@@ -14,6 +14,9 @@ import {
   ShieldCheck,
   Inbox,
   Wallet,
+  BookMarked,
+  ClipboardCheck,
+  Award,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";

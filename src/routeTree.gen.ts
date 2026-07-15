@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedStudentsRouteImport } from './routes/_authenticated/students'
 import { Route as AuthenticatedStaffRouteImport } from './routes/_authenticated/staff'
+import { Route as AuthenticatedResultsRouteImport } from './routes/_authenticated/results'
 import { Route as AuthenticatedProgramsRouteImport } from './routes/_authenticated/programs'
 import { Route as AuthenticatedFeesRouteImport } from './routes/_authenticated/fees'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -57,6 +58,11 @@ const AuthenticatedStudentsRoute = AuthenticatedStudentsRouteImport.update({
 const AuthenticatedStaffRoute = AuthenticatedStaffRouteImport.update({
   id: '/staff',
   path: '/staff',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedResultsRoute = AuthenticatedResultsRouteImport.update({
+  id: '/results',
+  path: '/results',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedProgramsRoute = AuthenticatedProgramsRouteImport.update({
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/fees': typeof AuthenticatedFeesRoute
   '/programs': typeof AuthenticatedProgramsRoute
+  '/results': typeof AuthenticatedResultsRoute
   '/staff': typeof AuthenticatedStaffRoute
   '/students': typeof AuthenticatedStudentsRoute
   '/users': typeof AuthenticatedUsersRoute
@@ -128,6 +135,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/fees': typeof AuthenticatedFeesRoute
   '/programs': typeof AuthenticatedProgramsRoute
+  '/results': typeof AuthenticatedResultsRoute
   '/staff': typeof AuthenticatedStaffRoute
   '/students': typeof AuthenticatedStudentsRoute
   '/users': typeof AuthenticatedUsersRoute
@@ -146,6 +154,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/fees': typeof AuthenticatedFeesRoute
   '/_authenticated/programs': typeof AuthenticatedProgramsRoute
+  '/_authenticated/results': typeof AuthenticatedResultsRoute
   '/_authenticated/staff': typeof AuthenticatedStaffRoute
   '/_authenticated/students': typeof AuthenticatedStudentsRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
@@ -164,6 +173,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/fees'
     | '/programs'
+    | '/results'
     | '/staff'
     | '/students'
     | '/users'
@@ -180,6 +190,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/fees'
     | '/programs'
+    | '/results'
     | '/staff'
     | '/students'
     | '/users'
@@ -197,6 +208,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/fees'
     | '/_authenticated/programs'
+    | '/_authenticated/results'
     | '/_authenticated/staff'
     | '/_authenticated/students'
     | '/_authenticated/users'
@@ -258,6 +270,13 @@ declare module '@tanstack/react-router' {
       path: '/staff'
       fullPath: '/staff'
       preLoaderRoute: typeof AuthenticatedStaffRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/results': {
+      id: '/_authenticated/results'
+      path: '/results'
+      fullPath: '/results'
+      preLoaderRoute: typeof AuthenticatedResultsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/programs': {
@@ -328,6 +347,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedFeesRoute: typeof AuthenticatedFeesRoute
   AuthenticatedProgramsRoute: typeof AuthenticatedProgramsRoute
+  AuthenticatedResultsRoute: typeof AuthenticatedResultsRoute
   AuthenticatedStaffRoute: typeof AuthenticatedStaffRoute
   AuthenticatedStudentsRoute: typeof AuthenticatedStudentsRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
@@ -342,6 +362,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedFeesRoute: AuthenticatedFeesRoute,
   AuthenticatedProgramsRoute: AuthenticatedProgramsRoute,
+  AuthenticatedResultsRoute: AuthenticatedResultsRoute,
   AuthenticatedStaffRoute: AuthenticatedStaffRoute,
   AuthenticatedStudentsRoute: AuthenticatedStudentsRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
