@@ -1,46 +1,67 @@
+## Pre-flight: Bug sweep of phases 1–3
 
-# EduCore — School/College Management ERP
+Supabase linter reports only pre-existing WARN-level notes on our `SECURITY DEFINER` helpers (`has_role`, `is_super_admin`, `get_user_campus`, `has_campus_access`, `can_manage_fees`, `handle_new_user`, `update_updated_at_column`). These are intentional and required to avoid RLS recursion — safe to leave.
 
-A multi-campus, multi-role academic ERP with dual-track (Pakistani BISE Board + Cambridge O/A-Level) support, built on Lovable Cloud (Supabase Auth, Postgres + RLS, Storage, Edge Functions) and TanStack Start.
+Before starting Phase 4 I will audit and patch:
+1. **Dialog a11y warnings** (console): several `DialogContent` blocks are missing `DialogDescription`/`aria-describedby`. Add descriptions across `admissions`, `students`, `staff`, `classes`, `campuses`, `programs`, `fees` edit dialogs.
+2. **Session robustness**: verify every mutation uses `supabase.auth.getSession()` guard pattern so the app never bounces to `/auth` on transient errors (already applied in most; sweep `fees.tsx` and `admissions.tsx`).
+3. **Fee module sanity**: confirm challan totals recompute correctly when scholarship changes, and that "Record Payment" writes a matching `bank_transactions` row (audit trail). Fix if missing.
+4. **Public inquiry**: confirm `campuses` public SELECT works from the anon key on the deployed preview (already fixed, spot-check).
+5. **Student "grade" auto-fill** on inquiry conversion: verify the field prefills only when empty (already implemented, spot-check).
 
-This is a very large scope (~8 phases, ~25 tables, 6 roles, 2 exam systems, AI layer). I'll build it **incrementally, phase by phase**, and stop for your confirmation after each phase before moving on. This plan covers the whole arc; we'll flesh out details as we go.
+No schema changes expected for the sweep unless I find a real bug.
 
-## Design direction
+---
 
-- Institutional, high-trust: navy + charcoal on white, generous whitespace, no gradients.
-- Serif display font for headings (Fraunces/Source Serif) paired with a clean sans (Inter) for UI — evokes ivy-league admin.
-- Dashboard-first: every role lands on KPIs relevant to them, never a bare menu.
-- Data-dense but calm tables, subtle borders, consistent semantic tokens defined in `src/styles.css`.
+## Phase 4 — Academics (large; ship as 4 sub-phases)
 
-## Architecture
+Because Phase 4 spans two exam systems + internal gradebook + PDF generation + a track-switch workflow, I will ship it in 4 sub-phases, each independently testable. I will stop for confirmation after each sub-phase.
 
-- **Auth & data:** Lovable Cloud (Supabase). `profiles` table joined to `auth.users` with `role` + `campus_id`. RLS on every table scoped by role/campus/user.
-- **Roles table:** separate `user_roles` table + `has_role()` security-definer function (never store role on `profiles` alone for privileged checks — prevents privilege escalation).
-- **Server logic:** TanStack `createServerFn` for app-internal reads/writes; server routes under `src/routes/api/public/*` for webhooks and the public inquiry chatbot endpoint.
-- **AI layer (Phase 8):** Supabase Edge Functions (or TanStack server fns) calling Lovable AI Gateway (`google/gemini-3-flash-preview` by default).
-- **Storage:** Supabase Storage buckets for `student-docs`, `staff-docs`, `assignments`, `certificates`.
-- **Notifications:** in-app table + email via Lovable Emails (Resend). SMS out of scope unless requested.
+### 4A. Core Academics
+**Tables (new):** `courses`, `course_assignments` (teacher ↔ section ↔ course), `attendance_records`, `assessments`, `assessment_scores`, `grading_scales`, `report_cards`.
+**Grading scale default:** A+ ≥90, A ≥85, A− ≥80, B+ ≥75, B ≥70, C ≥60, D ≥50, F <50, GPA on 4.0. Configurable per campus.
+**UI:**
+- `/courses` (Admin) — CRUD, code auto-gen (subject initials), assign to program/class.
+- `/teaching` (Teacher) — landing page listing the teacher's assigned sections/courses. From here they enter attendance and gradebook for a specific section+course.
+- **Attendance grid** — one row per enrolled student, one column per date; Present/Absent/Late/Leave; bulk-mark, save, edit. KPI card shows section attendance %.
+- **Gradebook** — per (section, course): create Assessments (Quiz/Assignment/Mid/Final, weight, max marks), enter scores in a spreadsheet grid, auto-computed weighted % and letter grade.
+- **Results publishing** — Campus Admin locks a term, generates internal Report Cards (subject grades + GPA + attendance %), and publishes to the Student portal.
+- **PDF result card** — printable format via a `/print/report-card/:id` route (same 3-copy pattern used for challans).
 
-## Phase order (build & confirm each before the next)
+### 4B. BISE Board module
+**Tables:** `board_registrations`, `board_subjects`, `board_exam_entries`, `board_results`.
+**UI (under `/board`):**
+- Register a student for Matric/Inter, choose Group (Science/Arts/Commerce/Pre-Med/Pre-Eng), select subjects with theory + practical marks split.
+- Generate/print **Roll Slips** and **Admit Cards**, gated on the student having no outstanding fee challan for the term (join with `fee_challans`).
+- Enter/import board results and store them for certificate generation later.
 
-1. **Foundation** — Auth, role-based redirect, `profiles`/`user_roles`/`has_role()`, campuses CRUD (with `academic_system: board | cambridge | both`), programs, classes, sections (system-tagged), student/staff profiles + document upload.
-2. **Admissions** — public inquiry form, Kanban pipeline, one-click convert to student (auto Student ID + portal login via Auth Admin).
-3. **Fees** — fee structures, auto-challan generation, CSV bank reconciliation, defaulter list, scholarship workflow.
-4. **Academics** — courses, teacher assignment, attendance grid, gradebook + GPA, results publishing, PDF result cards, **BISE Board module** (Matric/Inter, groups, theory+practical, roll slips, admit cards gated on fees), **Cambridge module** (O/A-Level, candidate/centre numbers, per-subject session entries, A*-G / A*-E grades, Statement of Entry), **Track Switch** request/approval workflow preserving history.
-5. **Certificates** — templated PDF generator, unique verification code + public lookup page, issuance log.
-6. **Student portal** — dashboard (attendance %, fees, results, deadlines), assignment upload, downloads.
-7. **Principal/Admin overview** — KPI dashboard, campus comparison, report builder (CSV/PDF export), audit-log viewer.
-8. **AI layer** — auto-fetch on ID entry, inquiry chatbot, fee-defaulter predictor, attendance-anomaly detector, report narrator, result-insight agent.
+### 4C. Cambridge module
+**Tables:** `cambridge_registrations`, `cambridge_subject_entries`, `cambridge_results`.
+**UI (under `/cambridge`):**
+- Register a student for O/A-Level with candidate number and centre number.
+- Per session (May/June, Oct/Nov) subject entries with syllabus code, tier, and expected grade.
+- Generate/print **Statement of Entry**.
+- Enter/import per-subject results using the A*–G / A*–E grade scale.
 
-Notifications and audit logging are threaded through every phase from Phase 3 onward (schemas seeded in Phase 1).
+### 4D. Track Switch workflow
+**Tables:** `track_switch_requests` (student_id, from_system, to_system, reason, status, requested_by, decided_by, decided_at).
+**UI:** Admissions Officer or Campus Admin raises a request; Super Admin/Campus Admin approves; on approval, update `students.academic_system` while preserving all prior board/Cambridge history rows (never delete). Add a "Track History" panel on the student profile.
 
-## What I need from you before starting Phase 1
+**RLS rules across 4A–4D:**
+- Teachers can read/write attendance and gradebook rows ONLY for sections/courses in their `course_assignments`.
+- Students can read their own attendance, results, and report cards.
+- Campus Admin scoped to `campus_id`; Super Admin unrestricted.
+- Public/anon has no access to any Phase 4 table.
+- Every new public-schema table gets explicit `GRANT`s in the same migration.
 
-A few decisions that will shape the schema and are cheaper to lock in now than to refactor later:
+---
 
-1. **Grading scale for the internal Gradebook (Phase 4).** Default I'll use unless you say otherwise: A+ ≥ 90, A 85, A− 80, B+ 75, B 70, C 60, D 50, F <50, with GPA on a 4.0 scale. OK, or give me your scale?
-2. **Currency & fee cycle default.** I'll assume PKR and monthly challans with configurable term/annual overrides. Confirm?
-3. **Email provider.** Lovable Emails (built-in, no setup) vs. bring-your-own (Resend/Brevo/Mailgun via connector). Recommend Lovable Emails to start.
-4. **Public inquiry chatbot LLM.** Default: Lovable AI Gateway with `google/gemini-3-flash-preview`. OK?
+## Deliverables sequence
 
-Once you confirm (or say "use defaults"), I'll enable Lovable Cloud and start Phase 1: auth, roles, campuses, programs/classes/sections, and student/staff profiles with document upload. I'll stop at the end of Phase 1 for you to test before moving on.
+1. Bug-sweep patches (single small edit batch, no migration).
+2. Sub-phase 4A migration → 4A UI → stop for review.
+3. Sub-phase 4B migration → 4B UI → stop.
+4. Sub-phase 4C migration → 4C UI → stop.
+5. Sub-phase 4D migration → 4D UI → stop.
+
+**Confirm this plan and I will start with the bug sweep + Sub-phase 4A (Core Academics) in the next message.**
