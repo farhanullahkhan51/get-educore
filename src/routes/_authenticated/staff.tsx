@@ -21,6 +21,7 @@ type Staff = {
   id: string; staff_code: string; first_name: string; last_name: string;
   campus_id: string; designation: string | null; department: string | null;
   email: string | null; phone: string | null;
+  qualification: string | null; address: string | null;
   documents: Array<{ name: string; path: string }> | null;
   profile_id: string | null;
 };
