@@ -241,6 +241,7 @@ function StudentsPage() {
                   <TableCell><SystemBadge system={s.academic_system} /></TableCell>
                   <TableCell className="text-sm text-muted-foreground"><FileText className="mr-1 inline h-3 w-3" />{s.documents?.length ?? 0}</TableCell>
                   <TableCell className="text-right">
+                    <Button size="sm" variant="ghost" onClick={() => setEditing(s)}><Pencil className="mr-1 h-3 w-3" /> Edit</Button>
                     <Button size="sm" variant="ghost" onClick={() => setUploadFor(s)}><Upload className="mr-1 h-3 w-3" /> Upload</Button>
                   </TableCell>
                 </TableRow>
