@@ -265,6 +265,7 @@ function ClassesPage() {
                           <TableCell>{s.room ?? "—"}</TableCell>
                           <TableCell>{s.capacity}</TableCell>
                           <TableCell className="text-right">
+                            <Button size="icon" variant="ghost" onClick={() => setEditSec(s)}><Pencil className="h-4 w-4" /></Button>
                             <Button size="icon" variant="ghost" onClick={() => delSection(s.id)}><Trash2 className="h-4 w-4" /></Button>
                           </TableCell>
                         </TableRow>
