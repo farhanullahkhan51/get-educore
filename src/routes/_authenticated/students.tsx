@@ -87,11 +87,37 @@ function StudentsPage() {
       date_of_birth: (fd.get("date_of_birth") as string) || null,
       gender: (fd.get("gender") as string) || null,
       address: String(fd.get("address") || "") || null,
+      grade: String(fd.get("grade") || "") || null,
       academic_system: String(fd.get("academic_system")) as Student["academic_system"],
     });
     if (error) return toast.error(error.message);
     toast.success(`Student ${code} registered`);
     setOpen(false);
+    qc.invalidateQueries({ queryKey: ["students"] });
+  }
+
+  async function handleUpdate(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!editing) return;
+    const fd = new FormData(e.currentTarget);
+    const { error } = await supabase.from("students").update({
+      first_name: String(fd.get("first_name")),
+      last_name: String(fd.get("last_name")),
+      campus_id: String(fd.get("campus_id")),
+      program_id: (fd.get("program_id") as string) || null,
+      class_id: (fd.get("class_id") as string) || null,
+      section_id: (fd.get("section_id") as string) || null,
+      guardian_name: String(fd.get("guardian_name") || "") || null,
+      guardian_phone: String(fd.get("guardian_phone") || "") || null,
+      date_of_birth: (fd.get("date_of_birth") as string) || null,
+      gender: (fd.get("gender") as string) || null,
+      address: String(fd.get("address") || "") || null,
+      grade: String(fd.get("grade") || "") || null,
+      academic_system: String(fd.get("academic_system")) as Student["academic_system"],
+    }).eq("id", editing.id);
+    if (error) return toast.error(error.message);
+    toast.success("Student updated");
+    setEditing(null);
     qc.invalidateQueries({ queryKey: ["students"] });
   }
 
