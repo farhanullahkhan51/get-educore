@@ -23,9 +23,14 @@ function Landing() {
             </div>
             <span className="font-serif text-lg font-semibold tracking-tight">EduCore</span>
           </div>
-          <Link to="/auth">
-            <Button variant="outline" size="sm">Sign in</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link to="/inquire">
+              <Button variant="ghost" size="sm">Apply / Inquire</Button>
+            </Link>
+            <Link to="/auth">
+              <Button variant="outline" size="sm">Sign in</Button>
+            </Link>
+          </div>
         </div>
       </header>
 
