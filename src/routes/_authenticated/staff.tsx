@@ -64,6 +64,28 @@ function StaffPage() {
     qc.invalidateQueries({ queryKey: ["staff"] });
   }
 
+  async function handleUpdate(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!editing) return;
+    const fd = new FormData(e.currentTarget);
+    const { error } = await supabase.from("staff").update({
+      first_name: String(fd.get("first_name")),
+      last_name: String(fd.get("last_name")),
+      campus_id: String(fd.get("campus_id")),
+      designation: String(fd.get("designation") || "") || null,
+      department: String(fd.get("department") || "") || null,
+      email: String(fd.get("email") || "") || null,
+      phone: String(fd.get("phone") || "") || null,
+      qualification: String(fd.get("qualification") || "") || null,
+      address: String(fd.get("address") || "") || null,
+    }).eq("id", editing.id);
+    if (error) return toast.error(error.message);
+    toast.success("Staff updated");
+    setEditing(null);
+    qc.invalidateQueries({ queryKey: ["staff"] });
+  }
+
+
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     if (!uploadFor || !e.target.files?.[0]) return;
     const file = e.target.files[0];
