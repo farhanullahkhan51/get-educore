@@ -142,6 +142,107 @@ export type Database = {
           },
         ]
       }
+      inquiries: {
+        Row: {
+          academic_system: Database["public"]["Enums"]["academic_system"] | null
+          address: string | null
+          assigned_to: string | null
+          campus_id: string | null
+          converted_at: string | null
+          converted_student_id: string | null
+          created_at: string
+          grade_applying_for: string | null
+          guardian_email: string | null
+          guardian_name: string
+          guardian_phone: string
+          guardian_relation: string | null
+          id: string
+          notes: string | null
+          previous_school: string | null
+          program_id: string | null
+          source: string | null
+          status: Database["public"]["Enums"]["inquiry_status"]
+          student_dob: string | null
+          student_gender: string | null
+          student_name: string
+          updated_at: string
+        }
+        Insert: {
+          academic_system?:
+            | Database["public"]["Enums"]["academic_system"]
+            | null
+          address?: string | null
+          assigned_to?: string | null
+          campus_id?: string | null
+          converted_at?: string | null
+          converted_student_id?: string | null
+          created_at?: string
+          grade_applying_for?: string | null
+          guardian_email?: string | null
+          guardian_name: string
+          guardian_phone: string
+          guardian_relation?: string | null
+          id?: string
+          notes?: string | null
+          previous_school?: string | null
+          program_id?: string | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["inquiry_status"]
+          student_dob?: string | null
+          student_gender?: string | null
+          student_name: string
+          updated_at?: string
+        }
+        Update: {
+          academic_system?:
+            | Database["public"]["Enums"]["academic_system"]
+            | null
+          address?: string | null
+          assigned_to?: string | null
+          campus_id?: string | null
+          converted_at?: string | null
+          converted_student_id?: string | null
+          created_at?: string
+          grade_applying_for?: string | null
+          guardian_email?: string | null
+          guardian_name?: string
+          guardian_phone?: string
+          guardian_relation?: string | null
+          id?: string
+          notes?: string | null
+          previous_school?: string | null
+          program_id?: string | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["inquiry_status"]
+          student_dob?: string | null
+          student_gender?: string | null
+          student_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inquiries_campus_id_fkey"
+            columns: ["campus_id"]
+            isOneToOne: false
+            referencedRelation: "campuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inquiries_converted_student_id_fkey"
+            columns: ["converted_student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inquiries_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -518,6 +619,7 @@ export type Database = {
         | "finance_officer"
         | "teacher"
         | "student"
+      inquiry_status: "new" | "contacted" | "visited" | "converted" | "lost"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -654,6 +756,7 @@ export const Constants = {
         "teacher",
         "student",
       ],
+      inquiry_status: ["new", "contacted", "visited", "converted", "lost"],
     },
   },
 } as const
