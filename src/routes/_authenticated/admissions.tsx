@@ -65,6 +65,22 @@ const STATUS_STYLES: Record<Status, string> = {
   lost: "bg-muted text-muted-foreground border-border",
 };
 
+const HEADER_STYLES: Record<Status, string> = {
+  new: "bg-gray-200 text-gray-900",
+  contacted: "bg-orange-100 text-orange-900",
+  visited: "bg-blue-100 text-blue-900",
+  converted: "bg-green-100 text-green-900",
+  lost: "bg-red-100 text-red-900",
+};
+
+const HEADER_HINT_STYLES: Record<Status, string> = {
+  new: "text-gray-600",
+  contacted: "text-orange-700",
+  visited: "text-blue-700",
+  converted: "text-green-700",
+  lost: "text-red-700",
+};
+
 function AdmissionsPage() {
   const qc = useQueryClient();
   const { data: user } = useCurrentUser();
@@ -171,12 +187,12 @@ function AdmissionsPage() {
           <div className="grid gap-4 xl:grid-cols-5 md:grid-cols-2">
             {COLUMNS.map((col) => (
               <div key={col.status} className="rounded-md border border-border bg-card/40">
-                <div className="border-b border-border px-3 py-2.5">
+                <div className={`border-b border-border px-3 py-2.5 ${HEADER_STYLES[col.status]}`}>
                   <div className="flex items-center justify-between">
                     <div className="text-sm font-semibold">{col.label}</div>
                     <Badge variant="outline" className={STATUS_STYLES[col.status]}>{grouped[col.status].length}</Badge>
                   </div>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{col.hint}</p>
+                  <p className={`mt-0.5 text-xs ${HEADER_HINT_STYLES[col.status]}`}>{col.hint}</p>
                 </div>
                 <div className="space-y-2 p-2 min-h-[200px]">
                   {isLoading && <p className="p-3 text-xs text-muted-foreground">Loading…</p>}
