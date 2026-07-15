@@ -1217,6 +1217,7 @@ function BankTab({ canManage, campuses }: {
   const [campusId, setCampusId] = useState<string>("");
   const [importOpen, setImportOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null);
   const [matching, setMatching] = useState<BankTxn | null>(null);
 
   const { data: accounts } = useQuery({
@@ -1236,17 +1237,30 @@ function BankTab({ canManage, campuses }: {
   async function handleAccountSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const { error } = await supabase.from("bank_accounts").insert({
+    const payload = {
       campus_id: String(fd.get("campus_id")),
       bank_name: String(fd.get("bank_name")),
       account_title: String(fd.get("account_title")),
       account_number: String(fd.get("account_number")),
       iban: String(fd.get("iban") || "") || null,
       branch: String(fd.get("branch") || "") || null,
-    });
-    if (error) return toast.error(error.message);
-    toast.success("Bank account added");
+      active: fd.get("active") === "on",
+    };
+    const res = editingAccount
+      ? await supabase.from("bank_accounts").update(payload).eq("id", editingAccount.id)
+      : await supabase.from("bank_accounts").insert(payload);
+    if (res.error) return toast.error(res.error.message);
+    toast.success(editingAccount ? "Bank account updated" : "Bank account added");
     setAccountOpen(false);
+    setEditingAccount(null);
+    qc.invalidateQueries({ queryKey: ["bank_accounts"] });
+  }
+
+  async function handleAccountDelete(id: string) {
+    if (!confirm("Delete this bank account?")) return;
+    const { error } = await supabase.from("bank_accounts").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Deleted");
     qc.invalidateQueries({ queryKey: ["bank_accounts"] });
   }
 
