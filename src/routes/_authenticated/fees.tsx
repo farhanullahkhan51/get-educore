@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Wallet, AlertTriangle, CheckCircle2, Upload, Link2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Wallet, AlertTriangle, CheckCircle2, Upload, Link2, Eye, Printer } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 
 export const Route = createFileRoute("/_authenticated/fees")({
@@ -386,6 +386,8 @@ function ChallansTab({
   const [campusFilter, setCampusFilter] = useState<string>("all");
   const [generatorOpen, setGeneratorOpen] = useState(false);
   const [payingFor, setPayingFor] = useState<Challan | null>(null);
+  const [viewing, setViewing] = useState<Challan | null>(null);
+  const [editing, setEditing] = useState<Challan | null>(null);
 
   const { data: challans, isLoading } = useQuery({
     queryKey: ["fee_challans"],
@@ -548,16 +550,27 @@ function ChallansTab({
                       <TableCell className="text-right">{PKR.format(Number(c.paid_amount))}</TableCell>
                       <TableCell>{statusBadge(isOverdue && c.status === "unpaid" ? "overdue" : c.status)}</TableCell>
                       <TableCell className="text-right">
-                        {canManage && (
-                          <div className="flex justify-end gap-1">
-                            {c.status !== "paid" && c.status !== "waived" && (
-                              <Button size="sm" variant="outline" onClick={() => setPayingFor(c)}>Record Payment</Button>
-                            )}
-                            <Button size="icon" variant="ghost" onClick={() => handleDelete(c.id)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        )}
+                        <div className="flex justify-end gap-1">
+                          <Button size="icon" variant="ghost" title="View" onClick={() => setViewing(c)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button size="icon" variant="ghost" title="Print" onClick={() => printChallan(c, studentMap.get(c.student_id), campuses.find((x) => x.id === c.campus_id))}>
+                            <Printer className="h-4 w-4" />
+                          </Button>
+                          {canManage && (
+                            <>
+                              <Button size="icon" variant="ghost" title="Edit" onClick={() => setEditing(c)}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              {c.status !== "paid" && c.status !== "waived" && (
+                                <Button size="sm" variant="outline" onClick={() => setPayingFor(c)}>Record Payment</Button>
+                              )}
+                              <Button size="icon" variant="ghost" title="Delete" onClick={() => handleDelete(c.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -617,7 +630,218 @@ function ChallansTab({
           </DialogContent>
         </Dialog>
       )}
+
+      {viewing && (
+        <ViewChallanDialog
+          challan={viewing}
+          student={studentMap.get(viewing.student_id)}
+          campus={campuses.find((c) => c.id === viewing.campus_id)}
+          onClose={() => setViewing(null)}
+          onPrint={() => printChallan(viewing, studentMap.get(viewing.student_id), campuses.find((c) => c.id === viewing.campus_id))}
+        />
+      )}
+
+      {editing && (
+        <EditChallanDialog
+          challan={editing}
+          onClose={() => setEditing(null)}
+          onDone={() => {
+            setEditing(null);
+            qc.invalidateQueries({ queryKey: ["fee_challans"] });
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+function printChallan(
+  c: Challan,
+  student: { code: string; name: string } | undefined,
+  campus: { name: string; code: string } | undefined,
+) {
+  const net = Number(c.gross_amount) - Number(c.discount_amount) + Number(c.fine_amount);
+  const balance = net - Number(c.paid_amount);
+  const fmt = (n: number) => new Intl.NumberFormat("en-PK", { style: "currency", currency: "PKR", maximumFractionDigits: 0 }).format(n);
+  const copies = ["Bank Copy", "School Copy", "Student Copy"];
+  const copy = (title: string) => `
+    <section class="copy">
+      <header>
+        <div class="brand">
+          <div class="school">${campus?.name ?? "EduCore"}</div>
+          <div class="sub">${campus?.code ?? ""} · Fee Challan</div>
+        </div>
+        <div class="copytag">${title}</div>
+      </header>
+      <div class="meta">
+        <div><span>Challan #</span><strong>${c.challan_no}</strong></div>
+        <div><span>Issue Date</span><strong>${c.issue_date}</strong></div>
+        <div><span>Due Date</span><strong>${c.due_date}</strong></div>
+        <div><span>Period</span><strong>${c.period_label ?? "—"}</strong></div>
+        <div><span>Student</span><strong>${student?.name ?? "—"}</strong></div>
+        <div><span>Student ID</span><strong>${student?.code ?? "—"}</strong></div>
+      </div>
+      <table>
+        <thead><tr><th>Description</th><th class="r">Amount</th></tr></thead>
+        <tbody>
+          <tr><td>${c.category} fee</td><td class="r">${fmt(Number(c.gross_amount))}</td></tr>
+          <tr><td>Discount / Scholarship</td><td class="r">− ${fmt(Number(c.discount_amount))}</td></tr>
+          <tr><td>Fine / Late Fee</td><td class="r">${fmt(Number(c.fine_amount))}</td></tr>
+          <tr class="tot"><td>Net Payable</td><td class="r">${fmt(net)}</td></tr>
+          <tr><td>Paid</td><td class="r">${fmt(Number(c.paid_amount))}</td></tr>
+          <tr class="tot"><td>Balance Due</td><td class="r">${fmt(balance)}</td></tr>
+        </tbody>
+      </table>
+      <div class="status">Status: <strong>${c.status.toUpperCase()}</strong></div>
+      <footer>Payable at any designated bank on or before due date. Late payments incur fines.</footer>
+    </section>
+  `;
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Challan ${c.challan_no}</title>
+    <style>
+      *{box-sizing:border-box}
+      body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#0f172a;margin:0;padding:16px;background:#fff}
+      .copy{border:1px solid #0f172a;padding:16px;margin-bottom:12px;page-break-inside:avoid}
+      header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #0f172a;padding-bottom:8px;margin-bottom:10px}
+      .school{font-size:18px;font-weight:700;font-family:Georgia,serif}
+      .sub{font-size:11px;color:#475569;letter-spacing:.08em;text-transform:uppercase}
+      .copytag{font-size:11px;border:1px solid #0f172a;padding:2px 8px;text-transform:uppercase;letter-spacing:.1em}
+      .meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:12px;margin-bottom:10px}
+      .meta span{color:#64748b;display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em}
+      table{width:100%;border-collapse:collapse;font-size:12px}
+      th,td{border-bottom:1px solid #e2e8f0;padding:6px 4px;text-align:left}
+      th{background:#f1f5f9}
+      .r{text-align:right}
+      .tot{font-weight:700;background:#f8fafc}
+      .status{margin-top:8px;font-size:12px}
+      footer{margin-top:8px;font-size:10px;color:#64748b;border-top:1px dashed #cbd5e1;padding-top:6px}
+      @media print{body{padding:0}.copy{border-color:#000}}
+    </style></head><body>
+    ${copies.map(copy).join("")}
+    <script>window.onload=()=>{window.print()}</script>
+    </body></html>`;
+  const w = window.open("", "_blank", "width=800,height=1000");
+  if (!w) return;
+  w.document.write(html);
+  w.document.close();
+}
+
+function ViewChallanDialog({
+  challan, student, campus, onClose, onPrint,
+}: {
+  challan: Challan;
+  student: { code: string; name: string } | undefined;
+  campus: { name: string; code: string } | undefined;
+  onClose: () => void;
+  onPrint: () => void;
+}) {
+  const net = Number(challan.gross_amount) - Number(challan.discount_amount) + Number(challan.fine_amount);
+  const balance = net - Number(challan.paid_amount);
+  const row = (k: string, v: React.ReactNode) => (
+    <div className="flex justify-between border-b py-1.5 text-sm"><span className="text-muted-foreground">{k}</span><span className="font-medium">{v}</span></div>
+  );
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Challan {challan.challan_no}</DialogTitle>
+          <DialogDescription>{campus?.name ?? ""}</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-0">
+          {row("Student", student?.name ?? "—")}
+          {row("Student ID", student?.code ?? "—")}
+          {row("Category", challan.category)}
+          {row("Period", challan.period_label ?? "—")}
+          {row("Issue Date", challan.issue_date)}
+          {row("Due Date", challan.due_date)}
+          {row("Gross", PKR.format(Number(challan.gross_amount)))}
+          {row("Discount", PKR.format(Number(challan.discount_amount)))}
+          {row("Fine", PKR.format(Number(challan.fine_amount)))}
+          {row("Net", <strong>{PKR.format(net)}</strong>)}
+          {row("Paid", PKR.format(Number(challan.paid_amount)))}
+          {row("Balance", <strong>{PKR.format(balance)}</strong>)}
+          {row("Status", statusBadge(challan.status))}
+          {challan.notes && row("Notes", challan.notes)}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Close</Button>
+          <Button onClick={onPrint}><Printer className="mr-2 h-4 w-4" />Print</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditChallanDialog({ challan, onClose, onDone }: { challan: Challan; onClose: () => void; onDone: () => void }) {
+  const [busy, setBusy] = useState(false);
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const gross = Number(fd.get("gross_amount"));
+    const discount = Number(fd.get("discount_amount"));
+    const fine = Number(fd.get("fine_amount"));
+    const paid = Number(fd.get("paid_amount"));
+    const net = gross - discount + fine;
+    const nextStatus =
+      String(fd.get("status")) as Challan["status"];
+    const payload = {
+      period_label: String(fd.get("period_label") || "") || null,
+      issue_date: String(fd.get("issue_date")),
+      due_date: String(fd.get("due_date")),
+      gross_amount: gross,
+      discount_amount: discount,
+      fine_amount: fine,
+      paid_amount: paid,
+      status: nextStatus,
+      notes: String(fd.get("notes") || "") || null,
+      paid_on: nextStatus === "paid" ? (challan.paid_on ?? new Date().toISOString().slice(0, 10)) : null,
+    };
+    setBusy(true);
+    const { error } = await supabase.from("fee_challans").update(payload).eq("id", challan.id);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Challan updated");
+    onDone();
+    void net;
+  }
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Edit Challan {challan.challan_no}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Period</Label><Input name="period_label" defaultValue={challan.period_label ?? ""} placeholder="2025-08" /></div>
+            <div>
+              <Label>Status</Label>
+              <Select name="status" defaultValue={challan.status}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {["unpaid","partial","paid","overdue","waived"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Issue Date</Label><Input name="issue_date" type="date" defaultValue={challan.issue_date} required /></div>
+            <div><Label>Due Date</Label><Input name="due_date" type="date" defaultValue={challan.due_date} required /></div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Gross (PKR)</Label><Input name="gross_amount" type="number" min="0" step="1" defaultValue={Number(challan.gross_amount)} required /></div>
+            <div><Label>Discount (PKR)</Label><Input name="discount_amount" type="number" min="0" step="1" defaultValue={Number(challan.discount_amount)} required /></div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Fine (PKR)</Label><Input name="fine_amount" type="number" min="0" step="1" defaultValue={Number(challan.fine_amount)} required /></div>
+            <div><Label>Paid (PKR)</Label><Input name="paid_amount" type="number" min="0" step="1" defaultValue={Number(challan.paid_amount)} required /></div>
+          </div>
+          <div><Label>Notes</Label><Textarea name="notes" defaultValue={challan.notes ?? ""} rows={2} /></div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button type="submit" disabled={busy}>{busy ? "Saving…" : "Save"}</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -993,6 +1217,7 @@ function BankTab({ canManage, campuses }: {
   const [campusId, setCampusId] = useState<string>("");
   const [importOpen, setImportOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null);
   const [matching, setMatching] = useState<BankTxn | null>(null);
 
   const { data: accounts } = useQuery({
@@ -1012,17 +1237,30 @@ function BankTab({ canManage, campuses }: {
   async function handleAccountSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const { error } = await supabase.from("bank_accounts").insert({
+    const payload = {
       campus_id: String(fd.get("campus_id")),
       bank_name: String(fd.get("bank_name")),
       account_title: String(fd.get("account_title")),
       account_number: String(fd.get("account_number")),
       iban: String(fd.get("iban") || "") || null,
       branch: String(fd.get("branch") || "") || null,
-    });
-    if (error) return toast.error(error.message);
-    toast.success("Bank account added");
+      active: fd.get("active") === "on",
+    };
+    const res = editingAccount
+      ? await supabase.from("bank_accounts").update(payload).eq("id", editingAccount.id)
+      : await supabase.from("bank_accounts").insert(payload);
+    if (res.error) return toast.error(res.error.message);
+    toast.success(editingAccount ? "Bank account updated" : "Bank account added");
     setAccountOpen(false);
+    setEditingAccount(null);
+    qc.invalidateQueries({ queryKey: ["bank_accounts"] });
+  }
+
+  async function handleAccountDelete(id: string) {
+    if (!confirm("Delete this bank account?")) return;
+    const { error } = await supabase.from("bank_accounts").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Deleted");
     qc.invalidateQueries({ queryKey: ["bank_accounts"] });
   }
 
@@ -1040,30 +1278,33 @@ function BankTab({ canManage, campuses }: {
               </SelectContent>
             </Select>
             {canManage && (
-              <Dialog open={accountOpen} onOpenChange={setAccountOpen}>
+              <Dialog open={accountOpen} onOpenChange={(o) => { setAccountOpen(o); if (!o) setEditingAccount(null); }}>
                 <DialogTrigger asChild>
-                  <Button variant="outline"><Plus className="mr-2 h-4 w-4" />Add Account</Button>
+                  <Button variant="outline" onClick={() => setEditingAccount(null)}><Plus className="mr-2 h-4 w-4" />Add Account</Button>
                 </DialogTrigger>
                 <DialogContent>
-                  <DialogHeader><DialogTitle>Add bank account</DialogTitle></DialogHeader>
+                  <DialogHeader><DialogTitle>{editingAccount ? "Edit bank account" : "Add bank account"}</DialogTitle></DialogHeader>
                   <form onSubmit={handleAccountSubmit} className="space-y-3">
                     <div>
                       <Label>Campus</Label>
-                      <Select name="campus_id" required>
+                      <Select name="campus_id" required defaultValue={editingAccount?.campus_id}>
                         <SelectTrigger><SelectValue placeholder="Select campus" /></SelectTrigger>
                         <SelectContent>{campuses.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <div><Label>Bank Name</Label><Input name="bank_name" required /></div>
-                      <div><Label>Branch</Label><Input name="branch" /></div>
+                      <div><Label>Bank Name</Label><Input name="bank_name" required defaultValue={editingAccount?.bank_name ?? ""} /></div>
+                      <div><Label>Branch</Label><Input name="branch" defaultValue={editingAccount?.branch ?? ""} /></div>
                     </div>
-                    <div><Label>Account Title</Label><Input name="account_title" required /></div>
+                    <div><Label>Account Title</Label><Input name="account_title" required defaultValue={editingAccount?.account_title ?? ""} /></div>
                     <div className="grid grid-cols-2 gap-3">
-                      <div><Label>Account Number</Label><Input name="account_number" required /></div>
-                      <div><Label>IBAN</Label><Input name="iban" /></div>
+                      <div><Label>Account Number</Label><Input name="account_number" required defaultValue={editingAccount?.account_number ?? ""} /></div>
+                      <div><Label>IBAN</Label><Input name="iban" defaultValue={editingAccount?.iban ?? ""} /></div>
                     </div>
-                    <DialogFooter><Button type="submit">Add</Button></DialogFooter>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" name="active" defaultChecked={editingAccount?.active ?? true} /> Active
+                    </label>
+                    <DialogFooter><Button type="submit">{editingAccount ? "Update" : "Add"}</Button></DialogFooter>
                   </form>
                 </DialogContent>
               </Dialog>
@@ -1087,6 +1328,8 @@ function BankTab({ canManage, campuses }: {
                     <TableHead className="whitespace-nowrap">Title</TableHead>
                     <TableHead className="whitespace-nowrap">Number</TableHead>
                     <TableHead className="whitespace-nowrap">Branch</TableHead>
+                    <TableHead className="whitespace-nowrap">Status</TableHead>
+                    <TableHead />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1096,6 +1339,19 @@ function BankTab({ canManage, campuses }: {
                       <TableCell className="max-w-[200px] truncate whitespace-nowrap">{a.account_title}</TableCell>
                       <TableCell className="font-mono text-xs max-w-[180px] truncate whitespace-nowrap">{a.account_number}</TableCell>
                       <TableCell className="max-w-[160px] truncate whitespace-nowrap">{a.branch ?? "—"}</TableCell>
+                      <TableCell>{a.active ? <Badge>Active</Badge> : <Badge variant="secondary">Inactive</Badge>}</TableCell>
+                      <TableCell className="text-right">
+                        {canManage && (
+                          <div className="flex justify-end gap-1">
+                            <Button size="icon" variant="ghost" title="Edit" onClick={() => { setEditingAccount(a); setAccountOpen(true); }}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button size="icon" variant="ghost" title="Delete" onClick={() => handleAccountDelete(a.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
