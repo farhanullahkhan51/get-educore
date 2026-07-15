@@ -278,6 +278,67 @@ function ClassesPage() {
           );
         })}
       </div>
+
+      <Dialog open={!!editCls} onOpenChange={(o) => !o && setEditCls(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="font-serif">Edit class</DialogTitle></DialogHeader>
+          {editCls && (
+            <form onSubmit={updateClass} className="space-y-4" key={editCls.id}>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Campus</Label>
+                  <Select name="campus_id" defaultValue={editCls.campus_id} required>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{campuses?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Program (optional)</Label>
+                  <Select name="program_id" defaultValue={editCls.program_id ?? undefined}>
+                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>{programs?.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2"><Label>Name</Label><Input name="name" defaultValue={editCls.name} required /></div>
+                <div className="space-y-2"><Label>Grade level</Label><Input name="grade_level" defaultValue={editCls.grade_level ?? ""} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2"><Label>Academic year</Label><Input name="academic_year" defaultValue={editCls.academic_year ?? ""} /></div>
+                <div className="space-y-2">
+                  <Label>System</Label>
+                  <Select name="academic_system" defaultValue={editCls.academic_system}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="board">Board</SelectItem>
+                      <SelectItem value="cambridge">Cambridge</SelectItem>
+                      <SelectItem value="both">Both</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter><Button type="submit">Save changes</Button></DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editSec} onOpenChange={(o) => !o && setEditSec(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="font-serif">Edit section</DialogTitle></DialogHeader>
+          {editSec && (
+            <form onSubmit={updateSection} className="space-y-4" key={editSec.id}>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-2"><Label>Name</Label><Input name="name" defaultValue={editSec.name} required /></div>
+                <div className="space-y-2"><Label>Capacity</Label><Input name="capacity" type="number" defaultValue={editSec.capacity ?? 40} /></div>
+                <div className="space-y-2"><Label>Room</Label><Input name="room" defaultValue={editSec.room ?? ""} /></div>
+              </div>
+              <DialogFooter><Button type="submit">Save changes</Button></DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
