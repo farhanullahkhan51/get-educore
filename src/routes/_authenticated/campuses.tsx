@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { generateCode } from "@/lib/generate-code";
 
 export const Route = createFileRoute("/_authenticated/campuses")({
   component: CampusesPage,
@@ -48,9 +49,12 @@ function CampusesPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    const name = String(fd.get("name"));
+    let code = String(fd.get("code") || "").trim().toUpperCase();
+    if (!code) code = generateCode(name, (campuses ?? []).map((c) => c.code));
     const payload = {
-      name: String(fd.get("name")),
-      code: String(fd.get("code")).toUpperCase(),
+      name,
+      code,
       address: String(fd.get("address") || "") || null,
       phone: String(fd.get("phone") || "") || null,
       email: String(fd.get("email") || "") || null,
@@ -97,7 +101,7 @@ function CampusesPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Code</Label>
-                    <Input name="code" defaultValue={editing?.code} required maxLength={16} />
+                    <Input name="code" defaultValue={editing?.code} maxLength={16} placeholder="Auto from name" />
                   </div>
                 </div>
                 <div className="space-y-2">

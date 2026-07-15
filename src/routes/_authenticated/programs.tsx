@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { SystemBadge } from "./campuses";
+import { generateCode } from "@/lib/generate-code";
 
 export const Route = createFileRoute("/_authenticated/programs")({
   component: ProgramsPage,
@@ -50,10 +51,13 @@ function ProgramsPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    const name = String(fd.get("name"));
+    let code = String(fd.get("code") || "").trim().toUpperCase();
+    if (!code) code = generateCode(name, (programs ?? []).map((p) => p.code));
     const payload = {
       campus_id: String(fd.get("campus_id")),
-      name: String(fd.get("name")),
-      code: String(fd.get("code")).toUpperCase(),
+      name,
+      code,
       description: String(fd.get("description") || "") || null,
       duration_years: Number(fd.get("duration_years") || 2),
       academic_system: String(fd.get("academic_system")) as Program["academic_system"],
@@ -106,7 +110,7 @@ function ProgramsPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Code</Label>
-                    <Input name="code" defaultValue={editing?.code} required />
+                    <Input name="code" defaultValue={editing?.code} placeholder="Auto from name" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
