@@ -386,6 +386,8 @@ function ChallansTab({
   const [campusFilter, setCampusFilter] = useState<string>("all");
   const [generatorOpen, setGeneratorOpen] = useState(false);
   const [payingFor, setPayingFor] = useState<Challan | null>(null);
+  const [viewing, setViewing] = useState<Challan | null>(null);
+  const [editing, setEditing] = useState<Challan | null>(null);
 
   const { data: challans, isLoading } = useQuery({
     queryKey: ["fee_challans"],
