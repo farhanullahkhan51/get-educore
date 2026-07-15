@@ -65,6 +65,22 @@ const STATUS_STYLES: Record<Status, string> = {
   lost: "bg-muted text-muted-foreground border-border",
 };
 
+const HEADER_STYLES: Record<Status, string> = {
+  new: "bg-gray-200 text-gray-900",
+  contacted: "bg-orange-100 text-orange-900",
+  visited: "bg-blue-100 text-blue-900",
+  converted: "bg-green-100 text-green-900",
+  lost: "bg-red-100 text-red-900",
+};
+
+const HEADER_HINT_STYLES: Record<Status, string> = {
+  new: "text-gray-600",
+  contacted: "text-orange-700",
+  visited: "text-blue-700",
+  converted: "text-green-700",
+  lost: "text-red-700",
+};
+
 function AdmissionsPage() {
   const qc = useQueryClient();
   const { data: user } = useCurrentUser();
