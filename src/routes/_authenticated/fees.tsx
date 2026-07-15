@@ -550,16 +550,27 @@ function ChallansTab({
                       <TableCell className="text-right">{PKR.format(Number(c.paid_amount))}</TableCell>
                       <TableCell>{statusBadge(isOverdue && c.status === "unpaid" ? "overdue" : c.status)}</TableCell>
                       <TableCell className="text-right">
-                        {canManage && (
-                          <div className="flex justify-end gap-1">
-                            {c.status !== "paid" && c.status !== "waived" && (
-                              <Button size="sm" variant="outline" onClick={() => setPayingFor(c)}>Record Payment</Button>
-                            )}
-                            <Button size="icon" variant="ghost" onClick={() => handleDelete(c.id)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        )}
+                        <div className="flex justify-end gap-1">
+                          <Button size="icon" variant="ghost" title="View" onClick={() => setViewing(c)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button size="icon" variant="ghost" title="Print" onClick={() => printChallan(c, studentMap.get(c.student_id), campuses.find((x) => x.id === c.campus_id))}>
+                            <Printer className="h-4 w-4" />
+                          </Button>
+                          {canManage && (
+                            <>
+                              <Button size="icon" variant="ghost" title="Edit" onClick={() => setEditing(c)}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              {c.status !== "paid" && c.status !== "waived" && (
+                                <Button size="sm" variant="outline" onClick={() => setPayingFor(c)}>Record Payment</Button>
+                              )}
+                              <Button size="icon" variant="ghost" title="Delete" onClick={() => handleDelete(c.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
