@@ -108,6 +108,39 @@ function ClassesPage() {
     qc.invalidateQueries({ queryKey: ["sections"] });
   }
 
+  async function updateClass(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!editCls) return;
+    const fd = new FormData(e.currentTarget);
+    const { error } = await supabase.from("classes").update({
+      campus_id: String(fd.get("campus_id")),
+      program_id: (fd.get("program_id") as string) || null,
+      name: String(fd.get("name")),
+      grade_level: String(fd.get("grade_level") || "") || null,
+      academic_year: String(fd.get("academic_year") || "") || null,
+      academic_system: String(fd.get("academic_system")) as Klass["academic_system"],
+    }).eq("id", editCls.id);
+    if (error) return toast.error(error.message);
+    toast.success("Class updated");
+    setEditCls(null);
+    qc.invalidateQueries({ queryKey: ["classes"] });
+  }
+
+  async function updateSection(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!editSec) return;
+    const fd = new FormData(e.currentTarget);
+    const { error } = await supabase.from("sections").update({
+      name: String(fd.get("name")),
+      capacity: Number(fd.get("capacity") || 40),
+      room: String(fd.get("room") || "") || null,
+    }).eq("id", editSec.id);
+    if (error) return toast.error(error.message);
+    toast.success("Section updated");
+    setEditSec(null);
+    qc.invalidateQueries({ queryKey: ["sections"] });
+  }
+
   return (
     <>
       <PageHeader
