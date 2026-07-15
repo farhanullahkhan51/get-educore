@@ -29,6 +29,7 @@ type Staff = {
 function StaffPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Staff | null>(null);
   const [uploadFor, setUploadFor] = useState<Staff | null>(null);
 
   const { data: campuses } = useQuery({
