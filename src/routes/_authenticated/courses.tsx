@@ -311,7 +311,7 @@ function AssignmentsTab() {
     const cls = classes?.find((c) => c.id === s.class_id);
     return [s.id, cls ? `${cls.name} — ${s.name}` : s.name];
   }));
-  const staffMap = new Map(staff?.map((s) => [s.id, s.full_name]));
+  const staffMap = new Map(staff?.map((s) => [s.id, `${s.first_name} ${s.last_name}`]));
 
   return (
     <>
@@ -349,7 +349,7 @@ function AssignmentsTab() {
                 <Select name="teacher_id" required>
                   <SelectTrigger><SelectValue placeholder="Select teacher" /></SelectTrigger>
                   <SelectContent>
-                    {staff?.map((s) => <SelectItem key={s.id} value={s.id}>{s.full_name} {s.designation ? `· ${s.designation}` : ""}</SelectItem>)}
+                    {staff?.map((s) => <SelectItem key={s.id} value={s.id}>{`${s.first_name} ${s.last_name}`} {s.designation ? `· ${s.designation}` : ""}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
