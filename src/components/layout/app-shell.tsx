@@ -13,6 +13,7 @@ import {
   LogOut,
   ShieldCheck,
   Inbox,
+  Wallet,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,7 @@ const NAV: NavItem[] = [
   { to: "/admissions", label: "Admissions", icon: Inbox, roles: ["super_admin", "campus_admin", "admissions_officer"] },
   { to: "/students", label: "Students", icon: GraduationCap, roles: ["super_admin", "campus_admin", "admissions_officer", "finance_officer", "teacher"] },
   { to: "/staff", label: "Staff", icon: Users, roles: ["super_admin", "campus_admin"] },
+  { to: "/fees", label: "Fees & Finance", icon: Wallet, roles: ["super_admin", "campus_admin", "finance_officer"] },
   { to: "/users", label: "Users & Roles", icon: UserCog, roles: ["super_admin"] },
 ];
 

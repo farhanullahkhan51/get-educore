@@ -55,6 +55,123 @@ export type Database = {
           },
         ]
       }
+      bank_accounts: {
+        Row: {
+          account_number: string
+          account_title: string
+          active: boolean
+          bank_name: string
+          branch: string | null
+          campus_id: string
+          created_at: string
+          iban: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          account_number: string
+          account_title: string
+          active?: boolean
+          bank_name: string
+          branch?: string | null
+          campus_id: string
+          created_at?: string
+          iban?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          account_number?: string
+          account_title?: string
+          active?: boolean
+          bank_name?: string
+          branch?: string | null
+          campus_id?: string
+          created_at?: string
+          iban?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_accounts_campus_id_fkey"
+            columns: ["campus_id"]
+            isOneToOne: false
+            referencedRelation: "campuses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_transactions: {
+        Row: {
+          amount: number
+          bank_account_id: string | null
+          campus_id: string
+          created_at: string
+          description: string | null
+          id: string
+          import_batch: string | null
+          matched_at: string | null
+          matched_by: string | null
+          matched_challan_id: string | null
+          reference: string | null
+          txn_date: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          bank_account_id?: string | null
+          campus_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          import_batch?: string | null
+          matched_at?: string | null
+          matched_by?: string | null
+          matched_challan_id?: string | null
+          reference?: string | null
+          txn_date: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          bank_account_id?: string | null
+          campus_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          import_batch?: string | null
+          matched_at?: string | null
+          matched_by?: string | null
+          matched_challan_id?: string | null
+          reference?: string | null
+          txn_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_transactions_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transactions_campus_id_fkey"
+            columns: ["campus_id"]
+            isOneToOne: false
+            referencedRelation: "campuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transactions_matched_challan_id_fkey"
+            columns: ["matched_challan_id"]
+            isOneToOne: false
+            referencedRelation: "fee_challans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campuses: {
         Row: {
           academic_system: Database["public"]["Enums"]["academic_system"]
@@ -135,6 +252,235 @@ export type Database = {
           },
           {
             foreignKeyName: "classes_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fee_challans: {
+        Row: {
+          campus_id: string
+          category: Database["public"]["Enums"]["fee_category"]
+          challan_no: string
+          created_at: string
+          created_by: string | null
+          discount_amount: number
+          due_date: string
+          fee_structure_id: string | null
+          fine_amount: number
+          gross_amount: number
+          id: string
+          issue_date: string
+          notes: string | null
+          paid_amount: number
+          paid_on: string | null
+          period_label: string | null
+          scholarship_id: string | null
+          status: Database["public"]["Enums"]["challan_status"]
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          campus_id: string
+          category?: Database["public"]["Enums"]["fee_category"]
+          challan_no: string
+          created_at?: string
+          created_by?: string | null
+          discount_amount?: number
+          due_date: string
+          fee_structure_id?: string | null
+          fine_amount?: number
+          gross_amount: number
+          id?: string
+          issue_date?: string
+          notes?: string | null
+          paid_amount?: number
+          paid_on?: string | null
+          period_label?: string | null
+          scholarship_id?: string | null
+          status?: Database["public"]["Enums"]["challan_status"]
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          campus_id?: string
+          category?: Database["public"]["Enums"]["fee_category"]
+          challan_no?: string
+          created_at?: string
+          created_by?: string | null
+          discount_amount?: number
+          due_date?: string
+          fee_structure_id?: string | null
+          fine_amount?: number
+          gross_amount?: number
+          id?: string
+          issue_date?: string
+          notes?: string | null
+          paid_amount?: number
+          paid_on?: string | null
+          period_label?: string | null
+          scholarship_id?: string | null
+          status?: Database["public"]["Enums"]["challan_status"]
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fee_challans_campus_id_fkey"
+            columns: ["campus_id"]
+            isOneToOne: false
+            referencedRelation: "campuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_challans_fee_structure_id_fkey"
+            columns: ["fee_structure_id"]
+            isOneToOne: false
+            referencedRelation: "fee_structures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_challans_scholarship_id_fkey"
+            columns: ["scholarship_id"]
+            isOneToOne: false
+            referencedRelation: "scholarships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_challans_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fee_ledger: {
+        Row: {
+          amount: number
+          bank_transaction_id: string | null
+          campus_id: string
+          challan_id: string
+          created_at: string
+          created_by: string | null
+          entry_type: string
+          id: string
+          notes: string | null
+        }
+        Insert: {
+          amount: number
+          bank_transaction_id?: string | null
+          campus_id: string
+          challan_id: string
+          created_at?: string
+          created_by?: string | null
+          entry_type: string
+          id?: string
+          notes?: string | null
+        }
+        Update: {
+          amount?: number
+          bank_transaction_id?: string | null
+          campus_id?: string
+          challan_id?: string
+          created_at?: string
+          created_by?: string | null
+          entry_type?: string
+          id?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fee_ledger_bank_transaction_id_fkey"
+            columns: ["bank_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "bank_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_ledger_campus_id_fkey"
+            columns: ["campus_id"]
+            isOneToOne: false
+            referencedRelation: "campuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_ledger_challan_id_fkey"
+            columns: ["challan_id"]
+            isOneToOne: false
+            referencedRelation: "fee_challans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fee_structures: {
+        Row: {
+          academic_year: string | null
+          active: boolean
+          amount: number
+          campus_id: string
+          category: Database["public"]["Enums"]["fee_category"]
+          class_id: string | null
+          created_at: string
+          created_by: string | null
+          frequency: Database["public"]["Enums"]["fee_frequency"]
+          id: string
+          name: string
+          notes: string | null
+          program_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          academic_year?: string | null
+          active?: boolean
+          amount: number
+          campus_id: string
+          category?: Database["public"]["Enums"]["fee_category"]
+          class_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          frequency?: Database["public"]["Enums"]["fee_frequency"]
+          id?: string
+          name: string
+          notes?: string | null
+          program_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          academic_year?: string | null
+          active?: boolean
+          amount?: number
+          campus_id?: string
+          category?: Database["public"]["Enums"]["fee_category"]
+          class_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          frequency?: Database["public"]["Enums"]["fee_frequency"]
+          id?: string
+          name?: string
+          notes?: string | null
+          program_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fee_structures_campus_id_fkey"
+            columns: ["campus_id"]
+            isOneToOne: false
+            referencedRelation: "campuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_structures_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_structures_program_id_fkey"
             columns: ["program_id"]
             isOneToOne: false
             referencedRelation: "programs"
@@ -324,6 +670,69 @@ export type Database = {
             columns: ["campus_id"]
             isOneToOne: false
             referencedRelation: "campuses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scholarships: {
+        Row: {
+          approved_by: string | null
+          campus_id: string
+          created_at: string
+          ends_on: string | null
+          id: string
+          name: string
+          reason: string | null
+          scholarship_type: Database["public"]["Enums"]["scholarship_type"]
+          starts_on: string | null
+          status: Database["public"]["Enums"]["scholarship_status"]
+          student_id: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          approved_by?: string | null
+          campus_id: string
+          created_at?: string
+          ends_on?: string | null
+          id?: string
+          name: string
+          reason?: string | null
+          scholarship_type?: Database["public"]["Enums"]["scholarship_type"]
+          starts_on?: string | null
+          status?: Database["public"]["Enums"]["scholarship_status"]
+          student_id: string
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          approved_by?: string | null
+          campus_id?: string
+          created_at?: string
+          ends_on?: string | null
+          id?: string
+          name?: string
+          reason?: string | null
+          scholarship_type?: Database["public"]["Enums"]["scholarship_type"]
+          starts_on?: string | null
+          status?: Database["public"]["Enums"]["scholarship_status"]
+          student_id?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scholarships_campus_id_fkey"
+            columns: ["campus_id"]
+            isOneToOne: false
+            referencedRelation: "campuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scholarships_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
             referencedColumns: ["id"]
           },
         ]
@@ -599,6 +1008,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_manage_fees: {
+        Args: { _campus_id: string; _user_id: string }
+        Returns: boolean
+      }
       get_user_campus: { Args: { _user_id: string }; Returns: string }
       has_campus_access: {
         Args: { _campus_id: string; _user_id: string }
@@ -622,7 +1035,18 @@ export type Database = {
         | "finance_officer"
         | "teacher"
         | "student"
+      challan_status: "unpaid" | "partial" | "paid" | "waived" | "overdue"
+      fee_category:
+        | "tuition"
+        | "admission"
+        | "exam"
+        | "transport"
+        | "hostel"
+        | "other"
+      fee_frequency: "monthly" | "term" | "annual" | "one_time"
       inquiry_status: "new" | "contacted" | "visited" | "converted" | "lost"
+      scholarship_status: "active" | "expired" | "revoked"
+      scholarship_type: "percentage" | "fixed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -759,7 +1183,19 @@ export const Constants = {
         "teacher",
         "student",
       ],
+      challan_status: ["unpaid", "partial", "paid", "waived", "overdue"],
+      fee_category: [
+        "tuition",
+        "admission",
+        "exam",
+        "transport",
+        "hostel",
+        "other",
+      ],
+      fee_frequency: ["monthly", "term", "annual", "one_time"],
       inquiry_status: ["new", "contacted", "visited", "converted", "lost"],
+      scholarship_status: ["active", "expired", "revoked"],
+      scholarship_type: ["percentage", "fixed"],
     },
   },
 } as const
