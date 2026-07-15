@@ -31,6 +31,10 @@ type Student = {
   guardian_phone: string | null;
   status: string;
   academic_system: "board" | "cambridge" | "both";
+  grade: string | null;
+  date_of_birth: string | null;
+  gender: string | null;
+  address: string | null;
   documents: Array<{ name: string; path: string }> | null;
   profile_id: string | null;
 };
