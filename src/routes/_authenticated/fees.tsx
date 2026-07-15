@@ -1075,30 +1075,32 @@ function BankTab({ canManage, campuses }: {
             )}
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0 sm:p-6">
           {filteredAccounts.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No bank accounts yet.</p>
+            <p className="text-sm text-muted-foreground p-6">No bank accounts yet.</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Bank</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Number</TableHead>
-                  <TableHead>Branch</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredAccounts.map((a) => (
-                  <TableRow key={a.id}>
-                    <TableCell>{a.bank_name}</TableCell>
-                    <TableCell>{a.account_title}</TableCell>
-                    <TableCell className="font-mono text-xs">{a.account_number}</TableCell>
-                    <TableCell>{a.branch ?? "—"}</TableCell>
+            <div className="overflow-x-auto">
+              <Table className="min-w-full">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="whitespace-nowrap">Bank</TableHead>
+                    <TableHead className="whitespace-nowrap">Title</TableHead>
+                    <TableHead className="whitespace-nowrap">Number</TableHead>
+                    <TableHead className="whitespace-nowrap">Branch</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredAccounts.map((a) => (
+                    <TableRow key={a.id}>
+                      <TableCell className="max-w-[160px] truncate whitespace-nowrap">{a.bank_name}</TableCell>
+                      <TableCell className="max-w-[200px] truncate whitespace-nowrap">{a.account_title}</TableCell>
+                      <TableCell className="font-mono text-xs max-w-[180px] truncate whitespace-nowrap">{a.account_number}</TableCell>
+                      <TableCell className="max-w-[160px] truncate whitespace-nowrap">{a.branch ?? "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
