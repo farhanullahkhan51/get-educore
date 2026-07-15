@@ -268,7 +268,7 @@ function AssignmentsTab() {
   });
   const { data: staff } = useQuery({
     queryKey: ["staff"],
-    queryFn: async () => (await supabase.from("staff").select("id, full_name, staff_code, campus_id, designation").order("full_name")).data ?? [],
+    queryFn: async () => (await supabase.from("staff").select("id, first_name, last_name, staff_code, campus_id, designation").order("first_name")).data ?? [],
   });
   const { data: assignments, isLoading } = useQuery({
     queryKey: ["course_assignments"],
