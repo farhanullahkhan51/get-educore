@@ -12,6 +12,7 @@ import {
   Layers,
   LogOut,
   ShieldCheck,
+  Inbox,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,7 @@ const NAV: NavItem[] = [
   { to: "/campuses", label: "Campuses", icon: Building2, roles: ["super_admin"] },
   { to: "/programs", label: "Programs", icon: BookOpen, roles: ["super_admin", "campus_admin"] },
   { to: "/classes", label: "Classes & Sections", icon: Layers, roles: ["super_admin", "campus_admin"] },
+  { to: "/admissions", label: "Admissions", icon: Inbox, roles: ["super_admin", "campus_admin", "admissions_officer"] },
   { to: "/students", label: "Students", icon: GraduationCap, roles: ["super_admin", "campus_admin", "admissions_officer", "finance_officer", "teacher"] },
   { to: "/staff", label: "Staff", icon: Users, roles: ["super_admin", "campus_admin"] },
   { to: "/users", label: "Users & Roles", icon: UserCog, roles: ["super_admin"] },
