@@ -1107,44 +1107,46 @@ function BankTab({ canManage, campuses }: {
 
       <Card>
         <CardHeader><CardTitle>Bank Transactions</CardTitle></CardHeader>
-        <CardContent>
-          {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p>
-            : filteredTxns.length === 0 ? <p className="text-sm text-muted-foreground">No transactions imported yet.</p>
+        <CardContent className="p-0 sm:p-6">
+          {isLoading ? <p className="text-sm text-muted-foreground p-6">Loading…</p>
+            : filteredTxns.length === 0 ? <p className="text-sm text-muted-foreground p-6">No transactions imported yet.</p>
             : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Reference</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredTxns.map((t) => (
-                    <TableRow key={t.id}>
-                      <TableCell>{t.txn_date}</TableCell>
-                      <TableCell className="font-mono text-xs">{t.reference ?? "—"}</TableCell>
-                      <TableCell className="max-w-xs truncate">{t.description ?? "—"}</TableCell>
-                      <TableCell className="text-right">{PKR.format(Number(t.amount))}</TableCell>
-                      <TableCell>
-                        {t.matched_challan_id
-                          ? <Badge className="bg-emerald-100 text-emerald-800">matched</Badge>
-                          : <Badge variant="secondary">unmatched</Badge>}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {canManage && !t.matched_challan_id && (
-                          <Button size="sm" variant="outline" onClick={() => setMatching(t)}>
-                            <Link2 className="mr-1 h-3 w-3" /> Match
-                          </Button>
-                        )}
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table className="min-w-full">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="whitespace-nowrap">Date</TableHead>
+                      <TableHead className="whitespace-nowrap">Reference</TableHead>
+                      <TableHead className="whitespace-nowrap">Description</TableHead>
+                      <TableHead className="whitespace-nowrap text-right">Amount</TableHead>
+                      <TableHead className="whitespace-nowrap">Status</TableHead>
+                      <TableHead />
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredTxns.map((t) => (
+                      <TableRow key={t.id}>
+                        <TableCell className="whitespace-nowrap">{t.txn_date}</TableCell>
+                        <TableCell className="font-mono text-xs max-w-[180px] truncate whitespace-nowrap">{t.reference ?? "—"}</TableCell>
+                        <TableCell className="max-w-xs truncate">{t.description ?? "—"}</TableCell>
+                        <TableCell className="text-right whitespace-nowrap">{PKR.format(Number(t.amount))}</TableCell>
+                        <TableCell>
+                          {t.matched_challan_id
+                            ? <Badge className="bg-emerald-100 text-emerald-800">matched</Badge>
+                            : <Badge variant="secondary">unmatched</Badge>}
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
+                          {canManage && !t.matched_challan_id && (
+                            <Button size="sm" variant="outline" onClick={() => setMatching(t)}>
+                              <Link2 className="mr-1 h-3 w-3" /> Match
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
         </CardContent>
       </Card>
