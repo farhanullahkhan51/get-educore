@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Wallet, AlertTriangle, CheckCircle2, Upload, Link2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Wallet, AlertTriangle, CheckCircle2, Upload, Link2, Eye, Printer } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 
 export const Route = createFileRoute("/_authenticated/fees")({
