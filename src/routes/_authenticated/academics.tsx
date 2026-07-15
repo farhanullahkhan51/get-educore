@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/academics")({
   component: AcademicsPage,
 });
 
-type Student = { id: string; first_name: string; last_name: string; student_id: string; section_id: string | null };
+type Student = { id: string; first_name: string; last_name: string; student_code: string; section_id: string | null };
 type AttStatus = "present" | "absent" | "late" | "leave";
 
 function AcademicsPage() {
@@ -76,7 +76,7 @@ function AttendanceTab() {
     enabled: !!sectionId,
     queryFn: async () => {
       const { data, error } = await supabase.from("students")
-        .select("id, first_name, last_name, student_id, section_id")
+        .select("id, first_name, last_name, student_code, section_id")
         .eq("section_id", sectionId).order("first_name");
       if (error) throw error;
       return data as Student[];
@@ -202,7 +202,7 @@ function AttendanceTab() {
                   )}
                   {students?.map((s) => (
                     <TableRow key={s.id}>
-                      <TableCell><code className="text-xs">{s.student_id}</code></TableCell>
+                      <TableCell><code className="text-xs">{s.student_code}</code></TableCell>
                       <TableCell className="font-medium">{s.first_name} {s.last_name}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
@@ -283,7 +283,7 @@ function GradebookTab() {
     enabled: !!sectionId,
     queryFn: async () => {
       const { data } = await supabase.from("students")
-        .select("id, first_name, last_name, student_id, section_id")
+        .select("id, first_name, last_name, student_code, section_id")
         .eq("section_id", sectionId).order("first_name");
       return (data ?? []) as Student[];
     },
@@ -336,7 +336,7 @@ function GradebookTab() {
   }
 
   const scoreMap = new Map<string, number | null>();
-  for (const s of scores ?? []) scoreMap.set(`${s.assessment_id}:${s.student_id}`, s.marks as number | null);
+  for (const s of scores ?? []) scoreMap.set(`${s.assessment_id}:${s.student_code}`, s.marks as number | null);
 
   function studentSummary(studentId: string) {
     if (!assessments || assessments.length === 0) return { percent: 0, grade: "—" };
@@ -454,7 +454,7 @@ function GradebookTab() {
                     <TableRow key={st.id}>
                       <TableCell className="sticky left-0 bg-background font-medium">
                         <div>{st.first_name} {st.last_name}</div>
-                        <div className="text-[10px] text-muted-foreground">{st.student_id}</div>
+                        <div className="text-[10px] text-muted-foreground">{st.student_code}</div>
                       </TableCell>
                       {assessments?.map((a) => {
                         const key = `${a.id}:${st.id}`;
