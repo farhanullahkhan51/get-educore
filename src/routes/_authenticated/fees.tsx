@@ -1278,30 +1278,33 @@ function BankTab({ canManage, campuses }: {
               </SelectContent>
             </Select>
             {canManage && (
-              <Dialog open={accountOpen} onOpenChange={setAccountOpen}>
+              <Dialog open={accountOpen} onOpenChange={(o) => { setAccountOpen(o); if (!o) setEditingAccount(null); }}>
                 <DialogTrigger asChild>
-                  <Button variant="outline"><Plus className="mr-2 h-4 w-4" />Add Account</Button>
+                  <Button variant="outline" onClick={() => setEditingAccount(null)}><Plus className="mr-2 h-4 w-4" />Add Account</Button>
                 </DialogTrigger>
                 <DialogContent>
-                  <DialogHeader><DialogTitle>Add bank account</DialogTitle></DialogHeader>
+                  <DialogHeader><DialogTitle>{editingAccount ? "Edit bank account" : "Add bank account"}</DialogTitle></DialogHeader>
                   <form onSubmit={handleAccountSubmit} className="space-y-3">
                     <div>
                       <Label>Campus</Label>
-                      <Select name="campus_id" required>
+                      <Select name="campus_id" required defaultValue={editingAccount?.campus_id}>
                         <SelectTrigger><SelectValue placeholder="Select campus" /></SelectTrigger>
                         <SelectContent>{campuses.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <div><Label>Bank Name</Label><Input name="bank_name" required /></div>
-                      <div><Label>Branch</Label><Input name="branch" /></div>
+                      <div><Label>Bank Name</Label><Input name="bank_name" required defaultValue={editingAccount?.bank_name ?? ""} /></div>
+                      <div><Label>Branch</Label><Input name="branch" defaultValue={editingAccount?.branch ?? ""} /></div>
                     </div>
-                    <div><Label>Account Title</Label><Input name="account_title" required /></div>
+                    <div><Label>Account Title</Label><Input name="account_title" required defaultValue={editingAccount?.account_title ?? ""} /></div>
                     <div className="grid grid-cols-2 gap-3">
-                      <div><Label>Account Number</Label><Input name="account_number" required /></div>
-                      <div><Label>IBAN</Label><Input name="iban" /></div>
+                      <div><Label>Account Number</Label><Input name="account_number" required defaultValue={editingAccount?.account_number ?? ""} /></div>
+                      <div><Label>IBAN</Label><Input name="iban" defaultValue={editingAccount?.iban ?? ""} /></div>
                     </div>
-                    <DialogFooter><Button type="submit">Add</Button></DialogFooter>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" name="active" defaultChecked={editingAccount?.active ?? true} /> Active
+                    </label>
+                    <DialogFooter><Button type="submit">{editingAccount ? "Update" : "Add"}</Button></DialogFooter>
                   </form>
                 </DialogContent>
               </Dialog>
@@ -1325,6 +1328,8 @@ function BankTab({ canManage, campuses }: {
                     <TableHead className="whitespace-nowrap">Title</TableHead>
                     <TableHead className="whitespace-nowrap">Number</TableHead>
                     <TableHead className="whitespace-nowrap">Branch</TableHead>
+                    <TableHead className="whitespace-nowrap">Status</TableHead>
+                    <TableHead />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1334,6 +1339,19 @@ function BankTab({ canManage, campuses }: {
                       <TableCell className="max-w-[200px] truncate whitespace-nowrap">{a.account_title}</TableCell>
                       <TableCell className="font-mono text-xs max-w-[180px] truncate whitespace-nowrap">{a.account_number}</TableCell>
                       <TableCell className="max-w-[160px] truncate whitespace-nowrap">{a.branch ?? "—"}</TableCell>
+                      <TableCell>{a.active ? <Badge>Active</Badge> : <Badge variant="secondary">Inactive</Badge>}</TableCell>
+                      <TableCell className="text-right">
+                        {canManage && (
+                          <div className="flex justify-end gap-1">
+                            <Button size="icon" variant="ghost" title="Edit" onClick={() => { setEditingAccount(a); setAccountOpen(true); }}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button size="icon" variant="ghost" title="Delete" onClick={() => handleAccountDelete(a.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
