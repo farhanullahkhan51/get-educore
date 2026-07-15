@@ -175,7 +175,8 @@ function StudentsPage() {
                     </Select>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-2"><Label>Grade</Label><Input name="grade" placeholder="e.g. Class 9" /></div>
                   <div className="space-y-2"><Label>Guardian name</Label><Input name="guardian_name" /></div>
                   <div className="space-y-2"><Label>Guardian phone</Label><Input name="guardian_phone" /></div>
                 </div>
