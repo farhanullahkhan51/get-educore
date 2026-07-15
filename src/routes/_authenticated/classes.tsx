@@ -245,6 +245,7 @@ function ClassesPage() {
                       </form>
                     </DialogContent>
                   </Dialog>
+                  <Button size="icon" variant="ghost" onClick={() => setEditCls(cls)}><Pencil className="h-4 w-4" /></Button>
                   <Button size="icon" variant="ghost" onClick={() => delClass(cls.id)}><Trash2 className="h-4 w-4" /></Button>
                 </div>
               </CardHeader>
