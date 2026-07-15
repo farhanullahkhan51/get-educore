@@ -640,9 +640,17 @@ function ConvertDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2 col-span-2">
+            <div className="space-y-2">
               <Label>Student ID</Label>
               <Input name="student_code" placeholder="Auto-generated" />
+            </div>
+            <div className="space-y-2">
+              <Label>Grade</Label>
+              <Input
+                name="grade"
+                defaultValue={inquiry.grade_applying_for ?? ""}
+                placeholder={inquiry.grade_applying_for ? undefined : "e.g. Class 9"}
+              />
             </div>
             <div className="space-y-2 col-span-2">
               <Label>Campus</Label>
