@@ -110,7 +110,7 @@ function ProgramsPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Code</Label>
-                    <Input name="code" defaultValue={editing?.code} required />
+                    <Input name="code" defaultValue={editing?.code} placeholder="Auto from name" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
