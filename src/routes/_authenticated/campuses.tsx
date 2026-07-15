@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { generateCode } from "@/lib/generate-code";
 
 export const Route = createFileRoute("/_authenticated/campuses")({
   component: CampusesPage,
