@@ -51,10 +51,13 @@ function ProgramsPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    const name = String(fd.get("name"));
+    let code = String(fd.get("code") || "").trim().toUpperCase();
+    if (!code) code = generateCode(name, (programs ?? []).map((p) => p.code));
     const payload = {
       campus_id: String(fd.get("campus_id")),
-      name: String(fd.get("name")),
-      code: String(fd.get("code")).toUpperCase(),
+      name,
+      code,
       description: String(fd.get("description") || "") || null,
       duration_years: Number(fd.get("duration_years") || 2),
       academic_system: String(fd.get("academic_system")) as Program["academic_system"],
