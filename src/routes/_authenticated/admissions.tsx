@@ -187,12 +187,12 @@ function AdmissionsPage() {
           <div className="grid gap-4 xl:grid-cols-5 md:grid-cols-2">
             {COLUMNS.map((col) => (
               <div key={col.status} className="rounded-md border border-border bg-card/40">
-                <div className="border-b border-border px-3 py-2.5">
+                <div className={`border-b border-border px-3 py-2.5 ${HEADER_STYLES[col.status]}`}>
                   <div className="flex items-center justify-between">
                     <div className="text-sm font-semibold">{col.label}</div>
                     <Badge variant="outline" className={STATUS_STYLES[col.status]}>{grouped[col.status].length}</Badge>
                   </div>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{col.hint}</p>
+                  <p className={`mt-0.5 text-xs ${HEADER_HINT_STYLES[col.status]}`}>{col.hint}</p>
                 </div>
                 <div className="space-y-2 p-2 min-h-[200px]">
                   {isLoading && <p className="p-3 text-xs text-muted-foreground">Loading…</p>}
