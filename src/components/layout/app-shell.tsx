@@ -13,6 +13,7 @@ import {
   LogOut,
   ShieldCheck,
   Inbox,
+  Wallet,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
