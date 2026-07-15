@@ -48,9 +48,12 @@ function CampusesPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    const name = String(fd.get("name"));
+    let code = String(fd.get("code") || "").trim().toUpperCase();
+    if (!code) code = generateCode(name, (campuses ?? []).map((c) => c.code));
     const payload = {
-      name: String(fd.get("name")),
-      code: String(fd.get("code")).toUpperCase(),
+      name,
+      code,
       address: String(fd.get("address") || "") || null,
       phone: String(fd.get("phone") || "") || null,
       email: String(fd.get("email") || "") || null,
