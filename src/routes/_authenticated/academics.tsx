@@ -310,7 +310,7 @@ function GradebookTab() {
       course_id: courseId,
       section_id: sectionId,
       title: String(fd.get("title")),
-      type: (String(fd.get("type") || "quiz")) as Assessment["type"] as never,
+      type: String(fd.get("type") || "quiz") as "quiz" | "assignment" | "midterm" | "final" | "project" | "other",
       max_marks: Number(fd.get("max_marks") || 100),
       weight_percent: Number(fd.get("weight_percent") || 10),
       due_date: (fd.get("due_date") as string) || null,
