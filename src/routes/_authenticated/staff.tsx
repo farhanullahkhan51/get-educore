@@ -179,6 +179,40 @@ function StaffPage() {
           <Input type="file" onChange={handleUpload} />
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle className="font-serif">Edit staff — {editing?.staff_code}</DialogTitle></DialogHeader>
+          {editing && (
+            <form onSubmit={handleUpdate} className="space-y-4" key={editing.id}>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2"><Label>First name</Label><Input name="first_name" defaultValue={editing.first_name} required /></div>
+                <div className="space-y-2"><Label>Last name</Label><Input name="last_name" defaultValue={editing.last_name} required /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2"><Label>Designation</Label><Input name="designation" defaultValue={editing.designation ?? ""} /></div>
+                <div className="space-y-2"><Label>Department</Label><Input name="department" defaultValue={editing.department ?? ""} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2"><Label>Email</Label><Input name="email" type="email" defaultValue={editing.email ?? ""} /></div>
+                <div className="space-y-2"><Label>Phone</Label><Input name="phone" defaultValue={editing.phone ?? ""} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2"><Label>Qualification</Label><Input name="qualification" defaultValue={editing.qualification ?? ""} /></div>
+                <div className="space-y-2">
+                  <Label>Campus</Label>
+                  <Select name="campus_id" defaultValue={editing.campus_id} required>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{campuses?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2"><Label>Address</Label><Input name="address" defaultValue={editing.address ?? ""} /></div>
+              <DialogFooter><Button type="submit">Save changes</Button></DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
