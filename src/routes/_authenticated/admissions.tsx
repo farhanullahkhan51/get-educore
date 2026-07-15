@@ -582,6 +582,7 @@ function ConvertDialog({
     }
 
     const acadSystem = (fd.get("academic_system") as AcademicSystem) || inquiry.academic_system || "board";
+    const grade = String(fd.get("grade") ?? "").trim() || inquiry.grade_applying_for || null;
 
     setSaving(true);
     const { data: student, error: studentErr } = await supabase
@@ -599,6 +600,7 @@ function ConvertDialog({
         program_id: effectiveProgramId || null,
         class_id: classId || null,
         section_id: sectionId || null,
+        grade,
         academic_system: acadSystem === "both" ? "board" : acadSystem,
         status: "active",
       })
