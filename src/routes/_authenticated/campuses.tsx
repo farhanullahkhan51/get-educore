@@ -101,7 +101,7 @@ function CampusesPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Code</Label>
-                    <Input name="code" defaultValue={editing?.code} required maxLength={16} />
+                    <Input name="code" defaultValue={editing?.code} maxLength={16} placeholder="Auto from name" />
                   </div>
                 </div>
                 <div className="space-y-2">
