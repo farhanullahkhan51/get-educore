@@ -466,6 +466,7 @@ export type Database = {
           documents: Json | null
           first_name: string
           gender: string | null
+          grade: string | null
           guardian_name: string | null
           guardian_phone: string | null
           id: string
@@ -488,6 +489,7 @@ export type Database = {
           documents?: Json | null
           first_name: string
           gender?: string | null
+          grade?: string | null
           guardian_name?: string | null
           guardian_phone?: string | null
           id?: string
@@ -510,6 +512,7 @@ export type Database = {
           documents?: Json | null
           first_name?: string
           gender?: string | null
+          grade?: string | null
           guardian_name?: string | null
           guardian_phone?: string | null
           id?: string

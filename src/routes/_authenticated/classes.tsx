@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Pencil } from "lucide-react";
 import { SystemBadge } from "./campuses";
 
 export const Route = createFileRoute("/_authenticated/classes")({
@@ -37,6 +37,8 @@ function ClassesPage() {
   const qc = useQueryClient();
   const [openCls, setOpenCls] = useState(false);
   const [openSec, setOpenSec] = useState<string | null>(null);
+  const [editCls, setEditCls] = useState<Klass | null>(null);
+  const [editSec, setEditSec] = useState<Section | null>(null);
 
   const { data: campuses } = useQuery({
     queryKey: ["campuses"],
@@ -103,6 +105,39 @@ function ClassesPage() {
     if (!confirm("Delete this section?")) return;
     const { error } = await supabase.from("sections").delete().eq("id", id);
     if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ["sections"] });
+  }
+
+  async function updateClass(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!editCls) return;
+    const fd = new FormData(e.currentTarget);
+    const { error } = await supabase.from("classes").update({
+      campus_id: String(fd.get("campus_id")),
+      program_id: (fd.get("program_id") as string) || null,
+      name: String(fd.get("name")),
+      grade_level: String(fd.get("grade_level") || "") || null,
+      academic_year: String(fd.get("academic_year") || "") || null,
+      academic_system: String(fd.get("academic_system")) as Klass["academic_system"],
+    }).eq("id", editCls.id);
+    if (error) return toast.error(error.message);
+    toast.success("Class updated");
+    setEditCls(null);
+    qc.invalidateQueries({ queryKey: ["classes"] });
+  }
+
+  async function updateSection(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!editSec) return;
+    const fd = new FormData(e.currentTarget);
+    const { error } = await supabase.from("sections").update({
+      name: String(fd.get("name")),
+      capacity: Number(fd.get("capacity") || 40),
+      room: String(fd.get("room") || "") || null,
+    }).eq("id", editSec.id);
+    if (error) return toast.error(error.message);
+    toast.success("Section updated");
+    setEditSec(null);
     qc.invalidateQueries({ queryKey: ["sections"] });
   }
 
@@ -210,6 +245,7 @@ function ClassesPage() {
                       </form>
                     </DialogContent>
                   </Dialog>
+                  <Button size="icon" variant="ghost" onClick={() => setEditCls(cls)}><Pencil className="h-4 w-4" /></Button>
                   <Button size="icon" variant="ghost" onClick={() => delClass(cls.id)}><Trash2 className="h-4 w-4" /></Button>
                 </div>
               </CardHeader>
@@ -229,6 +265,7 @@ function ClassesPage() {
                           <TableCell>{s.room ?? "—"}</TableCell>
                           <TableCell>{s.capacity}</TableCell>
                           <TableCell className="text-right">
+                            <Button size="icon" variant="ghost" onClick={() => setEditSec(s)}><Pencil className="h-4 w-4" /></Button>
                             <Button size="icon" variant="ghost" onClick={() => delSection(s.id)}><Trash2 className="h-4 w-4" /></Button>
                           </TableCell>
                         </TableRow>
@@ -241,6 +278,67 @@ function ClassesPage() {
           );
         })}
       </div>
+
+      <Dialog open={!!editCls} onOpenChange={(o) => !o && setEditCls(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="font-serif">Edit class</DialogTitle></DialogHeader>
+          {editCls && (
+            <form onSubmit={updateClass} className="space-y-4" key={editCls.id}>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Campus</Label>
+                  <Select name="campus_id" defaultValue={editCls.campus_id} required>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{campuses?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Program (optional)</Label>
+                  <Select name="program_id" defaultValue={editCls.program_id ?? undefined}>
+                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>{programs?.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2"><Label>Name</Label><Input name="name" defaultValue={editCls.name} required /></div>
+                <div className="space-y-2"><Label>Grade level</Label><Input name="grade_level" defaultValue={editCls.grade_level ?? ""} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2"><Label>Academic year</Label><Input name="academic_year" defaultValue={editCls.academic_year ?? ""} /></div>
+                <div className="space-y-2">
+                  <Label>System</Label>
+                  <Select name="academic_system" defaultValue={editCls.academic_system}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="board">Board</SelectItem>
+                      <SelectItem value="cambridge">Cambridge</SelectItem>
+                      <SelectItem value="both">Both</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter><Button type="submit">Save changes</Button></DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editSec} onOpenChange={(o) => !o && setEditSec(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="font-serif">Edit section</DialogTitle></DialogHeader>
+          {editSec && (
+            <form onSubmit={updateSection} className="space-y-4" key={editSec.id}>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-2"><Label>Name</Label><Input name="name" defaultValue={editSec.name} required /></div>
+                <div className="space-y-2"><Label>Capacity</Label><Input name="capacity" type="number" defaultValue={editSec.capacity ?? 40} /></div>
+                <div className="space-y-2"><Label>Room</Label><Input name="room" defaultValue={editSec.room ?? ""} /></div>
+              </div>
+              <DialogFooter><Button type="submit">Save changes</Button></DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

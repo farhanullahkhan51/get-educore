@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Upload, FileText } from "lucide-react";
+import { Plus, Upload, FileText, Pencil } from "lucide-react";
 import { SystemBadge } from "./campuses";
 
 export const Route = createFileRoute("/_authenticated/students")({
@@ -31,6 +31,10 @@ type Student = {
   guardian_phone: string | null;
   status: string;
   academic_system: "board" | "cambridge" | "both";
+  grade: string | null;
+  date_of_birth: string | null;
+  gender: string | null;
+  address: string | null;
   documents: Array<{ name: string; path: string }> | null;
   profile_id: string | null;
 };
@@ -38,6 +42,7 @@ type Student = {
 function StudentsPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Student | null>(null);
   const [uploadFor, setUploadFor] = useState<Student | null>(null);
 
   const { data: campuses } = useQuery({
@@ -82,11 +87,37 @@ function StudentsPage() {
       date_of_birth: (fd.get("date_of_birth") as string) || null,
       gender: (fd.get("gender") as string) || null,
       address: String(fd.get("address") || "") || null,
+      grade: String(fd.get("grade") || "") || null,
       academic_system: String(fd.get("academic_system")) as Student["academic_system"],
     });
     if (error) return toast.error(error.message);
     toast.success(`Student ${code} registered`);
     setOpen(false);
+    qc.invalidateQueries({ queryKey: ["students"] });
+  }
+
+  async function handleUpdate(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!editing) return;
+    const fd = new FormData(e.currentTarget);
+    const { error } = await supabase.from("students").update({
+      first_name: String(fd.get("first_name")),
+      last_name: String(fd.get("last_name")),
+      campus_id: String(fd.get("campus_id")),
+      program_id: (fd.get("program_id") as string) || null,
+      class_id: (fd.get("class_id") as string) || null,
+      section_id: (fd.get("section_id") as string) || null,
+      guardian_name: String(fd.get("guardian_name") || "") || null,
+      guardian_phone: String(fd.get("guardian_phone") || "") || null,
+      date_of_birth: (fd.get("date_of_birth") as string) || null,
+      gender: (fd.get("gender") as string) || null,
+      address: String(fd.get("address") || "") || null,
+      grade: String(fd.get("grade") || "") || null,
+      academic_system: String(fd.get("academic_system")) as Student["academic_system"],
+    }).eq("id", editing.id);
+    if (error) return toast.error(error.message);
+    toast.success("Student updated");
+    setEditing(null);
     qc.invalidateQueries({ queryKey: ["students"] });
   }
 
@@ -144,7 +175,8 @@ function StudentsPage() {
                     </Select>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-2"><Label>Grade</Label><Input name="grade" placeholder="e.g. Class 9" /></div>
                   <div className="space-y-2"><Label>Guardian name</Label><Input name="guardian_name" /></div>
                   <div className="space-y-2"><Label>Guardian phone</Label><Input name="guardian_phone" /></div>
                 </div>
@@ -209,6 +241,7 @@ function StudentsPage() {
                   <TableCell><SystemBadge system={s.academic_system} /></TableCell>
                   <TableCell className="text-sm text-muted-foreground"><FileText className="mr-1 inline h-3 w-3" />{s.documents?.length ?? 0}</TableCell>
                   <TableCell className="text-right">
+                    <Button size="sm" variant="ghost" onClick={() => setEditing(s)}><Pencil className="mr-1 h-3 w-3" /> Edit</Button>
                     <Button size="sm" variant="ghost" onClick={() => setUploadFor(s)}><Upload className="mr-1 h-3 w-3" /> Upload</Button>
                   </TableCell>
                 </TableRow>
@@ -222,6 +255,83 @@ function StudentsPage() {
         <DialogContent>
           <DialogHeader><DialogTitle className="font-serif">Upload document — {uploadFor?.first_name} {uploadFor?.last_name}</DialogTitle></DialogHeader>
           <Input type="file" onChange={handleUpload} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle className="font-serif">Edit student — {editing?.student_code}</DialogTitle></DialogHeader>
+          {editing && (
+            <form onSubmit={handleUpdate} className="space-y-4" key={editing.id}>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2"><Label>First name</Label><Input name="first_name" defaultValue={editing.first_name} required /></div>
+                <div className="space-y-2"><Label>Last name</Label><Input name="last_name" defaultValue={editing.last_name} required /></div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-2"><Label>Date of birth</Label><Input name="date_of_birth" type="date" defaultValue={editing.date_of_birth ?? ""} /></div>
+                <div className="space-y-2">
+                  <Label>Gender</Label>
+                  <Select name="gender" defaultValue={editing.gender ?? undefined}>
+                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Academic system</Label>
+                  <Select name="academic_system" defaultValue={editing.academic_system}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="board">Board</SelectItem>
+                      <SelectItem value="cambridge">Cambridge</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-2"><Label>Grade</Label><Input name="grade" defaultValue={editing.grade ?? ""} placeholder="e.g. Class 9" /></div>
+                <div className="space-y-2"><Label>Guardian name</Label><Input name="guardian_name" defaultValue={editing.guardian_name ?? ""} /></div>
+                <div className="space-y-2"><Label>Guardian phone</Label><Input name="guardian_phone" defaultValue={editing.guardian_phone ?? ""} /></div>
+              </div>
+              <div className="space-y-2"><Label>Address</Label><Input name="address" defaultValue={editing.address ?? ""} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Campus</Label>
+                  <Select name="campus_id" defaultValue={editing.campus_id} required>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{campuses?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Program</Label>
+                  <Select name="program_id" defaultValue={editing.program_id ?? undefined}>
+                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>{programs?.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Class</Label>
+                  <Select name="class_id" defaultValue={editing.class_id ?? undefined}>
+                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>{classes?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Section</Label>
+                  <Select name="section_id" defaultValue={editing.section_id ?? undefined}>
+                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>{sections?.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter><Button type="submit">Save changes</Button></DialogFooter>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
     </>
