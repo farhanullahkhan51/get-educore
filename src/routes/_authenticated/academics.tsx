@@ -336,7 +336,7 @@ function GradebookTab() {
   }
 
   const scoreMap = new Map<string, number | null>();
-  for (const s of scores ?? []) scoreMap.set(`${s.assessment_id}:${s.student_code}`, s.marks as number | null);
+  for (const s of scores ?? []) scoreMap.set(`${s.assessment_id}:${s.student_id}`, s.marks as number | null);
 
   function studentSummary(studentId: string) {
     if (!assessments || assessments.length === 0) return { percent: 0, grade: "—" };
