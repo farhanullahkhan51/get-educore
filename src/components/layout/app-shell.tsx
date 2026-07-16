@@ -17,6 +17,7 @@ import {
   BookMarked,
   ClipboardCheck,
   Award,
+  Landmark,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -40,6 +41,7 @@ const NAV: NavItem[] = [
   { to: "/courses", label: "Courses", icon: BookMarked, roles: ["super_admin", "campus_admin"] },
   { to: "/academics", label: "Academics", icon: ClipboardCheck, roles: ["super_admin", "campus_admin", "teacher"] },
   { to: "/results", label: "Results", icon: Award, roles: ["super_admin", "campus_admin", "teacher"] },
+  { to: "/board", label: "BISE Board", icon: Landmark, roles: ["super_admin", "campus_admin", "admissions_officer"] },
   { to: "/fees", label: "Fees & Finance", icon: Wallet, roles: ["super_admin", "campus_admin", "finance_officer"] },
   { to: "/users", label: "Users & Roles", icon: UserCog, roles: ["super_admin"] },
 ];

@@ -377,6 +377,181 @@ export type Database = {
           },
         ]
       }
+      board_exam_entries: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_elective: boolean
+          paper: string | null
+          practical_max: number
+          registration_id: string
+          subject_code: string
+          subject_name: string
+          theory_max: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_elective?: boolean
+          paper?: string | null
+          practical_max?: number
+          registration_id: string
+          subject_code: string
+          subject_name: string
+          theory_max?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_elective?: boolean
+          paper?: string | null
+          practical_max?: number
+          registration_id?: string
+          subject_code?: string
+          subject_name?: string
+          theory_max?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_exam_entries_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "board_registrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      board_registrations: {
+        Row: {
+          board_name: string
+          campus_id: string
+          created_at: string
+          created_by: string | null
+          exam_center: string | null
+          group_name: Database["public"]["Enums"]["board_group"]
+          id: string
+          level: Database["public"]["Enums"]["board_level"]
+          notes: string | null
+          part: string | null
+          registration_no: string | null
+          roll_no: string | null
+          session_year: string
+          status: Database["public"]["Enums"]["board_registration_status"]
+          student_id: string
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          board_name: string
+          campus_id: string
+          created_at?: string
+          created_by?: string | null
+          exam_center?: string | null
+          group_name: Database["public"]["Enums"]["board_group"]
+          id?: string
+          level: Database["public"]["Enums"]["board_level"]
+          notes?: string | null
+          part?: string | null
+          registration_no?: string | null
+          roll_no?: string | null
+          session_year: string
+          status?: Database["public"]["Enums"]["board_registration_status"]
+          student_id: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          board_name?: string
+          campus_id?: string
+          created_at?: string
+          created_by?: string | null
+          exam_center?: string | null
+          group_name?: Database["public"]["Enums"]["board_group"]
+          id?: string
+          level?: Database["public"]["Enums"]["board_level"]
+          notes?: string | null
+          part?: string | null
+          registration_no?: string | null
+          roll_no?: string | null
+          session_year?: string
+          status?: Database["public"]["Enums"]["board_registration_status"]
+          student_id?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_registrations_campus_id_fkey"
+            columns: ["campus_id"]
+            isOneToOne: false
+            referencedRelation: "campuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "board_registrations_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      board_results: {
+        Row: {
+          created_at: string
+          entry_id: string
+          grade: string | null
+          id: string
+          imported_at: string | null
+          practical_marks: number | null
+          remarks: string | null
+          status: Database["public"]["Enums"]["board_result_status"]
+          theory_marks: number | null
+          total_marks: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entry_id: string
+          grade?: string | null
+          id?: string
+          imported_at?: string | null
+          practical_marks?: number | null
+          remarks?: string | null
+          status?: Database["public"]["Enums"]["board_result_status"]
+          theory_marks?: number | null
+          total_marks?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entry_id?: string
+          grade?: string | null
+          id?: string
+          imported_at?: string | null
+          practical_marks?: number | null
+          remarks?: string | null
+          status?: Database["public"]["Enums"]["board_result_status"]
+          theory_marks?: number | null
+          total_marks?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_results_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: true
+            referencedRelation: "board_exam_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campuses: {
         Row: {
           academic_system: Database["public"]["Enums"]["academic_system"]
@@ -1480,6 +1655,10 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      student_has_outstanding_challans: {
+        Args: { _student_id: string }
+        Returns: boolean
+      }
       teacher_of_course_section: {
         Args: { _course_id: string; _section_id: string; _user_id: string }
         Returns: boolean
@@ -1506,6 +1685,22 @@ export type Database = {
         | "project"
         | "other"
       attendance_status: "present" | "absent" | "late" | "leave"
+      board_group:
+        | "science"
+        | "arts"
+        | "commerce"
+        | "pre_medical"
+        | "pre_engineering"
+        | "computer_science"
+        | "general"
+      board_level: "matric" | "inter"
+      board_registration_status:
+        | "draft"
+        | "submitted"
+        | "approved"
+        | "rejected"
+        | "cancelled"
+      board_result_status: "pass" | "fail" | "absent" | "withheld" | "pending"
       challan_status: "unpaid" | "partial" | "paid" | "waived" | "overdue"
       fee_category:
         | "tuition"
@@ -1664,6 +1859,24 @@ export const Constants = {
         "other",
       ],
       attendance_status: ["present", "absent", "late", "leave"],
+      board_group: [
+        "science",
+        "arts",
+        "commerce",
+        "pre_medical",
+        "pre_engineering",
+        "computer_science",
+        "general",
+      ],
+      board_level: ["matric", "inter"],
+      board_registration_status: [
+        "draft",
+        "submitted",
+        "approved",
+        "rejected",
+        "cancelled",
+      ],
+      board_result_status: ["pass", "fail", "absent", "withheld", "pending"],
       challan_status: ["unpaid", "partial", "paid", "waived", "overdue"],
       fee_category: [
         "tuition",
