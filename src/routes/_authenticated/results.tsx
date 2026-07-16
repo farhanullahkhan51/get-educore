@@ -214,23 +214,25 @@ function ResultsPage() {
       />
 
       <Card className="mb-4 shadow-none">
-        <CardContent className="grid gap-4 p-4 md:grid-cols-5">
-          <div className="space-y-2 md:col-span-2">
-            <Label>Section</Label>
-            <Select value={sectionId} onValueChange={setSectionId}>
-              <SelectTrigger><SelectValue placeholder="Select section" /></SelectTrigger>
-              <SelectContent>
-                {sections?.map((s: any) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.classes?.name ? `${s.classes.name} — ${s.name}` : s.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <CardContent className="space-y-4 p-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Section</Label>
+              <Select value={sectionId} onValueChange={setSectionId}>
+                <SelectTrigger><SelectValue placeholder="Select section" /></SelectTrigger>
+                <SelectContent>
+                  {sections?.map((s: any) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.classes?.name ? `${s.classes.name} — ${s.name}` : s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2"><Label>Term</Label><Input value={term} onChange={(e) => setTerm(e.target.value)} /></div>
+            <div className="space-y-2"><Label>Academic year</Label><Input value={year} onChange={(e) => setYear(e.target.value)} /></div>
           </div>
-          <div className="space-y-2"><Label>Term</Label><Input value={term} onChange={(e) => setTerm(e.target.value)} /></div>
-          <div className="space-y-2"><Label>Academic year</Label><Input value={year} onChange={(e) => setYear(e.target.value)} /></div>
-          <div className="flex items-end gap-2">
+          <div className="flex flex-wrap gap-2 border-t pt-4">
             <Button onClick={generate} disabled={!sectionId || busy}>
               {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <FileText className="mr-1 h-4 w-4" />}
               Generate
