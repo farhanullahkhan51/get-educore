@@ -172,12 +172,12 @@ function RegistrationsTab() {
       </Card>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw]">
           <DialogHeader>
             <DialogTitle>{editing ? "Edit Registration" : "New Board Registration"}</DialogTitle>
             <DialogDescription>Register the student for a board examination session.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-3 py-2 md:grid-cols-2">
+          <div className="grid gap-3 py-2 sm:grid-cols-2">
             <div className="space-y-2 md:col-span-2">
               <Label>Student *</Label>
               <Select value={form.student_id ?? ""} onValueChange={(v) => {
