@@ -349,9 +349,32 @@ function RollSlipTab() {
   const { data: regs } = useQuery({
     queryKey: ["board_registrations_all"],
     queryFn: async () => (await supabase.from("board_registrations")
-      .select("*, students(first_name,last_name,student_code,guardian_name,date_of_birth), campuses(name,city)")
-      .order("created_at", { ascending: false })).data ?? [],
+      .select("*").order("created_at", { ascending: false })).data ?? [],
   });
+  const { data: students } = useQuery({
+    queryKey: ["students-for-rollslip"],
+    queryFn: async () => (await supabase.from("students")
+      .select("id, first_name, last_name, student_code, guardian_name, date_of_birth, campus_id")).data ?? [],
+  });
+  const { data: campuses } = useQuery({
+    queryKey: ["campuses-for-rollslip"],
+    queryFn: async () => (await supabase.from("campuses").select("id,name")).data ?? [],
+  });
+  // Students with any unpaid / partial / overdue challan — filtered OUT of the dropdown.
+  const { data: outstandingSet } = useQuery({
+    queryKey: ["students_outstanding_set"],
+    queryFn: async () => {
+      const { data } = await supabase.from("fee_challans")
+        .select("student_id, status").in("status", ["unpaid", "partial", "overdue"]);
+      return new Set<string>((data ?? []).map((c: any) => c.student_id));
+    },
+  });
+
+  const eligible = (regs ?? []).filter((r: any) => !outstandingSet?.has(r.student_id));
+  const filteredOut = (regs?.length ?? 0) - eligible.length;
+
+  const studentOf = (id: string) => students?.find((s) => s.id === id);
+  const campusOf = (id: string) => campuses?.find((c) => c.id === id);
 
   async function printSlip(kind: "roll_slip" | "admit_card") {
     if (!regId) return toast.error("Select a registration");
@@ -374,7 +397,7 @@ function RollSlipTab() {
           <td>${e.subject_name}${e.paper ? ` (${e.paper})` : ""}</td>
           <td style="text-align:center">${Number(e.theory_max)} + ${Number(e.practical_max)}</td>
         </tr>`).join("");
-      const st = r.students; const c = r.campuses;
+      const st = studentOf(r.student_id); const c = campusOf(r.campus_id);
       const title = kind === "roll_slip" ? "ROLL NUMBER SLIP" : "ADMIT CARD";
       const w = window.open("", "_blank", "width=900,height=1100");
       if (!w) { setBusy(false); return; }
@@ -398,7 +421,7 @@ function RollSlipTab() {
           @media print { * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }
         </style></head><body>
         <div class="h">
-          <div class="sub">${c?.name ?? ""} ${c?.city ? "· " + c.city : ""}</div>
+          <div class="sub">${c?.name ?? ""}</div>
           <h1>${title}</h1>
           <div class="sub">${r.board_name} · ${r.level.toUpperCase()} · ${r.session_year}${r.part ? " · Part " + r.part : ""}</div>
         </div>
@@ -431,19 +454,26 @@ function RollSlipTab() {
       <CardContent className="space-y-4 p-4">
         <div className="rounded-sm border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
           <ShieldAlert className="mr-1 inline h-3.5 w-3.5" />
-          Roll slips and admit cards can only be issued if the student has no outstanding fee challans.
+          Only students with <b>no outstanding fee challans</b> appear below — synced automatically from Fees &amp; Finance.
+          {filteredOut > 0 && (
+            <div className="mt-1 opacity-80">{filteredOut} registration(s) hidden due to unpaid dues.</div>
+          )}
         </div>
         <div className="grid gap-3 md:grid-cols-2">
           <div className="space-y-2 sm:col-span-2">
-            <Label>Registration</Label>
+            <Label>Registration (fee-cleared students)</Label>
             <Select value={regId} onValueChange={setRegId}>
-              <SelectTrigger><SelectValue placeholder="Pick a board registration" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder={eligible.length ? "Pick a board registration" : "No fee-cleared registrations available"} /></SelectTrigger>
               <SelectContent>
-                {regs?.map((r: any) => (
-                  <SelectItem key={r.id} value={r.id}>
-                    {r.students?.first_name} {r.students?.last_name} — {r.level.toUpperCase()} {r.session_year} ({r.board_name})
-                  </SelectItem>
-                ))}
+                {eligible.map((r: any) => {
+                  const s = studentOf(r.student_id);
+                  const name = s ? `${s.first_name} ${s.last_name} · ${s.student_code}` : r.student_id.slice(0, 8);
+                  return (
+                    <SelectItem key={r.id} value={r.id}>
+                      {name} — {r.level.toUpperCase()} {r.session_year} ({r.board_name})
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
