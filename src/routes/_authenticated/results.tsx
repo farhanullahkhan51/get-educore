@@ -163,21 +163,28 @@ function ResultsPage() {
     const w = window.open("", "_blank", "width=900,height=1000");
     if (!w) return;
     w.document.write(`<!doctype html><html><head><title>Report Card - ${st?.first_name} ${st?.last_name}</title>
+      <meta name="color-scheme" content="light only">
       <style>
-        body { font-family: Georgia, serif; padding: 40px; color: #111; }
+        :root { color-scheme: light; }
+        html, body { background: #ffffff !important; color: #111111 !important; }
+        body { font-family: Georgia, serif; padding: 40px; }
         .h { text-align: center; border-bottom: 2px solid #111; padding-bottom: 12px; margin-bottom: 20px; }
-        .h h1 { margin: 0; font-size: 22px; letter-spacing: 3px; }
+        .h h1 { margin: 0; font-size: 22px; letter-spacing: 3px; color:#111; }
         .h .sub { font-size: 11px; text-transform: uppercase; letter-spacing: 4px; color:#555; }
-        .meta { display: flex; justify-content: space-between; margin: 16px 0; font-size: 13px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-        th, td { border: 1px solid #999; padding: 8px 10px; font-size: 13px; }
-        th { background: #f4f4f4; }
+        .meta { display: flex; justify-content: space-between; margin: 16px 0; font-size: 13px; color:#111; }
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; color:#111; }
+        th, td { border: 1px solid #999; padding: 8px 10px; font-size: 13px; background:#ffffff; color:#111; }
+        th { background: #f4f4f4 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .totals { margin-top: 20px; display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
-        .stat { border: 1px solid #999; padding: 10px; }
+        .stat { border: 1px solid #999; padding: 10px; background:#ffffff; color:#111; }
         .stat .lbl { font-size:10px; text-transform: uppercase; letter-spacing:2px; color:#555; }
-        .stat .val { font-size: 20px; font-weight: 600; margin-top:4px; }
-        .sig { margin-top: 60px; display: flex; justify-content: space-between; font-size: 12px; }
+        .stat .val { font-size: 20px; font-weight: 600; margin-top:4px; color:#111; }
+        .sig { margin-top: 60px; display: flex; justify-content: space-between; font-size: 12px; color:#111; }
         .sig div { border-top: 1px solid #111; padding-top: 6px; width: 30%; text-align: center; }
+        @media print {
+          html, body { background:#ffffff !important; color:#111111 !important; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
       </style></head><body>
       <div class="h">
         <div class="sub">EduCore Academic Report</div>
@@ -214,23 +221,25 @@ function ResultsPage() {
       />
 
       <Card className="mb-4 shadow-none">
-        <CardContent className="grid gap-4 p-4 md:grid-cols-5">
-          <div className="space-y-2 md:col-span-2">
-            <Label>Section</Label>
-            <Select value={sectionId} onValueChange={setSectionId}>
-              <SelectTrigger><SelectValue placeholder="Select section" /></SelectTrigger>
-              <SelectContent>
-                {sections?.map((s: any) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.classes?.name ? `${s.classes.name} — ${s.name}` : s.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <CardContent className="space-y-4 p-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Section</Label>
+              <Select value={sectionId} onValueChange={setSectionId}>
+                <SelectTrigger><SelectValue placeholder="Select section" /></SelectTrigger>
+                <SelectContent>
+                  {sections?.map((s: any) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.classes?.name ? `${s.classes.name} — ${s.name}` : s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2"><Label>Term</Label><Input value={term} onChange={(e) => setTerm(e.target.value)} /></div>
+            <div className="space-y-2"><Label>Academic year</Label><Input value={year} onChange={(e) => setYear(e.target.value)} /></div>
           </div>
-          <div className="space-y-2"><Label>Term</Label><Input value={term} onChange={(e) => setTerm(e.target.value)} /></div>
-          <div className="space-y-2"><Label>Academic year</Label><Input value={year} onChange={(e) => setYear(e.target.value)} /></div>
-          <div className="flex items-end gap-2">
+          <div className="flex flex-wrap gap-2 border-t pt-4">
             <Button onClick={generate} disabled={!sectionId || busy}>
               {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <FileText className="mr-1 h-4 w-4" />}
               Generate
