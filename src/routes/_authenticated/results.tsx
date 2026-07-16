@@ -163,21 +163,28 @@ function ResultsPage() {
     const w = window.open("", "_blank", "width=900,height=1000");
     if (!w) return;
     w.document.write(`<!doctype html><html><head><title>Report Card - ${st?.first_name} ${st?.last_name}</title>
+      <meta name="color-scheme" content="light only">
       <style>
-        body { font-family: Georgia, serif; padding: 40px; color: #111; }
+        :root { color-scheme: light; }
+        html, body { background: #ffffff !important; color: #111111 !important; }
+        body { font-family: Georgia, serif; padding: 40px; }
         .h { text-align: center; border-bottom: 2px solid #111; padding-bottom: 12px; margin-bottom: 20px; }
-        .h h1 { margin: 0; font-size: 22px; letter-spacing: 3px; }
+        .h h1 { margin: 0; font-size: 22px; letter-spacing: 3px; color:#111; }
         .h .sub { font-size: 11px; text-transform: uppercase; letter-spacing: 4px; color:#555; }
-        .meta { display: flex; justify-content: space-between; margin: 16px 0; font-size: 13px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-        th, td { border: 1px solid #999; padding: 8px 10px; font-size: 13px; }
-        th { background: #f4f4f4; }
+        .meta { display: flex; justify-content: space-between; margin: 16px 0; font-size: 13px; color:#111; }
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; color:#111; }
+        th, td { border: 1px solid #999; padding: 8px 10px; font-size: 13px; background:#ffffff; color:#111; }
+        th { background: #f4f4f4 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .totals { margin-top: 20px; display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
-        .stat { border: 1px solid #999; padding: 10px; }
+        .stat { border: 1px solid #999; padding: 10px; background:#ffffff; color:#111; }
         .stat .lbl { font-size:10px; text-transform: uppercase; letter-spacing:2px; color:#555; }
-        .stat .val { font-size: 20px; font-weight: 600; margin-top:4px; }
-        .sig { margin-top: 60px; display: flex; justify-content: space-between; font-size: 12px; }
+        .stat .val { font-size: 20px; font-weight: 600; margin-top:4px; color:#111; }
+        .sig { margin-top: 60px; display: flex; justify-content: space-between; font-size: 12px; color:#111; }
         .sig div { border-top: 1px solid #111; padding-top: 6px; width: 30%; text-align: center; }
+        @media print {
+          html, body { background:#ffffff !important; color:#111111 !important; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
       </style></head><body>
       <div class="h">
         <div class="sub">EduCore Academic Report</div>
