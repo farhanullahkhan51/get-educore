@@ -178,7 +178,7 @@ function RegistrationsTab() {
             <DialogDescription>Register the student for a board examination session.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-2 sm:grid-cols-2">
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-2 sm:col-span-2">
               <Label>Student *</Label>
               <Select value={form.student_id ?? ""} onValueChange={(v) => {
                 const s = students?.find((x) => x.id === v);
@@ -229,7 +229,7 @@ function RegistrationsTab() {
               <Label>Registration no</Label>
               <Input value={form.registration_no ?? ""} onChange={(e) => setForm({ ...form, registration_no: e.target.value })} />
             </div>
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-2 sm:col-span-2">
               <Label>Exam center</Label>
               <Input value={form.exam_center ?? ""} onChange={(e) => setForm({ ...form, exam_center: e.target.value })} />
             </div>
@@ -242,7 +242,7 @@ function RegistrationsTab() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-2 sm:col-span-2">
               <Label>Notes</Label>
               <Textarea value={form.notes ?? ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
             </div>
@@ -291,7 +291,7 @@ function SubjectsDialog({ reg, onClose }: { reg: Registration; onClose: () => vo
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto w-[95vw]">
         <DialogHeader>
           <DialogTitle>Subjects — {reg.level.toUpperCase()} {reg.session_year}</DialogTitle>
           <DialogDescription>Add each subject with theory / practical maximum marks.</DialogDescription>
@@ -327,7 +327,7 @@ function SubjectsDialog({ reg, onClose }: { reg: Registration; onClose: () => vo
         </div>
         <div className="grid grid-cols-2 gap-2 border-t pt-3 md:grid-cols-6">
           <Input placeholder="Code" value={row.subject_code ?? ""} onChange={(e) => setRow({ ...row, subject_code: e.target.value })} />
-          <Input className="md:col-span-2" placeholder="Subject name" value={row.subject_name ?? ""} onChange={(e) => setRow({ ...row, subject_name: e.target.value })} />
+          <Input className="sm:col-span-2" placeholder="Subject name" value={row.subject_name ?? ""} onChange={(e) => setRow({ ...row, subject_name: e.target.value })} />
           <Input placeholder="Paper" value={row.paper ?? ""} onChange={(e) => setRow({ ...row, paper: e.target.value })} />
           <Input type="number" placeholder="Theory" value={row.theory_max ?? ""} onChange={(e) => setRow({ ...row, theory_max: Number(e.target.value) })} />
           <div className="flex gap-2">
@@ -434,7 +434,7 @@ function RollSlipTab() {
           Roll slips and admit cards can only be issued if the student has no outstanding fee challans.
         </div>
         <div className="grid gap-3 md:grid-cols-2">
-          <div className="space-y-2 md:col-span-2">
+          <div className="space-y-2 sm:col-span-2">
             <Label>Registration</Label>
             <Select value={regId} onValueChange={setRegId}>
               <SelectTrigger><SelectValue placeholder="Pick a board registration" /></SelectTrigger>
