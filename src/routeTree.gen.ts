@@ -23,6 +23,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCoursesRouteImport } from './routes/_authenticated/courses'
 import { Route as AuthenticatedClassesRouteImport } from './routes/_authenticated/classes'
 import { Route as AuthenticatedCampusesRouteImport } from './routes/_authenticated/campuses'
+import { Route as AuthenticatedBoardRouteImport } from './routes/_authenticated/board'
 import { Route as AuthenticatedAdmissionsRouteImport } from './routes/_authenticated/admissions'
 import { Route as AuthenticatedAcademicsRouteImport } from './routes/_authenticated/academics'
 
@@ -95,6 +96,11 @@ const AuthenticatedCampusesRoute = AuthenticatedCampusesRouteImport.update({
   path: '/campuses',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedBoardRoute = AuthenticatedBoardRouteImport.update({
+  id: '/board',
+  path: '/board',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdmissionsRoute = AuthenticatedAdmissionsRouteImport.update({
   id: '/admissions',
   path: '/admissions',
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/inquire': typeof InquireRoute
   '/academics': typeof AuthenticatedAcademicsRoute
   '/admissions': typeof AuthenticatedAdmissionsRoute
+  '/board': typeof AuthenticatedBoardRoute
   '/campuses': typeof AuthenticatedCampusesRoute
   '/classes': typeof AuthenticatedClassesRoute
   '/courses': typeof AuthenticatedCoursesRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/inquire': typeof InquireRoute
   '/academics': typeof AuthenticatedAcademicsRoute
   '/admissions': typeof AuthenticatedAdmissionsRoute
+  '/board': typeof AuthenticatedBoardRoute
   '/campuses': typeof AuthenticatedCampusesRoute
   '/classes': typeof AuthenticatedClassesRoute
   '/courses': typeof AuthenticatedCoursesRoute
@@ -148,6 +156,7 @@ export interface FileRoutesById {
   '/inquire': typeof InquireRoute
   '/_authenticated/academics': typeof AuthenticatedAcademicsRoute
   '/_authenticated/admissions': typeof AuthenticatedAdmissionsRoute
+  '/_authenticated/board': typeof AuthenticatedBoardRoute
   '/_authenticated/campuses': typeof AuthenticatedCampusesRoute
   '/_authenticated/classes': typeof AuthenticatedClassesRoute
   '/_authenticated/courses': typeof AuthenticatedCoursesRoute
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
     | '/inquire'
     | '/academics'
     | '/admissions'
+    | '/board'
     | '/campuses'
     | '/classes'
     | '/courses'
@@ -184,6 +194,7 @@ export interface FileRouteTypes {
     | '/inquire'
     | '/academics'
     | '/admissions'
+    | '/board'
     | '/campuses'
     | '/classes'
     | '/courses'
@@ -202,6 +213,7 @@ export interface FileRouteTypes {
     | '/inquire'
     | '/_authenticated/academics'
     | '/_authenticated/admissions'
+    | '/_authenticated/board'
     | '/_authenticated/campuses'
     | '/_authenticated/classes'
     | '/_authenticated/courses'
@@ -321,6 +333,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCampusesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/board': {
+      id: '/_authenticated/board'
+      path: '/board'
+      fullPath: '/board'
+      preLoaderRoute: typeof AuthenticatedBoardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admissions': {
       id: '/_authenticated/admissions'
       path: '/admissions'
@@ -341,6 +360,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAcademicsRoute: typeof AuthenticatedAcademicsRoute
   AuthenticatedAdmissionsRoute: typeof AuthenticatedAdmissionsRoute
+  AuthenticatedBoardRoute: typeof AuthenticatedBoardRoute
   AuthenticatedCampusesRoute: typeof AuthenticatedCampusesRoute
   AuthenticatedClassesRoute: typeof AuthenticatedClassesRoute
   AuthenticatedCoursesRoute: typeof AuthenticatedCoursesRoute
@@ -356,6 +376,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAcademicsRoute: AuthenticatedAcademicsRoute,
   AuthenticatedAdmissionsRoute: AuthenticatedAdmissionsRoute,
+  AuthenticatedBoardRoute: AuthenticatedBoardRoute,
   AuthenticatedCampusesRoute: AuthenticatedCampusesRoute,
   AuthenticatedClassesRoute: AuthenticatedClassesRoute,
   AuthenticatedCoursesRoute: AuthenticatedCoursesRoute,
