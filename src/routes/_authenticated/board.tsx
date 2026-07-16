@@ -358,7 +358,7 @@ function RollSlipTab() {
   });
   const { data: campuses } = useQuery({
     queryKey: ["campuses-for-rollslip"],
-    queryFn: async () => (await supabase.from("campuses").select("id,name,city")).data ?? [],
+    queryFn: async () => (await supabase.from("campuses").select("id,name")).data ?? [],
   });
   // Students with any unpaid / partial / overdue challan — filtered OUT of the dropdown.
   const { data: outstandingSet } = useQuery({
@@ -421,7 +421,7 @@ function RollSlipTab() {
           @media print { * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }
         </style></head><body>
         <div class="h">
-          <div class="sub">${c?.name ?? ""} ${c?.city ? "· " + c.city : ""}</div>
+          <div class="sub">${c?.name ?? ""}</div>
           <h1>${title}</h1>
           <div class="sub">${r.board_name} · ${r.level.toUpperCase()} · ${r.session_year}${r.part ? " · Part " + r.part : ""}</div>
         </div>
