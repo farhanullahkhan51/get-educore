@@ -73,15 +73,17 @@ function ResultsPage() {
         const scoreMap = new Map((scores ?? []).map((s) => [s.assessment_id, s.marks]));
 
         // Group by course
-        const byCourse: Record<string, { weighted: number; weight: number; maxWeight: number }> = {};
+        const byCourse: Record<string, { weighted: number; weight: number; maxWeight: number; obtained: number; total: number }> = {};
         for (const a of asmts) {
           const m = scoreMap.get(a.id);
           if (m == null) continue;
           const p = (Number(m) / Number(a.max_marks)) * 100;
-          const c = byCourse[a.course_id] ?? { weighted: 0, weight: 0, maxWeight: 0 };
+          const c = byCourse[a.course_id] ?? { weighted: 0, weight: 0, maxWeight: 0, obtained: 0, total: 0 };
           c.weighted += (p * Number(a.weight_percent)) / 100;
           c.weight += Number(a.weight_percent);
           c.maxWeight += Number(a.weight_percent);
+          c.obtained += Number(m);
+          c.total += Number(a.max_marks);
           byCourse[a.course_id] = c;
         }
         // Fetch course titles
@@ -102,6 +104,8 @@ function ResultsPage() {
             percent: Number(percent.toFixed(2)),
             grade: letterFor(percent),
             gpa: gpaFor(percent),
+            marks_obtained: Number(c.obtained.toFixed(2)),
+            marks_total: Number(c.total.toFixed(2)),
           };
         });
 
@@ -109,6 +113,9 @@ function ResultsPage() {
           ? subjects.reduce((s, x) => s + x.percent, 0) / subjects.length : 0;
         const gpa = subjects.length
           ? subjects.reduce((s, x) => s + x.gpa, 0) / subjects.length : 0;
+
+
+
 
         // Attendance %
         const { data: att } = await supabase.from("attendance_records")
@@ -152,14 +159,17 @@ function ResultsPage() {
   function printCard(card: ReportCard) {
     const st = students?.find((s) => s.id === card.student_id);
     const section: any = sections?.find((s: any) => s.id === sectionId);
-    const rows = (card.subjects as any[]).map((s) => `
+    const subs = card.subjects as any[];
+    const rows = subs.map((s) => `
       <tr>
         <td>${s.code}</td>
         <td>${s.title}</td>
+        <td style="text-align:center">${(s.marks_obtained ?? 0).toFixed(0)} / ${(s.marks_total ?? 0).toFixed(0)}</td>
         <td style="text-align:center">${s.percent.toFixed(1)}%</td>
         <td style="text-align:center;font-weight:600">${s.grade}</td>
-        <td style="text-align:center">${s.gpa.toFixed(1)}</td>
       </tr>`).join("");
+    const totalObtained = subs.reduce((a, x) => a + (Number(x.marks_obtained) || 0), 0);
+    const totalMax = subs.reduce((a, x) => a + (Number(x.marks_total) || 0), 0);
     const w = window.open("", "_blank", "width=900,height=1000");
     if (!w) return;
     w.document.write(`<!doctype html><html><head><title>Report Card - ${st?.first_name} ${st?.last_name}</title>
@@ -196,12 +206,12 @@ function ResultsPage() {
         <div style="text-align:right">${section?.classes?.name ?? ""} — ${section?.name ?? ""}</div>
       </div>
       <table>
-        <thead><tr><th>Code</th><th>Subject</th><th>%</th><th>Grade</th><th>GPA</th></tr></thead>
+        <thead><tr><th>Code</th><th>Subject</th><th>Marks</th><th>%</th><th>Grade</th></tr></thead>
         <tbody>${rows || '<tr><td colspan="5" style="text-align:center">No subjects</td></tr>'}</tbody>
       </table>
       <div class="totals">
+        <div class="stat"><div class="lbl">Total Marks</div><div class="val">${totalObtained.toFixed(0)} / ${totalMax.toFixed(0)}</div></div>
         <div class="stat"><div class="lbl">Overall %</div><div class="val">${(card.overall_percent ?? 0).toFixed(1)}%</div></div>
-        <div class="stat"><div class="lbl">GPA</div><div class="val">${(card.gpa ?? 0).toFixed(2)}</div></div>
         <div class="stat"><div class="lbl">Attendance</div><div class="val">${(card.attendance_percent ?? 0).toFixed(1)}%</div></div>
       </div>
       <div class="sig"><div>Class Teacher</div><div>Principal</div><div>Parent</div></div>
@@ -209,6 +219,7 @@ function ResultsPage() {
     w.document.close();
     setTimeout(() => w.print(), 400);
   }
+
 
   const cardByStudent = new Map(cards?.map((c) => [c.student_id, c]));
 
@@ -258,8 +269,8 @@ function ResultsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Student</TableHead>
+                  <TableHead>Marks</TableHead>
                   <TableHead>Overall %</TableHead>
-                  <TableHead>GPA</TableHead>
                   <TableHead>Attendance</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -271,14 +282,18 @@ function ResultsPage() {
                 )}
                 {students?.map((st) => {
                   const c = cardByStudent.get(st.id);
+                  const subs = (c?.subjects as any[]) ?? [];
+                  const obtained = subs.reduce((a, x) => a + (Number(x.marks_obtained) || 0), 0);
+                  const total = subs.reduce((a, x) => a + (Number(x.marks_total) || 0), 0);
                   return (
                     <TableRow key={st.id}>
                       <TableCell>
                         <div className="font-medium">{st.first_name} {st.last_name}</div>
                         <div className="text-[10px] text-muted-foreground">{st.student_code}</div>
                       </TableCell>
+                      <TableCell>{c ? `${obtained.toFixed(0)} / ${total.toFixed(0)}` : "—"}</TableCell>
                       <TableCell>{c ? `${(c.overall_percent ?? 0).toFixed(1)}%` : "—"}</TableCell>
-                      <TableCell>{c ? (c.gpa ?? 0).toFixed(2) : "—"}</TableCell>
+
                       <TableCell>{c ? `${(c.attendance_percent ?? 0).toFixed(1)}%` : "—"}</TableCell>
                       <TableCell>
                         {c ? (
