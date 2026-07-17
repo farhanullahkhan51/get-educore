@@ -113,8 +113,8 @@ function ResultsPage() {
           ? subjects.reduce((s, x) => s + x.percent, 0) / subjects.length : 0;
         const gpa = subjects.length
           ? subjects.reduce((s, x) => s + x.gpa, 0) / subjects.length : 0;
-        const totalObtained = subjects.reduce((s, x) => s + x.marks_obtained, 0);
-        const totalMax = subjects.reduce((s, x) => s + x.marks_total, 0);
+
+
 
 
         // Attendance %
