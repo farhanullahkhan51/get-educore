@@ -1489,6 +1489,60 @@ export type Database = {
           },
         ]
       }
+      staff_payroll: {
+        Row: {
+          amount: number
+          campus_id: string
+          created_at: string
+          created_by: string | null
+          effective_date: string
+          entry_type: string
+          id: string
+          note: string | null
+          staff_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          campus_id: string
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          entry_type: string
+          id?: string
+          note?: string | null
+          staff_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          campus_id?: string
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          entry_type?: string
+          id?: string
+          note?: string | null
+          staff_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_payroll_campus_id_fkey"
+            columns: ["campus_id"]
+            isOneToOne: false
+            referencedRelation: "campuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_payroll_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       students: {
         Row: {
           academic_system: Database["public"]["Enums"]["academic_system"]
@@ -1503,6 +1557,7 @@ export type Database = {
           gender: string | null
           grade: string | null
           guardian_name: string | null
+          guardian_occupation: string | null
           guardian_phone: string | null
           id: string
           last_name: string
@@ -1526,6 +1581,7 @@ export type Database = {
           gender?: string | null
           grade?: string | null
           guardian_name?: string | null
+          guardian_occupation?: string | null
           guardian_phone?: string | null
           id?: string
           last_name: string
@@ -1549,6 +1605,7 @@ export type Database = {
           gender?: string | null
           grade?: string | null
           guardian_name?: string | null
+          guardian_occupation?: string | null
           guardian_phone?: string | null
           id?: string
           last_name?: string
