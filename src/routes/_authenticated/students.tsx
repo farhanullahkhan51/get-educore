@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Upload, FileText, Pencil } from "lucide-react";
+import { Plus, Upload, FileText, Pencil, Search } from "lucide-react";
 import { SystemBadge } from "./campuses";
 
 export const Route = createFileRoute("/_authenticated/students")({
@@ -29,6 +29,7 @@ type Student = {
   program_id: string | null;
   guardian_name: string | null;
   guardian_phone: string | null;
+  guardian_occupation: string | null;
   status: string;
   academic_system: "board" | "cambridge" | "both";
   grade: string | null;
@@ -43,7 +44,9 @@ function StudentsPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Student | null>(null);
+  const [viewing, setViewing] = useState<Student | null>(null);
   const [uploadFor, setUploadFor] = useState<Student | null>(null);
+  const [search, setSearch] = useState("");
 
   const { data: campuses } = useQuery({
     queryKey: ["campuses"],
@@ -69,6 +72,22 @@ function StudentsPage() {
   const campusMap = new Map(campuses?.map((c) => [c.id, c.name]));
   const classMap = new Map(classes?.map((c) => [c.id, c.name]));
   const sectionMap = new Map(sections?.map((s) => [s.id, s.name]));
+  const programMap = new Map(programs?.map((p) => [p.id, p.name]));
+
+  const filtered = useMemo(() => {
+    if (!students) return [];
+    const q = search.trim().toLowerCase();
+    if (!q) return students;
+    return students.filter((s) => {
+      const name = `${s.first_name} ${s.last_name}`.toLowerCase();
+      return (
+        name.includes(q)
+        || (s.student_code ?? "").toLowerCase().includes(q)
+        || (s.guardian_name ?? "").toLowerCase().includes(q)
+        || (s.guardian_occupation ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [students, search]);
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -84,6 +103,7 @@ function StudentsPage() {
       section_id: (fd.get("section_id") as string) || null,
       guardian_name: String(fd.get("guardian_name") || "") || null,
       guardian_phone: String(fd.get("guardian_phone") || "") || null,
+      guardian_occupation: String(fd.get("guardian_occupation") || "") || null,
       date_of_birth: (fd.get("date_of_birth") as string) || null,
       gender: (fd.get("gender") as string) || null,
       address: String(fd.get("address") || "") || null,
@@ -109,6 +129,7 @@ function StudentsPage() {
       section_id: (fd.get("section_id") as string) || null,
       guardian_name: String(fd.get("guardian_name") || "") || null,
       guardian_phone: String(fd.get("guardian_phone") || "") || null,
+      guardian_occupation: String(fd.get("guardian_occupation") || "") || null,
       date_of_birth: (fd.get("date_of_birth") as string) || null,
       gender: (fd.get("gender") as string) || null,
       address: String(fd.get("address") || "") || null,
@@ -144,7 +165,7 @@ function StudentsPage() {
         actions={
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" /> New student</Button></DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle className="font-serif">Register student</DialogTitle></DialogHeader>
               <form onSubmit={handleCreate} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
@@ -180,7 +201,10 @@ function StudentsPage() {
                   <div className="space-y-2"><Label>Guardian name</Label><Input name="guardian_name" /></div>
                   <div className="space-y-2"><Label>Guardian phone</Label><Input name="guardian_phone" /></div>
                 </div>
-                <div className="space-y-2"><Label>Address</Label><Input name="address" /></div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2"><Label>Guardian's occupation</Label><Input name="guardian_occupation" placeholder="e.g. Engineer" /></div>
+                  <div className="space-y-2"><Label>Address</Label><Input name="address" /></div>
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label>Campus</Label>
@@ -220,22 +244,44 @@ function StudentsPage() {
         }
       />
 
+      <div className="mb-4 relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search by name, guardian, occupation, or student ID"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
       <Card className="shadow-none">
         <CardContent className="p-0">
           <Table>
             <TableHeader><TableRow>
               <TableHead>Student ID</TableHead><TableHead>Name</TableHead>
+              <TableHead>Guardian</TableHead>
               <TableHead>Campus</TableHead><TableHead>Class/Section</TableHead>
               <TableHead>System</TableHead><TableHead>Docs</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {isLoading && <TableRow><TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
-              {students?.length === 0 && <TableRow><TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">No students yet.</TableCell></TableRow>}
-              {students?.map((s) => (
+              {isLoading && <TableRow><TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
+              {!isLoading && filtered.length === 0 && <TableRow><TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">{search ? "No matching students." : "No students yet."}</TableCell></TableRow>}
+              {filtered.map((s) => (
                 <TableRow key={s.id}>
                   <TableCell><code className="rounded bg-muted px-1.5 py-0.5 text-xs">{s.student_code}</code></TableCell>
-                  <TableCell className="font-medium">{s.first_name} {s.last_name}</TableCell>
+                  <TableCell>
+                    <button
+                      onClick={() => setViewing(s)}
+                      className="font-medium text-primary hover:underline text-left"
+                    >
+                      {s.first_name} {s.last_name}
+                    </button>
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    <div>{s.guardian_name ?? "—"}</div>
+                    <div className="text-xs text-muted-foreground">{s.guardian_occupation ?? ""}</div>
+                  </TableCell>
                   <TableCell className="text-sm">{campusMap.get(s.campus_id) ?? "—"}</TableCell>
                   <TableCell className="text-sm">{classMap.get(s.class_id ?? "") ?? "—"} · {sectionMap.get(s.section_id ?? "") ?? "—"}</TableCell>
                   <TableCell><SystemBadge system={s.academic_system} /></TableCell>
@@ -251,6 +297,41 @@ function StudentsPage() {
         </CardContent>
       </Card>
 
+      {/* View student details */}
+      <Dialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-serif">
+              {viewing?.first_name} {viewing?.last_name}
+            </DialogTitle>
+          </DialogHeader>
+          {viewing && (
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <Detail label="Student ID" value={viewing.student_code} />
+              <Detail label="Status" value={viewing.status} />
+              <Detail label="Date of birth" value={viewing.date_of_birth} />
+              <Detail label="Gender" value={viewing.gender} />
+              <Detail label="Grade" value={viewing.grade} />
+              <Detail label="Academic system" value={viewing.academic_system} />
+              <Detail label="Campus" value={campusMap.get(viewing.campus_id)} />
+              <Detail label="Program" value={programMap.get(viewing.program_id ?? "") ?? "—"} />
+              <Detail label="Class" value={classMap.get(viewing.class_id ?? "") ?? "—"} />
+              <Detail label="Section" value={sectionMap.get(viewing.section_id ?? "") ?? "—"} />
+              <Detail label="Guardian" value={viewing.guardian_name} />
+              <Detail label="Guardian phone" value={viewing.guardian_phone} />
+              <Detail label="Guardian's occupation" value={viewing.guardian_occupation} />
+              <Detail label="Documents on file" value={String(viewing.documents?.length ?? 0)} />
+              <div className="col-span-2"><Detail label="Address" value={viewing.address} /></div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { if (viewing) { const s = viewing; setViewing(null); setEditing(s); } }}>
+              <Pencil className="mr-1 h-3 w-3" /> Edit
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!uploadFor} onOpenChange={(o) => !o && setUploadFor(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle className="font-serif">Upload document — {uploadFor?.first_name} {uploadFor?.last_name}</DialogTitle></DialogHeader>
@@ -259,7 +340,7 @@ function StudentsPage() {
       </Dialog>
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="font-serif">Edit student — {editing?.student_code}</DialogTitle></DialogHeader>
           {editing && (
             <form onSubmit={handleUpdate} className="space-y-4" key={editing.id}>
@@ -296,7 +377,10 @@ function StudentsPage() {
                 <div className="space-y-2"><Label>Guardian name</Label><Input name="guardian_name" defaultValue={editing.guardian_name ?? ""} /></div>
                 <div className="space-y-2"><Label>Guardian phone</Label><Input name="guardian_phone" defaultValue={editing.guardian_phone ?? ""} /></div>
               </div>
-              <div className="space-y-2"><Label>Address</Label><Input name="address" defaultValue={editing.address ?? ""} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2"><Label>Guardian's occupation</Label><Input name="guardian_occupation" defaultValue={editing.guardian_occupation ?? ""} placeholder="e.g. Engineer" /></div>
+                <div className="space-y-2"><Label>Address</Label><Input name="address" defaultValue={editing.address ?? ""} /></div>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Campus</Label>
@@ -335,5 +419,14 @@ function StudentsPage() {
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function Detail({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <div>
+      <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="mt-0.5 font-medium">{value || "—"}</div>
+    </div>
   );
 }
