@@ -73,15 +73,17 @@ function ResultsPage() {
         const scoreMap = new Map((scores ?? []).map((s) => [s.assessment_id, s.marks]));
 
         // Group by course
-        const byCourse: Record<string, { weighted: number; weight: number; maxWeight: number }> = {};
+        const byCourse: Record<string, { weighted: number; weight: number; maxWeight: number; obtained: number; total: number }> = {};
         for (const a of asmts) {
           const m = scoreMap.get(a.id);
           if (m == null) continue;
           const p = (Number(m) / Number(a.max_marks)) * 100;
-          const c = byCourse[a.course_id] ?? { weighted: 0, weight: 0, maxWeight: 0 };
+          const c = byCourse[a.course_id] ?? { weighted: 0, weight: 0, maxWeight: 0, obtained: 0, total: 0 };
           c.weighted += (p * Number(a.weight_percent)) / 100;
           c.weight += Number(a.weight_percent);
           c.maxWeight += Number(a.weight_percent);
+          c.obtained += Number(m);
+          c.total += Number(a.max_marks);
           byCourse[a.course_id] = c;
         }
         // Fetch course titles
@@ -102,6 +104,8 @@ function ResultsPage() {
             percent: Number(percent.toFixed(2)),
             grade: letterFor(percent),
             gpa: gpaFor(percent),
+            marks_obtained: Number(c.obtained.toFixed(2)),
+            marks_total: Number(c.total.toFixed(2)),
           };
         });
 
@@ -109,6 +113,9 @@ function ResultsPage() {
           ? subjects.reduce((s, x) => s + x.percent, 0) / subjects.length : 0;
         const gpa = subjects.length
           ? subjects.reduce((s, x) => s + x.gpa, 0) / subjects.length : 0;
+        const totalObtained = subjects.reduce((s, x) => s + x.marks_obtained, 0);
+        const totalMax = subjects.reduce((s, x) => s + x.marks_total, 0);
+
 
         // Attendance %
         const { data: att } = await supabase.from("attendance_records")
