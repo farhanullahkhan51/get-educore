@@ -269,8 +269,8 @@ function ResultsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Student</TableHead>
+                  <TableHead>Marks</TableHead>
                   <TableHead>Overall %</TableHead>
-                  <TableHead>GPA</TableHead>
                   <TableHead>Attendance</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -282,14 +282,18 @@ function ResultsPage() {
                 )}
                 {students?.map((st) => {
                   const c = cardByStudent.get(st.id);
+                  const subs = (c?.subjects as any[]) ?? [];
+                  const obtained = subs.reduce((a, x) => a + (Number(x.marks_obtained) || 0), 0);
+                  const total = subs.reduce((a, x) => a + (Number(x.marks_total) || 0), 0);
                   return (
                     <TableRow key={st.id}>
                       <TableCell>
                         <div className="font-medium">{st.first_name} {st.last_name}</div>
                         <div className="text-[10px] text-muted-foreground">{st.student_code}</div>
                       </TableCell>
+                      <TableCell>{c ? `${obtained.toFixed(0)} / ${total.toFixed(0)}` : "—"}</TableCell>
                       <TableCell>{c ? `${(c.overall_percent ?? 0).toFixed(1)}%` : "—"}</TableCell>
-                      <TableCell>{c ? (c.gpa ?? 0).toFixed(2) : "—"}</TableCell>
+
                       <TableCell>{c ? `${(c.attendance_percent ?? 0).toFixed(1)}%` : "—"}</TableCell>
                       <TableCell>
                         {c ? (
