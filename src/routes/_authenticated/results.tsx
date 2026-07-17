@@ -159,14 +159,17 @@ function ResultsPage() {
   function printCard(card: ReportCard) {
     const st = students?.find((s) => s.id === card.student_id);
     const section: any = sections?.find((s: any) => s.id === sectionId);
-    const rows = (card.subjects as any[]).map((s) => `
+    const subs = card.subjects as any[];
+    const rows = subs.map((s) => `
       <tr>
         <td>${s.code}</td>
         <td>${s.title}</td>
+        <td style="text-align:center">${(s.marks_obtained ?? 0).toFixed(0)} / ${(s.marks_total ?? 0).toFixed(0)}</td>
         <td style="text-align:center">${s.percent.toFixed(1)}%</td>
         <td style="text-align:center;font-weight:600">${s.grade}</td>
-        <td style="text-align:center">${s.gpa.toFixed(1)}</td>
       </tr>`).join("");
+    const totalObtained = subs.reduce((a, x) => a + (Number(x.marks_obtained) || 0), 0);
+    const totalMax = subs.reduce((a, x) => a + (Number(x.marks_total) || 0), 0);
     const w = window.open("", "_blank", "width=900,height=1000");
     if (!w) return;
     w.document.write(`<!doctype html><html><head><title>Report Card - ${st?.first_name} ${st?.last_name}</title>
@@ -203,12 +206,12 @@ function ResultsPage() {
         <div style="text-align:right">${section?.classes?.name ?? ""} — ${section?.name ?? ""}</div>
       </div>
       <table>
-        <thead><tr><th>Code</th><th>Subject</th><th>%</th><th>Grade</th><th>GPA</th></tr></thead>
+        <thead><tr><th>Code</th><th>Subject</th><th>Marks</th><th>%</th><th>Grade</th></tr></thead>
         <tbody>${rows || '<tr><td colspan="5" style="text-align:center">No subjects</td></tr>'}</tbody>
       </table>
       <div class="totals">
+        <div class="stat"><div class="lbl">Total Marks</div><div class="val">${totalObtained.toFixed(0)} / ${totalMax.toFixed(0)}</div></div>
         <div class="stat"><div class="lbl">Overall %</div><div class="val">${(card.overall_percent ?? 0).toFixed(1)}%</div></div>
-        <div class="stat"><div class="lbl">GPA</div><div class="val">${(card.gpa ?? 0).toFixed(2)}</div></div>
         <div class="stat"><div class="lbl">Attendance</div><div class="val">${(card.attendance_percent ?? 0).toFixed(1)}%</div></div>
       </div>
       <div class="sig"><div>Class Teacher</div><div>Principal</div><div>Parent</div></div>
@@ -216,6 +219,7 @@ function ResultsPage() {
     w.document.close();
     setTimeout(() => w.print(), 400);
   }
+
 
   const cardByStudent = new Map(cards?.map((c) => [c.student_id, c]));
 
