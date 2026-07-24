@@ -516,10 +516,11 @@ function SubsTab() {
     const payload = {
       tenant_id: String(fd.get("tenant_id")),
       plan_tier_id: String(fd.get("plan_tier_id")),
-      billing_cycle: String(fd.get("billing_cycle")),
-      status: String(fd.get("status")),
+      billing_cycle: String(fd.get("billing_cycle")) as "monthly" | "yearly",
+      status: String(fd.get("status")) as "active" | "trialing" | "past_due" | "canceled",
       current_period_end: periodEnd ? new Date(periodEnd).toISOString() : null,
     };
+
     const res = editing
       ? await supabase.from("subscriptions").update(payload).eq("id", editing.id)
       : await supabase.from("subscriptions").insert(payload);
