@@ -2168,6 +2168,27 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      resolve_tenant_by_host: {
+        Args: { _host: string }
+        Returns: {
+          accent_color: string
+          custom_domain: string
+          default_currency: string
+          default_timezone: string
+          email_sender_name: string
+          favicon_url: string
+          font: string
+          id: string
+          letterhead_url: string
+          logo_url: string
+          name: string
+          primary_color: string
+          secondary_color: string
+          signature_url: string
+          slug: string
+          status: Database["public"]["Enums"]["tenant_status"]
+        }[]
+      }
       student_has_outstanding_challans: {
         Args: { _student_id: string }
         Returns: boolean
