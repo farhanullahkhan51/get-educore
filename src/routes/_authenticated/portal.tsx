@@ -1,0 +1,379 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { PageHeader } from "@/components/layout/page-header";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+import { CalendarCheck, Wallet, Award, GraduationCap, FileText } from "lucide-react";
+
+export const Route = createFileRoute("/_authenticated/portal")({
+  component: StudentPortalPage,
+});
+
+function StudentPortalPage() {
+  const { data: user } = useCurrentUser();
+
+  const { data: student, isLoading: studentLoading } = useQuery({
+    queryKey: ["portal-student", user?.userId],
+    enabled: !!user?.userId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("students")
+        .select("*")
+        .eq("profile_id", user!.userId)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  const studentId = student?.id;
+
+  const { data: attendance } = useQuery({
+    queryKey: ["portal-att", studentId],
+    enabled: !!studentId,
+    queryFn: async () => (await supabase.from("attendance_records")
+      .select("id,date,status,course_id,remarks")
+      .eq("student_id", studentId!)
+      .order("date", { ascending: false })
+      .limit(500)).data ?? [],
+  });
+
+  const { data: challans } = useQuery({
+    queryKey: ["portal-fee", studentId],
+    enabled: !!studentId,
+    queryFn: async () => (await supabase.from("fee_challans")
+      .select("id,challan_no,category,period_label,issue_date,due_date,gross_amount,discount_amount,fine_amount,paid_amount,status,paid_on")
+      .eq("student_id", studentId!)
+      .order("issue_date", { ascending: false })).data ?? [],
+  });
+
+  const { data: reports } = useQuery({
+    queryKey: ["portal-rc", studentId],
+    enabled: !!studentId,
+    queryFn: async () => (await supabase.from("report_cards")
+      .select("*")
+      .eq("student_id", studentId!)
+      .order("created_at", { ascending: false })).data ?? [],
+  });
+
+  const { data: scores } = useQuery({
+    queryKey: ["portal-scores", studentId],
+    enabled: !!studentId,
+    queryFn: async () => (await supabase.from("assessment_scores")
+      .select("id,marks,is_absent,assessment:assessment_id(title,type,max_marks,due_date,term,academic_year)")
+      .eq("student_id", studentId!)
+      .order("created_at", { ascending: false })
+      .limit(100)).data ?? [],
+  });
+
+  const { data: certs } = useQuery({
+    queryKey: ["portal-certs", studentId],
+    enabled: !!studentId,
+    queryFn: async () => (await supabase.from("certificates")
+      .select("id,serial_no,title,type,issue_date,status")
+      .eq("student_id", studentId!)
+      .order("issue_date", { ascending: false })).data ?? [],
+  });
+
+  const { data: courses } = useQuery({
+    queryKey: ["portal-courses"],
+    queryFn: async () => (await supabase.from("courses").select("id,code,title")).data ?? [],
+  });
+  const courseName = (id: string | null) => {
+    if (!id) return "—";
+    const c = courses?.find((x) => x.id === id);
+    return c ? `${c.code} · ${c.title}` : "—";
+  };
+
+  const attStats = useMemo(() => {
+    const list = attendance ?? [];
+    const total = list.length;
+    const present = list.filter((r) => r.status === "present" || r.status === "late").length;
+    const pct = total ? Math.round((present / total) * 100) : 0;
+    return { total, present, pct };
+  }, [attendance]);
+
+  const feeStats = useMemo(() => {
+    const list = challans ?? [];
+    const outstanding = list
+      .filter((c) => c.status !== "paid")
+      .reduce((sum, c) =>
+        sum + (Number(c.gross_amount) - Number(c.discount_amount ?? 0) + Number(c.fine_amount ?? 0) - Number(c.paid_amount ?? 0)), 0);
+    const unpaid = list.filter((c) => c.status !== "paid").length;
+    return { outstanding, unpaid };
+  }, [challans]);
+
+  if (studentLoading) {
+    return <div className="text-sm text-muted-foreground">Loading your portal…</div>;
+  }
+
+  if (!student) {
+    return (
+      <>
+        <PageHeader
+          eyebrow="Student Portal"
+          title="Portal not linked yet"
+          description="Your account isn't linked to a student profile."
+        />
+        <Card className="shadow-none">
+          <CardContent className="p-6 text-sm text-muted-foreground">
+            Please ask your campus administrator to link your login to your student record so you can view attendance,
+            fees, results and certificates here.
+          </CardContent>
+        </Card>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <PageHeader
+        eyebrow="Student Portal"
+        title={`Welcome, ${student.first_name} ${student.last_name}`}
+        description={`Student ID ${student.student_code}${student.grade ? ` · ${student.grade}` : ""}`}
+      />
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+        <Kpi label="Attendance" value={`${attStats.pct}%`} sub={`${attStats.present}/${attStats.total} days`} icon={CalendarCheck} />
+        <Kpi label="Outstanding fees" value={feeStats.outstanding.toLocaleString()} sub={`${feeStats.unpaid} unpaid challan(s)`} icon={Wallet} />
+        <Kpi label="Report cards" value={reports?.length ?? 0} sub="Terms recorded" icon={FileText} />
+        <Kpi label="Certificates" value={certs?.length ?? 0} sub="Issued to you" icon={Award} />
+      </div>
+
+      <Tabs defaultValue="attendance">
+        <TabsList>
+          <TabsTrigger value="attendance">Attendance</TabsTrigger>
+          <TabsTrigger value="fees">Fees</TabsTrigger>
+          <TabsTrigger value="results">Results</TabsTrigger>
+          <TabsTrigger value="certificates">Certificates</TabsTrigger>
+          <TabsTrigger value="profile">Profile</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="attendance">
+          <Card className="shadow-none">
+            <CardContent className="p-0 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Course</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Remarks</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(attendance ?? []).length === 0 && (
+                    <TableRow><TableCell colSpan={4} className="py-8 text-center text-sm text-muted-foreground">No attendance recorded yet.</TableCell></TableRow>
+                  )}
+                  {(attendance ?? []).map((r) => (
+                    <TableRow key={r.id}>
+                      <TableCell className="text-sm">{new Date(r.date).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-sm">{courseName(r.course_id)}</TableCell>
+                      <TableCell>
+                        <Badge variant={r.status === "present" ? "secondary" : r.status === "absent" ? "destructive" : "outline"}>
+                          {r.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{r.remarks ?? "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="fees">
+          <Card className="shadow-none">
+            <CardContent className="p-0 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Challan</TableHead>
+                    <TableHead>Period</TableHead>
+                    <TableHead>Issued</TableHead>
+                    <TableHead>Due</TableHead>
+                    <TableHead className="text-right">Payable</TableHead>
+                    <TableHead className="text-right">Paid</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(challans ?? []).length === 0 && (
+                    <TableRow><TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">No fee challans yet.</TableCell></TableRow>
+                  )}
+                  {(challans ?? []).map((c) => {
+                    const payable = Number(c.gross_amount) - Number(c.discount_amount ?? 0) + Number(c.fine_amount ?? 0);
+                    return (
+                      <TableRow key={c.id}>
+                        <TableCell className="font-mono text-xs">{c.challan_no}</TableCell>
+                        <TableCell className="text-sm">{c.period_label ?? c.category ?? "—"}</TableCell>
+                        <TableCell className="text-sm">{new Date(c.issue_date).toLocaleDateString()}</TableCell>
+                        <TableCell className="text-sm">{c.due_date ? new Date(c.due_date).toLocaleDateString() : "—"}</TableCell>
+                        <TableCell className="text-right text-sm">{payable.toLocaleString()}</TableCell>
+                        <TableCell className="text-right text-sm">{Number(c.paid_amount ?? 0).toLocaleString()}</TableCell>
+                        <TableCell>
+                          <Badge variant={c.status === "paid" ? "secondary" : c.status === "overdue" ? "destructive" : "outline"}>
+                            {c.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="results">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card className="shadow-none">
+              <CardHeader><CardTitle className="text-base font-serif">Report cards</CardTitle></CardHeader>
+              <CardContent className="p-0 overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Term</TableHead>
+                      <TableHead>Year</TableHead>
+                      <TableHead className="text-right">Marks</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(reports ?? []).length === 0 && (
+                      <TableRow><TableCell colSpan={3} className="py-6 text-center text-sm text-muted-foreground">No report cards published yet.</TableCell></TableRow>
+                    )}
+                    {(reports ?? []).map((r: any) => (
+                      <TableRow key={r.id}>
+                        <TableCell className="text-sm">{r.term ?? "—"}</TableCell>
+                        <TableCell className="text-sm">{r.academic_year ?? "—"}</TableCell>
+                        <TableCell className="text-right text-sm">
+                          {r.total_obtained != null && r.total_max != null
+                            ? `${r.total_obtained} / ${r.total_max}`
+                            : "—"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-none">
+              <CardHeader><CardTitle className="text-base font-serif">Recent assessments</CardTitle></CardHeader>
+              <CardContent className="p-0 overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Assessment</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead className="text-right">Marks</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(scores ?? []).length === 0 && (
+                      <TableRow><TableCell colSpan={3} className="py-6 text-center text-sm text-muted-foreground">No scores recorded yet.</TableCell></TableRow>
+                    )}
+                    {(scores ?? []).map((s: any) => (
+                      <TableRow key={s.id}>
+                        <TableCell className="text-sm">{s.assessment?.title ?? "—"}</TableCell>
+                        <TableCell className="text-sm capitalize">{s.assessment?.type ?? "—"}</TableCell>
+                        <TableCell className="text-right text-sm">
+                          {s.is_absent ? <span className="text-destructive">Absent</span> :
+                            s.assessment?.max_marks != null ? `${s.marks ?? 0} / ${s.assessment.max_marks}` : s.marks ?? "—"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="certificates">
+          <Card className="shadow-none">
+            <CardContent className="p-0 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Serial</TableHead>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Issued</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(certs ?? []).length === 0 && (
+                    <TableRow><TableCell colSpan={4} className="py-8 text-center text-sm text-muted-foreground">No certificates issued to you.</TableCell></TableRow>
+                  )}
+                  {(certs ?? []).map((c) => (
+                    <TableRow key={c.id}>
+                      <TableCell className="font-mono text-xs">{c.serial_no}</TableCell>
+                      <TableCell className="text-sm">{c.title}</TableCell>
+                      <TableCell className="text-sm">{new Date(c.issue_date).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <Badge variant={c.status === "issued" ? "secondary" : c.status === "revoked" ? "destructive" : "outline"}>
+                          {c.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="profile">
+          <Card className="shadow-none">
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 p-6 text-sm">
+              <Row label="Full name" value={`${student.first_name} ${student.last_name}`} />
+              <Row label="Student ID" value={student.student_code} />
+              <Row label="Grade / Class" value={student.grade ?? "—"} />
+              <Row label="Academic system" value={student.academic_system ?? "—"} />
+              <Row label="Date of birth" value={student.date_of_birth ? new Date(student.date_of_birth).toLocaleDateString() : "—"} />
+              <Row label="Gender" value={student.gender ?? "—"} />
+              <Row label="Guardian" value={student.guardian_name ?? "—"} />
+              <Row label="Guardian phone" value={student.guardian_phone ?? "—"} />
+              <Row label="Guardian occupation" value={student.guardian_occupation ?? "—"} />
+              <Row label="Admission date" value={student.admission_date ? new Date(student.admission_date).toLocaleDateString() : "—"} />
+              <Row label="Status" value={student.status ?? "—"} />
+              <Row label="Address" value={student.address ?? "—"} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </>
+  );
+}
+
+function Kpi({ label, value, sub, icon: Icon }: { label: string; value: string | number; sub?: string; icon: React.ComponentType<{ className?: string }> }) {
+  return (
+    <Card className="shadow-none">
+      <CardContent className="p-5">
+        <div className="flex items-center justify-between">
+          <div className="text-xs uppercase tracking-widest text-muted-foreground">{label}</div>
+          <Icon className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <div className="mt-3 font-serif text-3xl font-semibold">{value}</div>
+        {sub && <div className="mt-1 text-xs text-muted-foreground">{sub}</div>}
+      </CardContent>
+    </Card>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string | null }) {
+  return (
+    <div className="flex flex-col">
+      <span className="text-xs uppercase tracking-widest text-muted-foreground">{label}</span>
+      <span className="font-medium">{value ?? "—"}</span>
+    </div>
+  );
+}
