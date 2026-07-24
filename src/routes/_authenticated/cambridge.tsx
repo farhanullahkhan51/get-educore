@@ -116,7 +116,8 @@ function RegistrationsTab() {
       if (error) return toast.error(error.message);
       toast.success("Registration updated");
     } else {
-      const { error } = await supabase.from("cambridge_registrations").insert(payload);
+      if (!tenantId) return toast.error("Tenant not resolved");
+      const { error } = await supabase.from("cambridge_registrations").insert({ ...payload, tenant_id: tenantId });
       if (error) return toast.error(error.message);
       toast.success("Registration created");
     }
