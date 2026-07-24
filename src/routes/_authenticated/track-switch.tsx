@@ -69,7 +69,9 @@ function TrackSwitchPage() {
     if (campusOfStudent && campusOfStudent.academic_system !== "both" && campusOfStudent.academic_system !== toSystem && toSystem !== "both") {
       return toast.error(`This campus only supports ${campusOfStudent.academic_system.toUpperCase()}. Switch the campus academic system to "Both" first.`);
     }
+    if (!tenantId) return toast.error("Tenant not resolved");
     const { error: swErr } = await supabase.from("track_switches").insert({
+      tenant_id: tenantId,
       campus_id: student.campus_id, student_id: studentId,
       from_system: student.academic_system, to_system: toSystem,
       effective_date: effectiveDate, reason: reason || null,
