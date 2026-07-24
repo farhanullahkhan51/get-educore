@@ -108,11 +108,12 @@ function TenantsTab() {
       slug: String(fd.get("slug")).toLowerCase().replace(/[^a-z0-9-]/g, "-"),
       custom_domain: String(fd.get("custom_domain") || "") || null,
       plan_tier_id: String(fd.get("plan_tier_id") || "") || null,
-      status: String(fd.get("status") || "active"),
+      status: String(fd.get("status") || "active") as "active" | "trial" | "suspended",
     };
     const res = editing
       ? await supabase.from("tenants").update(payload).eq("id", editing.id)
       : await supabase.from("tenants").insert(payload).select("id").single();
+
     if (res.error) return toast.error(res.error.message);
     if (!editing && "data" in res && res.data?.id) {
       // seed tenant_settings row
