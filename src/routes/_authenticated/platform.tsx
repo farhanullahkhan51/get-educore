@@ -303,6 +303,7 @@ function TenantSettingsDialog({ tenant, onClose }: { tenant: Tenant; onClose: ()
     if (error) return toast.error(error.message);
     toast.success("Settings saved");
     qc.invalidateQueries({ queryKey: ["platform.settings", tenant.id] });
+    qc.invalidateQueries({ queryKey: ["tenant-branding"] });
     onClose();
   }
 
