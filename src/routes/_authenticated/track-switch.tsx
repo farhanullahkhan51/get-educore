@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { ArrowLeftRight, Plus } from "lucide-react";
+import { useTenantId } from "@/lib/tenant-context";
 
 export const Route = createFileRoute("/_authenticated/track-switch")({
   component: TrackSwitchPage,
