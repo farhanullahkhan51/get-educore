@@ -83,7 +83,7 @@ function Landing() {
 
       <footer className="hairline mt-10">
         <div className="mx-auto max-w-6xl px-6 py-6 text-xs text-muted-foreground">
-          © {new Date().getFullYear()} EduCore. Built for institutions.
+          © {new Date().getFullYear()} {brandName}. Built for institutions.
         </div>
       </footer>
     </div>
