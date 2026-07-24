@@ -235,7 +235,7 @@ function TenantsTab() {
                     <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="trial">Trial</SelectItem>
                     <SelectItem value="suspended">Suspended</SelectItem>
-                    <SelectItem value="archived">Archived</SelectItem>
+                    
                   </SelectContent>
                 </Select>
               </div>
