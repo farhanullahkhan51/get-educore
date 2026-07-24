@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { GraduationCap, CheckCircle2 } from "lucide-react";
 import { z } from "zod";
+import { useTenant } from "@/lib/tenant-context";
 
 export const Route = createFileRoute("/inquire")({
   head: () => ({
