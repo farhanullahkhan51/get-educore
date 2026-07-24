@@ -33,6 +33,7 @@ const SYSTEMS = [
 
 function TrackSwitchPage() {
   const [open, setOpen] = useState(false);
+  const tenantId = useTenantId();
   const [studentId, setStudentId] = useState("");
   const [toSystem, setToSystem] = useState<"board" | "cambridge" | "both">("cambridge");
   const [effectiveDate, setEffectiveDate] = useState(new Date().toISOString().slice(0, 10));
