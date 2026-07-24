@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Pencil, ListChecks, Printer, Trash2, Loader2, Save } from "lucide-react";
-import { getActiveTenantName } from "@/lib/tenant-context";
+import { getActiveTenantName, useTenantId } from "@/lib/tenant-context";
 
 export const Route = createFileRoute("/_authenticated/cambridge")({
   component: CambridgePage,
