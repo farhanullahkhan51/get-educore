@@ -45,6 +45,8 @@ const NAV: NavItem[] = [
   { to: "/board", label: "BISE Board", icon: Landmark, roles: ["super_admin", "campus_admin", "admissions_officer"] },
   { to: "/fees", label: "Fees & Finance", icon: Wallet, roles: ["super_admin", "campus_admin", "finance_officer"] },
   { to: "/users", label: "Users & Roles", icon: UserCog, roles: ["super_admin"] },
+  { to: "/platform", label: "Platform Admin", icon: ShieldCheck, roles: ["super_admin"] },
+
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
