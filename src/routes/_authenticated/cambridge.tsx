@@ -78,6 +78,7 @@ function CambridgePage() {
 /* ----------------------------- Registrations ----------------------------- */
 
 function RegistrationsTab() {
+  const tenantId = useTenantId();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Registration | null>(null);
   const [subjectsFor, setSubjectsFor] = useState<Registration | null>(null);
