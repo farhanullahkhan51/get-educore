@@ -239,6 +239,43 @@ function CertificatesPage() {
     refetch();
   }
 
+  function openEdit(c: Certificate) {
+    setEditing(c);
+    setEditTitle(c.title);
+    setEditSerial(c.serial_no);
+    setEditDate(c.issue_date);
+    setEditBody(c.body);
+    setEditRemarks(c.remarks ?? "");
+  }
+
+  async function saveEdit() {
+    if (!editing) return;
+    if (!editTitle.trim() || !editSerial.trim() || !editBody.trim()) {
+      return toast.error("Title, serial and body are required");
+    }
+    const { error } = await supabase.from("certificates").update({
+      title: editTitle.trim(),
+      serial_no: editSerial.trim(),
+      issue_date: editDate,
+      body: editBody.trim(),
+      remarks: editRemarks.trim() || null,
+    }).eq("id", editing.id);
+    if (error) return toast.error(error.message);
+    toast.success("Certificate updated");
+    setEditing(null);
+    refetch();
+  }
+
+  async function deleteCert() {
+    if (!editing) return;
+    if (!window.confirm(`Permanently delete certificate ${editing.serial_no}? This cannot be undone.`)) return;
+    const { error } = await supabase.from("certificates").delete().eq("id", editing.id);
+    if (error) return toast.error(error.message);
+    toast.success("Certificate deleted");
+    setEditing(null);
+    refetch();
+  }
+
   function printCert(c: Certificate) {
     const campus = campuses?.find((x) => x.id === c.campus_id);
     const w = window.open("", "_blank", "width=900,height=1100");
