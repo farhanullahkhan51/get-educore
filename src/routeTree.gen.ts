@@ -19,6 +19,7 @@ import { Route as AuthenticatedStudentsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedStaffRouteImport } from './routes/_authenticated/staff'
 import { Route as AuthenticatedResultsRouteImport } from './routes/_authenticated/results'
 import { Route as AuthenticatedProgramsRouteImport } from './routes/_authenticated/programs'
+import { Route as AuthenticatedPortalRouteImport } from './routes/_authenticated/portal'
 import { Route as AuthenticatedPlatformRouteImport } from './routes/_authenticated/platform'
 import { Route as AuthenticatedFeesRouteImport } from './routes/_authenticated/fees'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -79,6 +80,11 @@ const AuthenticatedResultsRoute = AuthenticatedResultsRouteImport.update({
 const AuthenticatedProgramsRoute = AuthenticatedProgramsRouteImport.update({
   id: '/programs',
   path: '/programs',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPortalRoute = AuthenticatedPortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedPlatformRoute = AuthenticatedPlatformRouteImport.update({
@@ -153,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/fees': typeof AuthenticatedFeesRoute
   '/platform': typeof AuthenticatedPlatformRoute
+  '/portal': typeof AuthenticatedPortalRoute
   '/programs': typeof AuthenticatedProgramsRoute
   '/results': typeof AuthenticatedResultsRoute
   '/staff': typeof AuthenticatedStaffRoute
@@ -175,6 +182,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/fees': typeof AuthenticatedFeesRoute
   '/platform': typeof AuthenticatedPlatformRoute
+  '/portal': typeof AuthenticatedPortalRoute
   '/programs': typeof AuthenticatedProgramsRoute
   '/results': typeof AuthenticatedResultsRoute
   '/staff': typeof AuthenticatedStaffRoute
@@ -199,6 +207,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/fees': typeof AuthenticatedFeesRoute
   '/_authenticated/platform': typeof AuthenticatedPlatformRoute
+  '/_authenticated/portal': typeof AuthenticatedPortalRoute
   '/_authenticated/programs': typeof AuthenticatedProgramsRoute
   '/_authenticated/results': typeof AuthenticatedResultsRoute
   '/_authenticated/staff': typeof AuthenticatedStaffRoute
@@ -223,6 +232,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/fees'
     | '/platform'
+    | '/portal'
     | '/programs'
     | '/results'
     | '/staff'
@@ -245,6 +255,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/fees'
     | '/platform'
+    | '/portal'
     | '/programs'
     | '/results'
     | '/staff'
@@ -268,6 +279,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/fees'
     | '/_authenticated/platform'
+    | '/_authenticated/portal'
     | '/_authenticated/programs'
     | '/_authenticated/results'
     | '/_authenticated/staff'
@@ -353,6 +365,13 @@ declare module '@tanstack/react-router' {
       path: '/programs'
       fullPath: '/programs'
       preLoaderRoute: typeof AuthenticatedProgramsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/portal': {
+      id: '/_authenticated/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof AuthenticatedPortalRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/platform': {
@@ -447,6 +466,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedFeesRoute: typeof AuthenticatedFeesRoute
   AuthenticatedPlatformRoute: typeof AuthenticatedPlatformRoute
+  AuthenticatedPortalRoute: typeof AuthenticatedPortalRoute
   AuthenticatedProgramsRoute: typeof AuthenticatedProgramsRoute
   AuthenticatedResultsRoute: typeof AuthenticatedResultsRoute
   AuthenticatedStaffRoute: typeof AuthenticatedStaffRoute
@@ -467,6 +487,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedFeesRoute: AuthenticatedFeesRoute,
   AuthenticatedPlatformRoute: AuthenticatedPlatformRoute,
+  AuthenticatedPortalRoute: AuthenticatedPortalRoute,
   AuthenticatedProgramsRoute: AuthenticatedProgramsRoute,
   AuthenticatedResultsRoute: AuthenticatedResultsRoute,
   AuthenticatedStaffRoute: AuthenticatedStaffRoute,

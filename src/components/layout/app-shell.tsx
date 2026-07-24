@@ -34,7 +34,8 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["super_admin", "campus_admin", "admissions_officer", "finance_officer", "teacher", "student"] },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["super_admin", "campus_admin", "admissions_officer", "finance_officer", "teacher"] },
+  { to: "/portal", label: "My Portal", icon: GraduationCap, roles: ["student"] },
   { to: "/campuses", label: "Campuses", icon: Building2, roles: ["super_admin"] },
   { to: "/programs", label: "Programs", icon: BookOpen, roles: ["super_admin", "campus_admin"] },
   { to: "/classes", label: "Classes & Sections", icon: Layers, roles: ["super_admin", "campus_admin"] },
