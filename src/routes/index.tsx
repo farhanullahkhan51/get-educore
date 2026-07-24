@@ -2,6 +2,7 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { GraduationCap, ShieldCheck, LineChart, Users } from "lucide-react";
+import { useTenant } from "@/lib/tenant-context";
 
 export const Route = createFileRoute("/")({
   beforeLoad: async () => {
@@ -13,15 +14,21 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
+  const { tenant } = useTenant();
+  const brandName = tenant?.name ?? "EduCore";
   return (
     <div className="min-h-screen bg-background">
       <header className="hairline">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
           <div className="flex items-center gap-2">
-            <div className="grid h-8 w-8 place-items-center rounded-sm bg-primary text-primary-foreground">
-              <GraduationCap className="h-4 w-4" />
-            </div>
-            <span className="font-serif text-lg font-semibold tracking-tight">EduCore</span>
+            {tenant?.logo_url ? (
+              <img src={tenant.logo_url} alt={`${brandName} logo`} className="h-8 w-8 rounded-sm object-contain" />
+            ) : (
+              <div className="grid h-8 w-8 place-items-center rounded-sm bg-primary text-primary-foreground">
+                <GraduationCap className="h-4 w-4" />
+              </div>
+            )}
+            <span className="font-serif text-lg font-semibold tracking-tight">{brandName}</span>
           </div>
           <div className="flex items-center gap-2">
             <Link to="/inquire">
@@ -43,7 +50,7 @@ function Landing() {
             The administrative backbone of a modern institution.
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-            EduCore unifies admissions, fees, attendance, results, and certificates across every
+            {brandName} unifies admissions, fees, attendance, results, and certificates across every
             campus — with first-class support for Pakistani Board (BISE) and Cambridge
             O/A-Level tracks.
           </p>
@@ -76,7 +83,7 @@ function Landing() {
 
       <footer className="hairline mt-10">
         <div className="mx-auto max-w-6xl px-6 py-6 text-xs text-muted-foreground">
-          © {new Date().getFullYear()} EduCore. Built for institutions.
+          © {new Date().getFullYear()} {brandName}. Built for institutions.
         </div>
       </footer>
     </div>

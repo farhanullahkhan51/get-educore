@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { FileText, Printer, CheckCircle2, Loader2 } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { letterFor, gpaFor } from "./academics";
+import { getActiveTenantName } from "@/lib/tenant-context";
 
 export const Route = createFileRoute("/_authenticated/results")({
   component: ResultsPage,
@@ -197,7 +198,7 @@ function ResultsPage() {
         }
       </style></head><body>
       <div class="h">
-        <div class="sub">EduCore Academic Report</div>
+        <div class="sub">${getActiveTenantName()} Academic Report</div>
         <h1>REPORT CARD</h1>
         <div class="sub">${card.term} · ${card.academic_year}</div>
       </div>

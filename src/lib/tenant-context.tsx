@@ -39,6 +39,19 @@ function getHostname(): string {
 }
 
 /**
+ * Module-level cache of the last resolved tenant branding.
+ * Populated by TenantProvider so non-React helpers (print templates, etc.)
+ * can read the active tenant name/logo without React context.
+ */
+let cachedTenant: TenantBranding | null = null;
+export function getActiveTenant(): TenantBranding | null {
+  return cachedTenant;
+}
+export function getActiveTenantName(fallback = "EduCore"): string {
+  return cachedTenant?.name ?? fallback;
+}
+
+/**
  * Convert a hex color like "#1a2b3c" to "26 43 60" (space-separated RGB)
  * so it can be assigned to an HSL/RGB CSS custom property consumed by Tailwind tokens.
  */
@@ -76,6 +89,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   // Apply branding: CSS variables, page title, favicon
   useEffect(() => {
     if (!tenant || typeof document === "undefined") return;
+    cachedTenant = tenant;
 
     const root = document.documentElement;
     const primary = hexToRgbTriplet(tenant.primary_color);

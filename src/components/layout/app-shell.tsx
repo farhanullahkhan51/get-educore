@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useCurrentUser, roleLabel, type AppRole } from "@/hooks/use-current-user";
+import { useTenant } from "@/lib/tenant-context";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -48,6 +49,7 @@ const NAV: NavItem[] = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { data: user, isLoading } = useCurrentUser();
+  const { tenant } = useTenant();
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -67,11 +69,21 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen bg-background">
       <aside className="hidden w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground md:flex">
         <div className="flex items-center gap-2 px-5 py-5 border-b border-sidebar-border">
-          <div className="grid h-8 w-8 place-items-center rounded-sm bg-sidebar-primary text-sidebar-primary-foreground">
-            <GraduationCap className="h-4 w-4" />
-          </div>
+          {tenant?.logo_url ? (
+            <img
+              src={tenant.logo_url}
+              alt={`${tenant.name} logo`}
+              className="h-8 w-8 rounded-sm object-contain bg-sidebar-primary-foreground"
+            />
+          ) : (
+            <div className="grid h-8 w-8 place-items-center rounded-sm bg-sidebar-primary text-sidebar-primary-foreground">
+              <GraduationCap className="h-4 w-4" />
+            </div>
+          )}
           <div>
-            <div className="font-serif text-base font-semibold text-sidebar-primary">EduCore</div>
+            <div className="font-serif text-base font-semibold text-sidebar-primary">
+              {tenant?.name ?? "EduCore"}
+            </div>
             <div className="text-[10px] uppercase tracking-widest opacity-60">Admin Suite</div>
           </div>
         </div>

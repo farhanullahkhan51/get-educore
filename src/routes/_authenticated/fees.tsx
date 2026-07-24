@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getActiveTenantName } from "@/lib/tenant-context";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -668,7 +669,7 @@ function printChallan(
     <section class="copy">
       <header>
         <div class="brand">
-          <div class="school">${campus?.name ?? "EduCore"}</div>
+          <div class="school">${campus?.name ?? getActiveTenantName()}</div>
           <div class="sub">${campus?.code ?? ""} · Fee Challan</div>
         </div>
         <div class="copytag">${title}</div>
