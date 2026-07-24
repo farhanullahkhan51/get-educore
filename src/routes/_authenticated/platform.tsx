@@ -446,8 +446,16 @@ function ImageField({
       toast.error(error.message);
       return;
     }
-    const { data } = supabase.storage.from("branding").getPublicUrl(path);
-    onChange(data.publicUrl);
+    // Bucket is private (workspace blocks public buckets), so sign a long-lived URL.
+    const { data: signed, error: signErr } = await supabase.storage
+      .from("branding")
+      .createSignedUrl(path, 60 * 60 * 24 * 365 * 10); // 10 years
+    if (signErr || !signed?.signedUrl) {
+      setUploading(false);
+      toast.error(signErr?.message ?? "Could not generate URL");
+      return;
+    }
+    onChange(signed.signedUrl);
     setUploading(false);
     toast.success(`${label} uploaded`);
     e.target.value = "";
