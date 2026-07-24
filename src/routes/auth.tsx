@@ -17,6 +17,8 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { tenant } = useTenant();
+  const brandName = tenant?.name ?? "EduCore";
   const [loading, setLoading] = useState(false);
 
   async function handleSignIn(e: React.FormEvent<HTMLFormElement>) {
