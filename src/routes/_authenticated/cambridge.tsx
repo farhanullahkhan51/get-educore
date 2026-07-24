@@ -480,6 +480,7 @@ function StatementTab() {
 
 function ResultsTab() {
   const [regId, setRegId] = useState("");
+  const tenantId = useTenantId();
 
   const { data: regs } = useQuery({
     queryKey: ["cambridge_registrations_for_results"],
@@ -491,7 +492,7 @@ function ResultsTab() {
     queryFn: async () => (await supabase.from("students")
       .select("id, first_name, last_name, student_code")).data ?? [],
   });
-  const { data: entries, refetch: refetchEntries } = useQuery({
+  const { data: entries } = useQuery({
     queryKey: ["cambridge_entries_res", regId],
     enabled: !!regId,
     queryFn: async () => (await supabase.from("cambridge_subject_entries")
@@ -520,24 +521,25 @@ function ResultsTab() {
   }
   async function saveRow(entryId: string) {
     const cur = draft[entryId]; if (!cur) return;
+    if (!tenantId) return toast.error("Tenant not resolved");
     const existing = resultOf(entryId);
-    const payload = {
-      entry_id: entryId,
+    const basePayload = {
       ums: cur.ums ?? null, percentage: cur.percentage ?? null,
       grade: cur.grade ?? null, status: cur.status ?? "pending",
       remarks: cur.remarks ?? null, imported_at: new Date().toISOString(),
     };
     if (existing) {
-      const { error } = await supabase.from("cambridge_results").update(payload).eq("id", existing.id);
+      const { error } = await supabase.from("cambridge_results").update(basePayload).eq("id", existing.id);
       if (error) return toast.error(error.message);
     } else {
-      const { error } = await supabase.from("cambridge_results").insert(payload);
+      const { error } = await supabase.from("cambridge_results").insert({ entry_id: entryId, tenant_id: tenantId, ...basePayload });
       if (error) return toast.error(error.message);
     }
     toast.success("Result saved");
     setDraft((d) => { const n = { ...d }; delete n[entryId]; return n; });
     refetchResults();
   }
+
 
   const selected = regs?.find((r: any) => r.id === regId);
 
