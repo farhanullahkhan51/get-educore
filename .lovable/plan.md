@@ -1,67 +1,51 @@
-## Pre-flight: Bug sweep of phases 1–3
+# Multi-tenant conversion — Step 1 only
 
-Supabase linter reports only pre-existing WARN-level notes on our `SECURITY DEFINER` helpers (`has_role`, `is_super_admin`, `get_user_campus`, `has_campus_access`, `can_manage_fees`, `handle_new_user`, `update_updated_at_column`). These are intentional and required to avoid RLS recursion — safe to leave.
+Scope of this plan is exactly Step 1 from your list: introduce the tenancy tables, seed plan tiers, and create the default tenant + its tenant_settings row. No existing tables are touched, no RLS is changed, no UI is added yet. Steps 2–8 will each get their own plan once Step 1 is verified.
 
-Before starting Phase 4 I will audit and patch:
-1. **Dialog a11y warnings** (console): several `DialogContent` blocks are missing `DialogDescription`/`aria-describedby`. Add descriptions across `admissions`, `students`, `staff`, `classes`, `campuses`, `programs`, `fees` edit dialogs.
-2. **Session robustness**: verify every mutation uses `supabase.auth.getSession()` guard pattern so the app never bounces to `/auth` on transient errors (already applied in most; sweep `fees.tsx` and `admissions.tsx`).
-3. **Fee module sanity**: confirm challan totals recompute correctly when scholarship changes, and that "Record Payment" writes a matching `bank_transactions` row (audit trail). Fix if missing.
-4. **Public inquiry**: confirm `campuses` public SELECT works from the anon key on the deployed preview (already fixed, spot-check).
-5. **Student "grade" auto-fill** on inquiry conversion: verify the field prefills only when empty (already implemented, spot-check).
+## What gets created (single migration)
 
-No schema changes expected for the sweep unless I find a real bug.
+1. `plan_tiers`
+   - `name` (unique), `feature_flags jsonb default '{}'::jsonb`, `student_limit int`, `campus_limit int`
+   - Seeded: **Starter / Pro / Enterprise** with escalating limits and empty feature_flags you can fill later.
 
----
+2. `tenants`
+   - `name`, `slug` (unique, lowercase, url-safe), `custom_domain` (nullable, unique when set), `custom_domain_status` (enum: `pending | verifying | verified | active | failed`, default `pending`), `domain_verification_token` (random text, generated on insert), `plan_tier_id` (fk plan_tiers), `status` (enum: `active | suspended | trial`, default `active`).
 
-## Phase 4 — Academics (large; ship as 4 sub-phases)
+3. `tenant_settings` (1-to-1 with tenants; pk = tenant_id)
+   - `logo_url`, `favicon_url`, `primary_color`, `secondary_color`, `accent_color`, `font`, `letterhead_url`, `signature_url`, `email_sender_name`, `default_currency` (default `PKR`), `default_timezone` (default `Asia/Karachi`).
 
-Because Phase 4 spans two exam systems + internal gradebook + PDF generation + a track-switch workflow, I will ship it in 4 sub-phases, each independently testable. I will stop for confirmation after each sub-phase.
+4. `subscriptions`
+   - `tenant_id` (fk), `plan_tier_id` (fk), `billing_cycle` (enum: `monthly | yearly`), `status` (enum: `active | past_due | canceled | trialing`), `current_period_end timestamptz`.
 
-### 4A. Core Academics
-**Tables (new):** `courses`, `course_assignments` (teacher ↔ section ↔ course), `attendance_records`, `assessments`, `assessment_scores`, `grading_scales`, `report_cards`.
-**Grading scale default:** A+ ≥90, A ≥85, A− ≥80, B+ ≥75, B ≥70, C ≥60, D ≥50, F <50, GPA on 4.0. Configurable per campus.
-**UI:**
-- `/courses` (Admin) — CRUD, code auto-gen (subject initials), assign to program/class.
-- `/teaching` (Teacher) — landing page listing the teacher's assigned sections/courses. From here they enter attendance and gradebook for a specific section+course.
-- **Attendance grid** — one row per enrolled student, one column per date; Present/Absent/Late/Leave; bulk-mark, save, edit. KPI card shows section attendance %.
-- **Gradebook** — per (section, course): create Assessments (Quiz/Assignment/Mid/Final, weight, max marks), enter scores in a spreadsheet grid, auto-computed weighted % and letter grade.
-- **Results publishing** — Campus Admin locks a term, generates internal Report Cards (subject grades + GPA + attendance %), and publishes to the Student portal.
-- **PDF result card** — printable format via a `/print/report-card/:id` route (same 3-copy pattern used for challans).
+All four get `id uuid pk default gen_random_uuid()`, `created_at`, `updated_at` + update trigger, GRANTs, RLS enabled.
 
-### 4B. BISE Board module
-**Tables:** `board_registrations`, `board_subjects`, `board_exam_entries`, `board_results`.
-**UI (under `/board`):**
-- Register a student for Matric/Inter, choose Group (Science/Arts/Commerce/Pre-Med/Pre-Eng), select subjects with theory + practical marks split.
-- Generate/print **Roll Slips** and **Admit Cards**, gated on the student having no outstanding fee challan for the term (join with `fee_challans`).
-- Enter/import board results and store them for certificate generation later.
+## Row-Level Security for these new tables (Step 1 only)
 
-### 4C. Cambridge module
-**Tables:** `cambridge_registrations`, `cambridge_subject_entries`, `cambridge_results`.
-**UI (under `/cambridge`):**
-- Register a student for O/A-Level with candidate number and centre number.
-- Per session (May/June, Oct/Nov) subject entries with syllabus code, tier, and expected grade.
-- Generate/print **Statement of Entry**.
-- Enter/import per-subject results using the A*–G / A*–E grade scale.
+Step 1 has no tenant_id column on existing tables yet, so policies here are minimal and safe:
+- `plan_tiers`: `SELECT` for `authenticated` (everyone can see tier metadata); writes restricted to `super_admin` via existing `has_role`.
+- `tenants`, `tenant_settings`, `subscriptions`: `SELECT/ALL` restricted to `super_admin` for now. In Step 6 we'll introduce the `platform_super_admin` role and rewrite these; in Step 3 we'll add tenant-scoped read for a tenant's own row.
+- `anon` gets no access to any of these tables in Step 1.
 
-### 4D. Track Switch workflow
-**Tables:** `track_switch_requests` (student_id, from_system, to_system, reason, status, requested_by, decided_by, decided_at).
-**UI:** Admissions Officer or Campus Admin raises a request; Super Admin/Campus Admin approves; on approval, update `students.academic_system` while preserving all prior board/Cambridge history rows (never delete). Add a "Track History" panel on the student profile.
+## Seed data
 
-**RLS rules across 4A–4D:**
-- Teachers can read/write attendance and gradebook rows ONLY for sections/courses in their `course_assignments`.
-- Students can read their own attendance, results, and report cards.
-- Campus Admin scoped to `campus_id`; Super Admin unrestricted.
-- Public/anon has no access to any Phase 4 table.
-- Every new public-schema table gets explicit `GRANT`s in the same migration.
+- `plan_tiers`: Starter (500 students / 1 campus), Pro (5,000 / 5), Enterprise (unlimited, stored as NULL).
+- Default `tenants` row: `name = 'EduCore'`, `slug = 'educore'`, `plan_tier_id = Enterprise`, `status = 'active'`. (Say the word if you want a different name/slug — easy one-line change before I run the migration.)
+- Default `tenant_settings` row referencing that tenant, all branding fields left NULL — you'll fill them in after Step 1 as you noted.
 
----
+## Explicitly NOT in this step
 
-## Deliverables sequence
+- No `tenant_id` column added to existing tables (that's Step 2).
+- No changes to existing RLS policies (Step 3).
+- No hostname resolution, theme context, or UI (Steps 4–7).
+- No Platform Super Admin role or console (Step 6).
+- Nothing removed or renamed.
 
-1. Bug-sweep patches (single small edit batch, no migration).
-2. Sub-phase 4A migration → 4A UI → stop for review.
-3. Sub-phase 4B migration → 4B UI → stop.
-4. Sub-phase 4C migration → 4C UI → stop.
-5. Sub-phase 4D migration → 4D UI → stop.
+## Verification before moving to Step 2
 
-**Confirm this plan and I will start with the bug sweep + Sub-phase 4A (Core Academics) in the next message.**
+After the migration runs I'll query and show you:
+- The 3 plan_tiers rows
+- The default tenants row (with its generated verification token)
+- The default tenant_settings row
+- That existing tables/policies/data are untouched (row counts unchanged on `profiles`, `students`, `campuses`).
+
+Once you confirm, I'll produce the Step 2 plan (adding `tenant_id` to every existing table, backfilled to the default tenant id, NOT NULL).
