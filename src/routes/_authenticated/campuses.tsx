@@ -184,12 +184,13 @@ function CampusesPage() {
   );
 }
 
-export function SystemBadge({ system }: { system: "board" | "cambridge" | "both" }) {
+export function SystemBadge({ system }: { system: "board" | "cambridge" | "both" | null | undefined }) {
   const map = {
     board: { label: "Board", cls: "bg-primary/10 text-primary" },
     cambridge: { label: "Cambridge", cls: "bg-accent text-accent-foreground" },
     both: { label: "Board + Cambridge", cls: "bg-secondary text-secondary-foreground" },
   } as const;
-  const m = map[system];
+  const m = (system && map[system]) || { label: "—", cls: "bg-muted text-muted-foreground" };
   return <Badge variant="outline" className={m.cls + " border-transparent"}>{m.label}</Badge>;
 }
+
