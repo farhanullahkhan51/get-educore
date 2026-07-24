@@ -415,15 +415,15 @@ function CertificatesPage() {
                     {c.status === "draft" && <Badge variant="outline">Draft</Badge>}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" onClick={() => setViewing(c)}>View</Button>
-                    <Button variant="ghost" size="sm" onClick={() => printCert(c)}>
+                    <Button variant="ghost" size="icon" title="View" onClick={() => setViewing(c)}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" title="Edit" onClick={() => openEdit(c)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" title="Print" onClick={() => printCert(c)}>
                       <Printer className="h-4 w-4" />
                     </Button>
-                    {c.status !== "revoked" && (
-                      <Button variant="ghost" size="sm" onClick={() => revoke(c)}>
-                        <Ban className="h-4 w-4 text-destructive" />
-                      </Button>
-                    )}
                   </TableCell>
                 </TableRow>
               ))}
