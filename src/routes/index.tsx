@@ -2,6 +2,7 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { GraduationCap, ShieldCheck, LineChart, Users } from "lucide-react";
+import { useTenant } from "@/lib/tenant-context";
 
 export const Route = createFileRoute("/")({
   beforeLoad: async () => {
