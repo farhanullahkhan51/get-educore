@@ -50,7 +50,7 @@ function Landing() {
             The administrative backbone of a modern institution.
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-            EduCore unifies admissions, fees, attendance, results, and certificates across every
+            {brandName} unifies admissions, fees, attendance, results, and certificates across every
             campus — with first-class support for Pakistani Board (BISE) and Cambridge
             O/A-Level tracks.
           </p>
