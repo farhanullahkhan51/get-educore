@@ -440,7 +440,7 @@ function RollSlipTab() {
           <tbody>${subjRows || '<tr><td colspan="4" style="text-align:center">No subjects registered</td></tr>'}</tbody>
         </table>
         <div class="sig"><div>Candidate Signature</div><div>Controller of Examinations</div><div>Principal</div></div>
-        <div class="stamp">Issued ${new Date().toLocaleDateString()} · EduCore</div>
+        <div class="stamp">Issued ${new Date().toLocaleDateString()} · ${getActiveTenantName()}</div>
         </body></html>`);
       w.document.close();
       setTimeout(() => w.print(), 400);

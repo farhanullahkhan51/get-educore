@@ -668,7 +668,7 @@ function printChallan(
     <section class="copy">
       <header>
         <div class="brand">
-          <div class="school">${campus?.name ?? "EduCore"}</div>
+          <div class="school">${campus?.name ?? getActiveTenantName()}</div>
           <div class="sub">${campus?.code ?? ""} · Fee Challan</div>
         </div>
         <div class="copytag">${title}</div>
