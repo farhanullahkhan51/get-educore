@@ -19,7 +19,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Award, Plus, Printer, Ban, Search } from "lucide-react";
+import { Award, Plus, Printer, Ban, Search, Eye, Pencil, Trash2 } from "lucide-react";
 import { useTenantId, getActiveTenantName } from "@/lib/tenant-context";
 
 export const Route = createFileRoute("/_authenticated/certificates")({
