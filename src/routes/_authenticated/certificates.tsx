@@ -91,6 +91,12 @@ function CertificatesPage() {
   const tenantId = useTenantId();
   const [open, setOpen] = useState(false);
   const [viewing, setViewing] = useState<Certificate | null>(null);
+  const [editing, setEditing] = useState<Certificate | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editSerial, setEditSerial] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editBody, setEditBody] = useState("");
+  const [editRemarks, setEditRemarks] = useState("");
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
 
