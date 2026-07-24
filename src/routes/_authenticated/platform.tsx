@@ -379,7 +379,7 @@ function PlansTab() {
       name: String(fd.get("name")),
       student_limit: fd.get("student_limit") ? Number(fd.get("student_limit")) : null,
       campus_limit: fd.get("campus_limit") ? Number(fd.get("campus_limit")) : null,
-      feature_flags: flags,
+      feature_flags: flags as never,
     };
     const res = editing
       ? await supabase.from("plan_tiers").update(payload).eq("id", editing.id)
