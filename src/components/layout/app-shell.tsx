@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useCurrentUser, roleLabel, type AppRole } from "@/hooks/use-current-user";
+import { useTenant } from "@/lib/tenant-context";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import {
