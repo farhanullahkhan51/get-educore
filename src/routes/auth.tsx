@@ -65,16 +65,20 @@ function AuthPage() {
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="relative hidden bg-primary text-primary-foreground lg:flex lg:flex-col lg:justify-between lg:p-12">
         <div className="flex items-center gap-2">
-          <div className="grid h-8 w-8 place-items-center rounded-sm bg-primary-foreground text-primary">
-            <GraduationCap className="h-4 w-4" />
-          </div>
-          <span className="font-serif text-lg font-semibold">EduCore</span>
+          {tenant?.logo_url ? (
+            <img src={tenant.logo_url} alt={`${brandName} logo`} className="h-8 w-8 rounded-sm bg-primary-foreground object-contain" />
+          ) : (
+            <div className="grid h-8 w-8 place-items-center rounded-sm bg-primary-foreground text-primary">
+              <GraduationCap className="h-4 w-4" />
+            </div>
+          )}
+          <span className="font-serif text-lg font-semibold">{brandName}</span>
         </div>
         <div>
           <p className="max-w-md font-serif text-3xl leading-tight">
             "Order, memory, and continuity — the three pillars of any institution worth keeping."
           </p>
-          <p className="mt-4 text-sm opacity-70">EduCore Administrative Handbook</p>
+          <p className="mt-4 text-sm opacity-70">{brandName} Administrative Handbook</p>
         </div>
         <div className="text-xs opacity-70">Institution-grade access · Audited · RLS-enforced</div>
       </div>
