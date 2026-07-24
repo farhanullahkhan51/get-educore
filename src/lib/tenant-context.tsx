@@ -89,6 +89,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   // Apply branding: CSS variables, page title, favicon
   useEffect(() => {
     if (!tenant || typeof document === "undefined") return;
+    cachedTenant = tenant;
 
     const root = document.documentElement;
     const primary = hexToRgbTriplet(tenant.primary_color);
