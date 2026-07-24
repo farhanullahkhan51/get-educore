@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { loadGoogleFont } from "@/lib/google-fonts";
+
 
 export type TenantBranding = {
   id: string;
@@ -118,8 +120,10 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       root.style.removeProperty("--accent");
     }
     if (tenant.font) {
-      root.style.setProperty("--font-sans", tenant.font);
+      loadGoogleFont(tenant.font);
+      root.style.setProperty("--font-sans", `"${tenant.font}", ui-sans-serif, system-ui, sans-serif`);
     }
+
 
     if (tenant.name) {
       document.title = `${tenant.name} — Academic ERP`;
