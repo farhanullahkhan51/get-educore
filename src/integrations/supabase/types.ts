@@ -858,6 +858,94 @@ export type Database = {
           },
         ]
       }
+      certificates: {
+        Row: {
+          body: string
+          campus_id: string
+          created_at: string
+          id: string
+          issue_date: string
+          issued_by: string | null
+          recipient_name: string
+          recipient_ref: string | null
+          remarks: string | null
+          revoke_reason: string | null
+          revoked_at: string | null
+          serial_no: string
+          staff_id: string | null
+          status: Database["public"]["Enums"]["certificate_status"]
+          student_id: string | null
+          tenant_id: string
+          title: string
+          type: Database["public"]["Enums"]["certificate_type"]
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          campus_id: string
+          created_at?: string
+          id?: string
+          issue_date?: string
+          issued_by?: string | null
+          recipient_name: string
+          recipient_ref?: string | null
+          remarks?: string | null
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          serial_no: string
+          staff_id?: string | null
+          status?: Database["public"]["Enums"]["certificate_status"]
+          student_id?: string | null
+          tenant_id: string
+          title: string
+          type: Database["public"]["Enums"]["certificate_type"]
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          campus_id?: string
+          created_at?: string
+          id?: string
+          issue_date?: string
+          issued_by?: string | null
+          recipient_name?: string
+          recipient_ref?: string | null
+          remarks?: string | null
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          serial_no?: string
+          staff_id?: string | null
+          status?: Database["public"]["Enums"]["certificate_status"]
+          student_id?: string | null
+          tenant_id?: string
+          title?: string
+          type?: Database["public"]["Enums"]["certificate_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificates_campus_id_fkey"
+            columns: ["campus_id"]
+            isOneToOne: false
+            referencedRelation: "campuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificates_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificates_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classes: {
         Row: {
           academic_system: Database["public"]["Enums"]["academic_system"]
@@ -2473,6 +2561,18 @@ export type Database = {
         | "checkpoint"
         | "primary"
       cambridge_session: "feb_march" | "may_june" | "oct_nov"
+      certificate_status: "draft" | "issued" | "revoked"
+      certificate_type:
+        | "character"
+        | "bonafide"
+        | "school_leaving"
+        | "transfer"
+        | "provisional"
+        | "passing"
+        | "participation"
+        | "merit"
+        | "experience"
+        | "custom"
       challan_status: "unpaid" | "partial" | "paid" | "waived" | "overdue"
       custom_domain_status:
         | "pending"
@@ -2667,6 +2767,19 @@ export const Constants = {
         "primary",
       ],
       cambridge_session: ["feb_march", "may_june", "oct_nov"],
+      certificate_status: ["draft", "issued", "revoked"],
+      certificate_type: [
+        "character",
+        "bonafide",
+        "school_leaving",
+        "transfer",
+        "provisional",
+        "passing",
+        "participation",
+        "merit",
+        "experience",
+        "custom",
+      ],
       challan_status: ["unpaid", "partial", "paid", "waived", "overdue"],
       custom_domain_status: [
         "pending",
