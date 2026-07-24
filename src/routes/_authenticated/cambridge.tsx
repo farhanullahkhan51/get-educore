@@ -266,9 +266,12 @@ function EntriesDialog({ reg, onClose }: { reg: Registration; onClose: () => voi
   });
   const [row, setRow] = useState<Partial<Entry>>({ is_carry_forward: false });
 
+  const tenantId = useTenantId();
   async function add() {
     if (!row.syllabus_code || !row.subject_name) return toast.error("Syllabus code and name required");
+    if (!tenantId) return toast.error("Tenant not resolved");
     const { error } = await supabase.from("cambridge_subject_entries").insert({
+      tenant_id: tenantId,
       registration_id: reg.id,
       syllabus_code: row.syllabus_code, subject_name: row.subject_name,
       components: row.components ?? null, tier: row.tier ?? null,
