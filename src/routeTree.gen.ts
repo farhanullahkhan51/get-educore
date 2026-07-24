@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
+import { Route as AuthenticatedTrackSwitchRouteImport } from './routes/_authenticated/track-switch'
 import { Route as AuthenticatedStudentsRouteImport } from './routes/_authenticated/students'
 import { Route as AuthenticatedStaffRouteImport } from './routes/_authenticated/staff'
 import { Route as AuthenticatedResultsRouteImport } from './routes/_authenticated/results'
@@ -24,6 +25,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCoursesRouteImport } from './routes/_authenticated/courses'
 import { Route as AuthenticatedClassesRouteImport } from './routes/_authenticated/classes'
 import { Route as AuthenticatedCampusesRouteImport } from './routes/_authenticated/campuses'
+import { Route as AuthenticatedCambridgeRouteImport } from './routes/_authenticated/cambridge'
 import { Route as AuthenticatedBoardRouteImport } from './routes/_authenticated/board'
 import { Route as AuthenticatedAdmissionsRouteImport } from './routes/_authenticated/admissions'
 import { Route as AuthenticatedAcademicsRouteImport } from './routes/_authenticated/academics'
@@ -52,6 +54,12 @@ const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedTrackSwitchRoute =
+  AuthenticatedTrackSwitchRouteImport.update({
+    id: '/track-switch',
+    path: '/track-switch',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedStudentsRoute = AuthenticatedStudentsRouteImport.update({
   id: '/students',
   path: '/students',
@@ -102,6 +110,11 @@ const AuthenticatedCampusesRoute = AuthenticatedCampusesRouteImport.update({
   path: '/campuses',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCambridgeRoute = AuthenticatedCambridgeRouteImport.update({
+  id: '/cambridge',
+  path: '/cambridge',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedBoardRoute = AuthenticatedBoardRouteImport.update({
   id: '/board',
   path: '/board',
@@ -125,6 +138,7 @@ export interface FileRoutesByFullPath {
   '/academics': typeof AuthenticatedAcademicsRoute
   '/admissions': typeof AuthenticatedAdmissionsRoute
   '/board': typeof AuthenticatedBoardRoute
+  '/cambridge': typeof AuthenticatedCambridgeRoute
   '/campuses': typeof AuthenticatedCampusesRoute
   '/classes': typeof AuthenticatedClassesRoute
   '/courses': typeof AuthenticatedCoursesRoute
@@ -135,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/results': typeof AuthenticatedResultsRoute
   '/staff': typeof AuthenticatedStaffRoute
   '/students': typeof AuthenticatedStudentsRoute
+  '/track-switch': typeof AuthenticatedTrackSwitchRoute
   '/users': typeof AuthenticatedUsersRoute
 }
 export interface FileRoutesByTo {
@@ -144,6 +159,7 @@ export interface FileRoutesByTo {
   '/academics': typeof AuthenticatedAcademicsRoute
   '/admissions': typeof AuthenticatedAdmissionsRoute
   '/board': typeof AuthenticatedBoardRoute
+  '/cambridge': typeof AuthenticatedCambridgeRoute
   '/campuses': typeof AuthenticatedCampusesRoute
   '/classes': typeof AuthenticatedClassesRoute
   '/courses': typeof AuthenticatedCoursesRoute
@@ -154,6 +170,7 @@ export interface FileRoutesByTo {
   '/results': typeof AuthenticatedResultsRoute
   '/staff': typeof AuthenticatedStaffRoute
   '/students': typeof AuthenticatedStudentsRoute
+  '/track-switch': typeof AuthenticatedTrackSwitchRoute
   '/users': typeof AuthenticatedUsersRoute
 }
 export interface FileRoutesById {
@@ -165,6 +182,7 @@ export interface FileRoutesById {
   '/_authenticated/academics': typeof AuthenticatedAcademicsRoute
   '/_authenticated/admissions': typeof AuthenticatedAdmissionsRoute
   '/_authenticated/board': typeof AuthenticatedBoardRoute
+  '/_authenticated/cambridge': typeof AuthenticatedCambridgeRoute
   '/_authenticated/campuses': typeof AuthenticatedCampusesRoute
   '/_authenticated/classes': typeof AuthenticatedClassesRoute
   '/_authenticated/courses': typeof AuthenticatedCoursesRoute
@@ -175,6 +193,7 @@ export interface FileRoutesById {
   '/_authenticated/results': typeof AuthenticatedResultsRoute
   '/_authenticated/staff': typeof AuthenticatedStaffRoute
   '/_authenticated/students': typeof AuthenticatedStudentsRoute
+  '/_authenticated/track-switch': typeof AuthenticatedTrackSwitchRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
 }
 export interface FileRouteTypes {
@@ -186,6 +205,7 @@ export interface FileRouteTypes {
     | '/academics'
     | '/admissions'
     | '/board'
+    | '/cambridge'
     | '/campuses'
     | '/classes'
     | '/courses'
@@ -196,6 +216,7 @@ export interface FileRouteTypes {
     | '/results'
     | '/staff'
     | '/students'
+    | '/track-switch'
     | '/users'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -205,6 +226,7 @@ export interface FileRouteTypes {
     | '/academics'
     | '/admissions'
     | '/board'
+    | '/cambridge'
     | '/campuses'
     | '/classes'
     | '/courses'
@@ -215,6 +237,7 @@ export interface FileRouteTypes {
     | '/results'
     | '/staff'
     | '/students'
+    | '/track-switch'
     | '/users'
   id:
     | '__root__'
@@ -225,6 +248,7 @@ export interface FileRouteTypes {
     | '/_authenticated/academics'
     | '/_authenticated/admissions'
     | '/_authenticated/board'
+    | '/_authenticated/cambridge'
     | '/_authenticated/campuses'
     | '/_authenticated/classes'
     | '/_authenticated/courses'
@@ -235,6 +259,7 @@ export interface FileRouteTypes {
     | '/_authenticated/results'
     | '/_authenticated/staff'
     | '/_authenticated/students'
+    | '/_authenticated/track-switch'
     | '/_authenticated/users'
   fileRoutesById: FileRoutesById
 }
@@ -280,6 +305,13 @@ declare module '@tanstack/react-router' {
       path: '/users'
       fullPath: '/users'
       preLoaderRoute: typeof AuthenticatedUsersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/track-switch': {
+      id: '/_authenticated/track-switch'
+      path: '/track-switch'
+      fullPath: '/track-switch'
+      preLoaderRoute: typeof AuthenticatedTrackSwitchRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/students': {
@@ -352,6 +384,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCampusesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/cambridge': {
+      id: '/_authenticated/cambridge'
+      path: '/cambridge'
+      fullPath: '/cambridge'
+      preLoaderRoute: typeof AuthenticatedCambridgeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/board': {
       id: '/_authenticated/board'
       path: '/board'
@@ -380,6 +419,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAcademicsRoute: typeof AuthenticatedAcademicsRoute
   AuthenticatedAdmissionsRoute: typeof AuthenticatedAdmissionsRoute
   AuthenticatedBoardRoute: typeof AuthenticatedBoardRoute
+  AuthenticatedCambridgeRoute: typeof AuthenticatedCambridgeRoute
   AuthenticatedCampusesRoute: typeof AuthenticatedCampusesRoute
   AuthenticatedClassesRoute: typeof AuthenticatedClassesRoute
   AuthenticatedCoursesRoute: typeof AuthenticatedCoursesRoute
@@ -390,6 +430,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedResultsRoute: typeof AuthenticatedResultsRoute
   AuthenticatedStaffRoute: typeof AuthenticatedStaffRoute
   AuthenticatedStudentsRoute: typeof AuthenticatedStudentsRoute
+  AuthenticatedTrackSwitchRoute: typeof AuthenticatedTrackSwitchRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
 }
 
@@ -397,6 +438,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAcademicsRoute: AuthenticatedAcademicsRoute,
   AuthenticatedAdmissionsRoute: AuthenticatedAdmissionsRoute,
   AuthenticatedBoardRoute: AuthenticatedBoardRoute,
+  AuthenticatedCambridgeRoute: AuthenticatedCambridgeRoute,
   AuthenticatedCampusesRoute: AuthenticatedCampusesRoute,
   AuthenticatedClassesRoute: AuthenticatedClassesRoute,
   AuthenticatedCoursesRoute: AuthenticatedCoursesRoute,
@@ -407,6 +449,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedResultsRoute: AuthenticatedResultsRoute,
   AuthenticatedStaffRoute: AuthenticatedStaffRoute,
   AuthenticatedStudentsRoute: AuthenticatedStudentsRoute,
+  AuthenticatedTrackSwitchRoute: AuthenticatedTrackSwitchRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
 }
 
