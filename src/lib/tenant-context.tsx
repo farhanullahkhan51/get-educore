@@ -52,19 +52,15 @@ export function getActiveTenantName(fallback = "EduCore"): string {
 }
 
 /**
- * Convert a hex color like "#1a2b3c" to "26 43 60" (space-separated RGB)
- * so it can be assigned to an HSL/RGB CSS custom property consumed by Tailwind tokens.
+ * Validate hex like "#1a2b3c" or "#abc". Returns normalized 6-digit hex or null.
  */
-function hexToRgbTriplet(hex: string | null | undefined): string | null {
+function normalizeHex(hex: string | null | undefined): string | null {
   if (!hex) return null;
   const clean = hex.replace("#", "").trim();
   if (![3, 6].includes(clean.length)) return null;
   const full = clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean;
-  const r = parseInt(full.slice(0, 2), 16);
-  const g = parseInt(full.slice(2, 4), 16);
-  const b = parseInt(full.slice(4, 6), 16);
-  if ([r, g, b].some(Number.isNaN)) return null;
-  return `${r} ${g} ${b}`;
+  if (!/^[0-9a-fA-F]{6}$/.test(full)) return null;
+  return `#${full.toLowerCase()}`;
 }
 
 export function TenantProvider({ children }: { children: ReactNode }) {
@@ -92,14 +88,38 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     cachedTenant = tenant;
 
     const root = document.documentElement;
-    const primary = hexToRgbTriplet(tenant.primary_color);
-    const secondary = hexToRgbTriplet(tenant.secondary_color);
-    const accent = hexToRgbTriplet(tenant.accent_color);
+    const primary = normalizeHex(tenant.primary_color);
+    const secondary = normalizeHex(tenant.secondary_color);
+    const accent = normalizeHex(tenant.accent_color);
 
-    if (primary) root.style.setProperty("--tenant-primary", primary);
-    if (secondary) root.style.setProperty("--tenant-secondary", secondary);
-    if (accent) root.style.setProperty("--tenant-accent", accent);
-    if (tenant.font) root.style.setProperty("--tenant-font", tenant.font);
+    // Override core theme tokens directly with hex — CSS custom properties
+    // accept any valid color, so hex overrides the base oklch values.
+    if (primary) {
+      root.style.setProperty("--primary", primary);
+      root.style.setProperty("--ring", primary);
+      root.style.setProperty("--sidebar", primary);
+      root.style.setProperty("--sidebar-primary-foreground", primary);
+    } else {
+      root.style.removeProperty("--primary");
+      root.style.removeProperty("--ring");
+      root.style.removeProperty("--sidebar");
+      root.style.removeProperty("--sidebar-primary-foreground");
+    }
+    if (secondary) {
+      root.style.setProperty("--secondary", secondary);
+      root.style.setProperty("--sidebar-accent", secondary);
+    } else {
+      root.style.removeProperty("--secondary");
+      root.style.removeProperty("--sidebar-accent");
+    }
+    if (accent) {
+      root.style.setProperty("--accent", accent);
+    } else {
+      root.style.removeProperty("--accent");
+    }
+    if (tenant.font) {
+      root.style.setProperty("--font-sans", tenant.font);
+    }
 
     if (tenant.name) {
       document.title = `${tenant.name} — Academic ERP`;
@@ -115,6 +135,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       link.href = tenant.favicon_url;
     }
   }, [tenant]);
+
 
   const value = useMemo(
     () => ({ tenant, hostname, isLoading }),
