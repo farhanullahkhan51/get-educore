@@ -577,6 +577,60 @@ function CertificatesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit dialog */}
+      <Dialog open={!!editing} onOpenChange={(o) => { if (!o) setEditing(null); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit certificate</DialogTitle>
+            <DialogDescription>
+              Update the certificate content. Use Revoke to mark it invalid, or Delete to permanently remove it.
+            </DialogDescription>
+          </DialogHeader>
+          {editing && (
+            <div className="space-y-3 py-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Title</Label>
+                  <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Issue date</Label>
+                  <Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Serial number</Label>
+                <Input value={editSerial} onChange={(e) => setEditSerial(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Body</Label>
+                <Textarea rows={10} value={editBody} onChange={(e) => setEditBody(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Remarks</Label>
+                <Input value={editRemarks} onChange={(e) => setEditRemarks(e.target.value)} />
+              </div>
+            </div>
+          )}
+          <DialogFooter className="flex-wrap gap-2 sm:justify-between">
+            <div className="flex gap-2">
+              <Button variant="destructive" onClick={deleteCert}>
+                <Trash2 className="mr-1 h-4 w-4" /> Delete
+              </Button>
+              {editing?.status !== "revoked" && (
+                <Button variant="outline" onClick={() => editing && revoke(editing)}>
+                  <Ban className="mr-1 h-4 w-4" /> Revoke
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
+              <Button onClick={saveEdit}>Save changes</Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
