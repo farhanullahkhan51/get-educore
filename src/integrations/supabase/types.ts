@@ -1136,6 +1136,36 @@ export type Database = {
           },
         ]
       }
+      plan_tiers: {
+        Row: {
+          campus_limit: number | null
+          created_at: string
+          feature_flags: Json
+          id: string
+          name: string
+          student_limit: number | null
+          updated_at: string
+        }
+        Insert: {
+          campus_limit?: number | null
+          created_at?: string
+          feature_flags?: Json
+          id?: string
+          name: string
+          student_limit?: number | null
+          updated_at?: string
+        }
+        Update: {
+          campus_limit?: number | null
+          created_at?: string
+          feature_flags?: Json
+          id?: string
+          name?: string
+          student_limit?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1654,6 +1684,160 @@ export type Database = {
           },
         ]
       }
+      subscriptions: {
+        Row: {
+          billing_cycle: Database["public"]["Enums"]["billing_cycle"]
+          created_at: string
+          current_period_end: string | null
+          id: string
+          plan_tier_id: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          billing_cycle?: Database["public"]["Enums"]["billing_cycle"]
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          plan_tier_id: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          billing_cycle?: Database["public"]["Enums"]["billing_cycle"]
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          plan_tier_id?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_plan_tier_id_fkey"
+            columns: ["plan_tier_id"]
+            isOneToOne: false
+            referencedRelation: "plan_tiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_settings: {
+        Row: {
+          accent_color: string | null
+          created_at: string
+          default_currency: string
+          default_timezone: string
+          email_sender_name: string | null
+          favicon_url: string | null
+          font: string | null
+          letterhead_url: string | null
+          logo_url: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          signature_url: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          accent_color?: string | null
+          created_at?: string
+          default_currency?: string
+          default_timezone?: string
+          email_sender_name?: string | null
+          favicon_url?: string | null
+          font?: string | null
+          letterhead_url?: string | null
+          logo_url?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          signature_url?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          accent_color?: string | null
+          created_at?: string
+          default_currency?: string
+          default_timezone?: string
+          email_sender_name?: string | null
+          favicon_url?: string | null
+          font?: string | null
+          letterhead_url?: string | null
+          logo_url?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          signature_url?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_settings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenants: {
+        Row: {
+          created_at: string
+          custom_domain: string | null
+          custom_domain_status: Database["public"]["Enums"]["custom_domain_status"]
+          domain_verification_token: string
+          id: string
+          name: string
+          plan_tier_id: string | null
+          slug: string
+          status: Database["public"]["Enums"]["tenant_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          custom_domain?: string | null
+          custom_domain_status?: Database["public"]["Enums"]["custom_domain_status"]
+          domain_verification_token?: string
+          id?: string
+          name: string
+          plan_tier_id?: string | null
+          slug: string
+          status?: Database["public"]["Enums"]["tenant_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          custom_domain?: string | null
+          custom_domain_status?: Database["public"]["Enums"]["custom_domain_status"]
+          domain_verification_token?: string
+          id?: string
+          name?: string
+          plan_tier_id?: string | null
+          slug?: string
+          status?: Database["public"]["Enums"]["tenant_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenants_plan_tier_id_fkey"
+            columns: ["plan_tier_id"]
+            isOneToOne: false
+            referencedRelation: "plan_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           campus_id: string | null
@@ -1742,6 +1926,7 @@ export type Database = {
         | "project"
         | "other"
       attendance_status: "present" | "absent" | "late" | "leave"
+      billing_cycle: "monthly" | "yearly"
       board_group:
         | "science"
         | "arts"
@@ -1759,6 +1944,12 @@ export type Database = {
         | "cancelled"
       board_result_status: "pass" | "fail" | "absent" | "withheld" | "pending"
       challan_status: "unpaid" | "partial" | "paid" | "waived" | "overdue"
+      custom_domain_status:
+        | "pending"
+        | "verifying"
+        | "verified"
+        | "active"
+        | "failed"
       fee_category:
         | "tuition"
         | "admission"
@@ -1771,6 +1962,8 @@ export type Database = {
       report_card_status: "draft" | "published" | "locked"
       scholarship_status: "active" | "expired" | "revoked"
       scholarship_type: "percentage" | "fixed"
+      subscription_status: "active" | "past_due" | "canceled" | "trialing"
+      tenant_status: "active" | "suspended" | "trial"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1916,6 +2109,7 @@ export const Constants = {
         "other",
       ],
       attendance_status: ["present", "absent", "late", "leave"],
+      billing_cycle: ["monthly", "yearly"],
       board_group: [
         "science",
         "arts",
@@ -1935,6 +2129,13 @@ export const Constants = {
       ],
       board_result_status: ["pass", "fail", "absent", "withheld", "pending"],
       challan_status: ["unpaid", "partial", "paid", "waived", "overdue"],
+      custom_domain_status: [
+        "pending",
+        "verifying",
+        "verified",
+        "active",
+        "failed",
+      ],
       fee_category: [
         "tuition",
         "admission",
@@ -1948,6 +2149,8 @@ export const Constants = {
       report_card_status: ["draft", "published", "locked"],
       scholarship_status: ["active", "expired", "revoked"],
       scholarship_type: ["percentage", "fixed"],
+      subscription_status: ["active", "past_due", "canceled", "trialing"],
+      tenant_status: ["active", "suspended", "trial"],
     },
   },
 } as const
