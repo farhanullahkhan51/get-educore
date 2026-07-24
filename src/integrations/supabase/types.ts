@@ -642,6 +642,175 @@ export type Database = {
           },
         ]
       }
+      cambridge_registrations: {
+        Row: {
+          campus_id: string
+          candidate_number: string | null
+          centre_number: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          level: Database["public"]["Enums"]["cambridge_level"]
+          notes: string | null
+          session: Database["public"]["Enums"]["cambridge_session"]
+          session_year: string
+          status: string
+          student_id: string
+          submitted_at: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          campus_id: string
+          candidate_number?: string | null
+          centre_number?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          level: Database["public"]["Enums"]["cambridge_level"]
+          notes?: string | null
+          session: Database["public"]["Enums"]["cambridge_session"]
+          session_year: string
+          status?: string
+          student_id: string
+          submitted_at?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          campus_id?: string
+          candidate_number?: string | null
+          centre_number?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          level?: Database["public"]["Enums"]["cambridge_level"]
+          notes?: string | null
+          session?: Database["public"]["Enums"]["cambridge_session"]
+          session_year?: string
+          status?: string
+          student_id?: string
+          submitted_at?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cambridge_registrations_campus_id_fkey"
+            columns: ["campus_id"]
+            isOneToOne: false
+            referencedRelation: "campuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cambridge_registrations_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cambridge_results: {
+        Row: {
+          created_at: string
+          entry_id: string
+          grade: string | null
+          id: string
+          imported_at: string | null
+          percentage: number | null
+          remarks: string | null
+          status: string
+          tenant_id: string
+          ums: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entry_id: string
+          grade?: string | null
+          id?: string
+          imported_at?: string | null
+          percentage?: number | null
+          remarks?: string | null
+          status?: string
+          tenant_id: string
+          ums?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entry_id?: string
+          grade?: string | null
+          id?: string
+          imported_at?: string | null
+          percentage?: number | null
+          remarks?: string | null
+          status?: string
+          tenant_id?: string
+          ums?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cambridge_results_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "cambridge_subject_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cambridge_subject_entries: {
+        Row: {
+          components: string | null
+          created_at: string
+          display_order: number
+          id: string
+          is_carry_forward: boolean
+          registration_id: string
+          subject_name: string
+          syllabus_code: string
+          tenant_id: string
+          tier: string | null
+          updated_at: string
+        }
+        Insert: {
+          components?: string | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_carry_forward?: boolean
+          registration_id: string
+          subject_name: string
+          syllabus_code: string
+          tenant_id: string
+          tier?: string | null
+          updated_at?: string
+        }
+        Update: {
+          components?: string | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_carry_forward?: boolean
+          registration_id?: string
+          subject_name?: string
+          syllabus_code?: string
+          tenant_id?: string
+          tier?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cambridge_subject_entries_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "cambridge_registrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campuses: {
         Row: {
           academic_system: Database["public"]["Enums"]["academic_system"]
@@ -2099,6 +2268,66 @@ export type Database = {
           },
         ]
       }
+      track_switches: {
+        Row: {
+          approved_by: string | null
+          campus_id: string
+          created_at: string
+          created_by: string | null
+          effective_date: string
+          from_system: string
+          id: string
+          reason: string | null
+          student_id: string
+          tenant_id: string
+          to_system: string
+          updated_at: string
+        }
+        Insert: {
+          approved_by?: string | null
+          campus_id: string
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          from_system: string
+          id?: string
+          reason?: string | null
+          student_id: string
+          tenant_id: string
+          to_system: string
+          updated_at?: string
+        }
+        Update: {
+          approved_by?: string | null
+          campus_id?: string
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          from_system?: string
+          id?: string
+          reason?: string | null
+          student_id?: string
+          tenant_id?: string
+          to_system?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "track_switches_campus_id_fkey"
+            columns: ["campus_id"]
+            isOneToOne: false
+            referencedRelation: "campuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "track_switches_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           campus_id: string | null
@@ -2236,6 +2465,14 @@ export type Database = {
         | "rejected"
         | "cancelled"
       board_result_status: "pass" | "fail" | "absent" | "withheld" | "pending"
+      cambridge_level:
+        | "igcse"
+        | "o_level"
+        | "as_level"
+        | "a_level"
+        | "checkpoint"
+        | "primary"
+      cambridge_session: "feb_march" | "may_june" | "oct_nov"
       challan_status: "unpaid" | "partial" | "paid" | "waived" | "overdue"
       custom_domain_status:
         | "pending"
@@ -2421,6 +2658,15 @@ export const Constants = {
         "cancelled",
       ],
       board_result_status: ["pass", "fail", "absent", "withheld", "pending"],
+      cambridge_level: [
+        "igcse",
+        "o_level",
+        "as_level",
+        "a_level",
+        "checkpoint",
+        "primary",
+      ],
+      cambridge_session: ["feb_march", "may_june", "oct_nov"],
       challan_status: ["unpaid", "partial", "paid", "waived", "overdue"],
       custom_domain_status: [
         "pending",
