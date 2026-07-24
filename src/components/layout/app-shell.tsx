@@ -45,6 +45,8 @@ const NAV: NavItem[] = [
   { to: "/academics", label: "Academics", icon: ClipboardCheck, roles: ["super_admin", "campus_admin", "teacher"] },
   { to: "/results", label: "Results", icon: Award, roles: ["super_admin", "campus_admin", "teacher"] },
   { to: "/board", label: "BISE Board", icon: Landmark, roles: ["super_admin", "campus_admin", "admissions_officer"] },
+  { to: "/cambridge", label: "Cambridge", icon: BookMarked, roles: ["super_admin", "campus_admin", "admissions_officer"] },
+  { to: "/track-switch", label: "Track Switch", icon: Layers, roles: ["super_admin", "campus_admin"] },
   { to: "/fees", label: "Fees & Finance", icon: Wallet, roles: ["super_admin", "campus_admin", "finance_officer"] },
   { to: "/users", label: "Users & Roles", icon: UserCog, roles: ["super_admin"] },
   { to: "/platform", label: "Platform Admin", icon: ShieldCheck, roles: ["super_admin"] },
