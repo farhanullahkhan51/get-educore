@@ -112,7 +112,7 @@ function CertificatesPage() {
   const { data: students } = useQuery({
     queryKey: ["students-for-cert"],
     queryFn: async () => (await supabase.from("students")
-      .select("id,first_name,last_name,student_code,campus_id,grade_level,date_of_birth,guardian_name").order("first_name")).data ?? [],
+      .select("id,first_name,last_name,student_code,campus_id,grade,date_of_birth,guardian_name").order("first_name")).data ?? [],
   });
   const { data: staff } = useQuery({
     queryKey: ["staff-for-cert"],
@@ -164,7 +164,7 @@ function CertificatesPage() {
         selectedStudent.student_code,
         {
           campus: selectedCampus?.name,
-          grade: selectedStudent.grade_level ?? undefined,
+          grade: selectedStudent.grade ?? undefined,
           dob: selectedStudent.date_of_birth ?? undefined,
           date: issueDate,
         }));
