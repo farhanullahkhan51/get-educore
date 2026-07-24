@@ -117,7 +117,7 @@ function CertificatesPage() {
   const { data: staff } = useQuery({
     queryKey: ["staff-for-cert"],
     queryFn: async () => (await supabase.from("staff")
-      .select("id,full_name,employee_code,campus_id,designation").order("full_name")).data ?? [],
+      .select("id,first_name,last_name,staff_code,campus_id,designation").order("first_name")).data ?? [],
   });
   const { data: certificates, refetch } = useQuery({
     queryKey: ["certificates"],
@@ -170,8 +170,8 @@ function CertificatesPage() {
         }));
     } else if (isStaffCert && selectedStaff) {
       setBody(defaultBody(type,
-        selectedStaff.full_name,
-        selectedStaff.employee_code,
+        `${selectedStaff.first_name} ${selectedStaff.last_name}`,
+        selectedStaff.staff_code,
         { campus: selectedCampus?.name, date: issueDate }));
     } else if (type === "custom") {
       setBody("");
@@ -190,12 +190,12 @@ function CertificatesPage() {
     const recipient_name = isStudentCert && selectedStudent
       ? `${selectedStudent.first_name} ${selectedStudent.last_name}`
       : isStaffCert && selectedStaff
-      ? selectedStaff.full_name
+      ? `${selectedStaff.first_name} ${selectedStaff.last_name}`
       : "";
     const recipient_ref = isStudentCert
       ? selectedStudent?.student_code ?? null
       : isStaffCert
-      ? selectedStaff?.employee_code ?? null
+      ? selectedStaff?.staff_code ?? null
       : null;
 
     if (!recipient_name) return toast.error("Recipient is required");
@@ -443,7 +443,7 @@ function CertificatesPage() {
                   <SelectContent>
                     {staff?.filter((s) => !campusId || s.campus_id === campusId).map((s) => (
                       <SelectItem key={s.id} value={s.id}>
-                        {s.full_name} · {s.employee_code}{s.designation ? ` · ${s.designation}` : ""}
+                        {s.first_name} {s.last_name} · {s.staff_code}{s.designation ? ` · ${s.designation}` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
