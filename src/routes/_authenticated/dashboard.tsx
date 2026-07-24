@@ -26,6 +26,7 @@ function Kpi({ label, value, icon: Icon }: { label: string; value: string | numb
 
 function Dashboard() {
   const { data: user } = useCurrentUser();
+  if (user?.primaryRole === "student") return <Navigate to="/portal" replace />;
 
   const { data: counts } = useQuery({
     queryKey: ["dash-counts", user?.primaryRole, user?.campusId],
