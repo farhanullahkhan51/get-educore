@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useCurrentUser, roleLabel } from "@/hooks/use-current-user";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +26,7 @@ function Kpi({ label, value, icon: Icon }: { label: string; value: string | numb
 
 function Dashboard() {
   const { data: user } = useCurrentUser();
+  if (user?.primaryRole === "student") return <Navigate to="/portal" replace />;
 
   const { data: counts } = useQuery({
     queryKey: ["dash-counts", user?.primaryRole, user?.campusId],

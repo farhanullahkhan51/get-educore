@@ -19,7 +19,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Award, Plus, Printer, Ban, Search } from "lucide-react";
+import { Award, Plus, Printer, Ban, Search, Eye, Pencil, Trash2 } from "lucide-react";
 import { useTenantId, getActiveTenantName } from "@/lib/tenant-context";
 
 export const Route = createFileRoute("/_authenticated/certificates")({
@@ -91,6 +91,12 @@ function CertificatesPage() {
   const tenantId = useTenantId();
   const [open, setOpen] = useState(false);
   const [viewing, setViewing] = useState<Certificate | null>(null);
+  const [editing, setEditing] = useState<Certificate | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editSerial, setEditSerial] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editBody, setEditBody] = useState("");
+  const [editRemarks, setEditRemarks] = useState("");
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
 
@@ -233,6 +239,43 @@ function CertificatesPage() {
     refetch();
   }
 
+  function openEdit(c: Certificate) {
+    setEditing(c);
+    setEditTitle(c.title);
+    setEditSerial(c.serial_no);
+    setEditDate(c.issue_date);
+    setEditBody(c.body);
+    setEditRemarks(c.remarks ?? "");
+  }
+
+  async function saveEdit() {
+    if (!editing) return;
+    if (!editTitle.trim() || !editSerial.trim() || !editBody.trim()) {
+      return toast.error("Title, serial and body are required");
+    }
+    const { error } = await supabase.from("certificates").update({
+      title: editTitle.trim(),
+      serial_no: editSerial.trim(),
+      issue_date: editDate,
+      body: editBody.trim(),
+      remarks: editRemarks.trim() || null,
+    }).eq("id", editing.id);
+    if (error) return toast.error(error.message);
+    toast.success("Certificate updated");
+    setEditing(null);
+    refetch();
+  }
+
+  async function deleteCert() {
+    if (!editing) return;
+    if (!window.confirm(`Permanently delete certificate ${editing.serial_no}? This cannot be undone.`)) return;
+    const { error } = await supabase.from("certificates").delete().eq("id", editing.id);
+    if (error) return toast.error(error.message);
+    toast.success("Certificate deleted");
+    setEditing(null);
+    refetch();
+  }
+
   function printCert(c: Certificate) {
     const campus = campuses?.find((x) => x.id === c.campus_id);
     const w = window.open("", "_blank", "width=900,height=1100");
@@ -372,15 +415,15 @@ function CertificatesPage() {
                     {c.status === "draft" && <Badge variant="outline">Draft</Badge>}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" onClick={() => setViewing(c)}>View</Button>
-                    <Button variant="ghost" size="sm" onClick={() => printCert(c)}>
+                    <Button variant="ghost" size="icon" title="View" onClick={() => setViewing(c)}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" title="Edit" onClick={() => openEdit(c)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" title="Print" onClick={() => printCert(c)}>
                       <Printer className="h-4 w-4" />
                     </Button>
-                    {c.status !== "revoked" && (
-                      <Button variant="ghost" size="sm" onClick={() => revoke(c)}>
-                        <Ban className="h-4 w-4 text-destructive" />
-                      </Button>
-                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -531,6 +574,60 @@ function CertificatesPage() {
                 <Printer className="mr-1 h-4 w-4" /> Print
               </Button>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit dialog */}
+      <Dialog open={!!editing} onOpenChange={(o) => { if (!o) setEditing(null); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit certificate</DialogTitle>
+            <DialogDescription>
+              Update the certificate content. Use Revoke to mark it invalid, or Delete to permanently remove it.
+            </DialogDescription>
+          </DialogHeader>
+          {editing && (
+            <div className="space-y-3 py-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Title</Label>
+                  <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Issue date</Label>
+                  <Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Serial number</Label>
+                <Input value={editSerial} onChange={(e) => setEditSerial(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Body</Label>
+                <Textarea rows={10} value={editBody} onChange={(e) => setEditBody(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Remarks</Label>
+                <Input value={editRemarks} onChange={(e) => setEditRemarks(e.target.value)} />
+              </div>
+            </div>
+          )}
+          <DialogFooter className="flex-wrap gap-2 sm:justify-between">
+            <div className="flex gap-2">
+              <Button variant="destructive" onClick={deleteCert}>
+                <Trash2 className="mr-1 h-4 w-4" /> Delete
+              </Button>
+              {editing?.status !== "revoked" && (
+                <Button variant="outline" onClick={() => editing && revoke(editing)}>
+                  <Ban className="mr-1 h-4 w-4" /> Revoke
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
+              <Button onClick={saveEdit}>Save changes</Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
