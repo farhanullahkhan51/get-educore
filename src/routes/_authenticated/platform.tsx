@@ -432,6 +432,15 @@ function SettingsForm({
               Choose from 50 pre-integrated Google Fonts. Preview updates instantly; saved only when you click Save.
             </p>
             <FontPicker value={font} onChange={setFont} />
+            <InterfacePreview
+              name={tenant.name}
+              logoUrl={logoUrl}
+              primary={primary}
+              secondary={secondary}
+              accent={accent}
+              font={font}
+            />
+
           </section>
 
           {/* Meta */}
