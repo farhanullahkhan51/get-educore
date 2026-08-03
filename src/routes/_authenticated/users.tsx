@@ -19,9 +19,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { X } from "lucide-react";
+import { X, Trash2 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { deleteAppUser } from "@/lib/users.functions";
 import type { AppRole } from "@/hooks/use-current-user";
-import { roleLabel } from "@/hooks/use-current-user";
+import { roleLabel, useCurrentUser } from "@/hooks/use-current-user";
 
 export const Route = createFileRoute("/_authenticated/users")({
   component: UsersPage,
@@ -97,6 +99,28 @@ function UsersPage() {
     qc.invalidateQueries({ queryKey: ["all-profiles"] });
   }
 
+  const { data: me } = useCurrentUser();
+  const removeUser = useServerFn(deleteAppUser);
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; label: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    try {
+      await removeUser({ data: { userId: pendingDelete.id } });
+      toast.success("User deleted");
+      setPendingDelete(null);
+      qc.invalidateQueries({ queryKey: ["all-profiles"] });
+      qc.invalidateQueries({ queryKey: ["all-roles"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not delete user");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+
   return (
     <>
       <PageHeader
@@ -111,9 +135,11 @@ function UsersPage() {
             <TableHeader><TableRow>
               <TableHead>User</TableHead><TableHead>Campus</TableHead>
               <TableHead>Roles</TableHead><TableHead>Assign role</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {isLoading && <TableRow><TableCell colSpan={4} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
+              {isLoading && <TableRow><TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
+
               {profiles?.map((p) => {
                 const userRoles = rolesByUser.get(p.id) ?? [];
                 return (
@@ -148,6 +174,19 @@ function UsersPage() {
                     <TableCell>
                       <RoleAssigner onAssign={(role) => assignRole(p.id, role, p.campus_id)} />
                     </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Delete ${p.full_name ?? p.email ?? "user"}`}
+                        disabled={p.id === me?.userId}
+                        onClick={() => setPendingDelete({ id: p.id, label: p.full_name ?? p.email ?? "this user" })}
+                        className="text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+
                   </TableRow>
                 );
               })}
@@ -155,6 +194,26 @@ function UsersPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!pendingDelete} onOpenChange={(o) => { if (!o && !deleting) setPendingDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this user?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDelete?.label} will be permanently removed, along with their login, profile and all assigned roles.
+              Linked student or staff records are kept but unlinked. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction disabled={deleting} onClick={(e) => { e.preventDefault(); confirmDelete(); }}>
+              {deleting ? "Deleting…" : "Delete user"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+
 
       <AlertDialog open={!!pendingRevoke} onOpenChange={(o) => { if (!o) { setPendingRevoke(null); setConfirmStep(1); } }}>
         <AlertDialogContent>
