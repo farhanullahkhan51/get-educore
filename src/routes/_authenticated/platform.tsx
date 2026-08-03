@@ -177,6 +177,15 @@ function TenantsTab() {
                       <Badge variant={t.status === "active" ? "default" : "secondary"}>{t.status}</Badge>
                     </TableCell>
                     <TableCell className="text-right space-x-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        aria-label={`Preview ${t.name} interface`}
+                        title="Preview this tenant's interface & font"
+                        onClick={() => startPreview(t)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
                       <Button size="sm" variant="ghost" onClick={() => setSettingsFor(t)}>
                         <Settings2 className="h-4 w-4" />
                       </Button>
@@ -187,6 +196,7 @@ function TenantsTab() {
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </TableCell>
+
                   </TableRow>
                 ))}
                 {!tenants?.length && (
