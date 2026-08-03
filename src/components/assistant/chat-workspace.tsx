@@ -226,7 +226,10 @@ export function ChatWorkspace({ threadId }: { threadId: string }) {
 
   const busy = status === "submitted" || status === "streaming";
 
+  const [voiceLanguage, setVoiceLanguage] = useState<VoiceLanguage>("auto");
+
   const voice = useVoiceInput({
+    language: voiceLanguage,
     onTranscript: (text) => {
       setInput(text);
       void handleSend(text);
