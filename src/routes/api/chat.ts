@@ -98,34 +98,75 @@ function buildTools(supabase: Db) {
 
     fees_summary: tool({
       description:
-        "Fee collection summary from challans: totals billed, collected and outstanding, plus a breakdown by challan status.",
-      inputSchema: z.object({}),
-      execute: async () => {
+        "Fee collection summary from challans: totals billed, collected and outstanding, a breakdown by challan status, and a per-month breakdown. Optionally filter to a single billing month.",
+      inputSchema: z.object({
+        month: z
+          .string()
+          .describe(
+            "Billing month to filter on as YYYY-MM (e.g. '2026-07' for July 2026). Use an empty string for all months.",
+          ),
+      }),
+      execute: async ({ month }) => {
         const { data, error } = await supabase
           .from("fee_challans")
-          .select("gross_amount, discount_amount, fine_amount, paid_amount, status")
+          .select("gross_amount, discount_amount, fine_amount, paid_amount, status, due_date, period_label")
           .limit(5000);
         if (error) return { error: error.message };
-        const rows = data ?? [];
+
+        const monthKey = (r: { due_date: string | null; period_label: string | null }) => {
+          const fromLabel = (r.period_label ?? "").match(/(\d{4})[-/](\d{1,2})/);
+          if (fromLabel) return `${fromLabel[1]}-${fromLabel[2].padStart(2, "0")}`;
+          return r.due_date ? r.due_date.slice(0, 7) : "unknown";
+        };
+        const wanted = month.trim().replace(/\//g, "-");
+        const normalizedWanted = /^\d{4}-\d{1,2}$/.test(wanted)
+          ? `${wanted.slice(0, 4)}-${wanted.slice(5).padStart(2, "0")}`
+          : "";
+
+        const all = data ?? [];
+        const rows = normalizedWanted ? all.filter((r) => monthKey(r) === normalizedWanted) : all;
+
         let billed = 0;
         let collected = 0;
         const byStatus: Record<string, number> = {};
+        const byMonth: Record<string, { billed: number; collected: number; challans: number }> = {};
         for (const r of rows) {
           const net = Number(r.gross_amount ?? 0) - Number(r.discount_amount ?? 0) + Number(r.fine_amount ?? 0);
+          const paid = Number(r.paid_amount ?? 0);
           billed += net;
-          collected += Number(r.paid_amount ?? 0);
+          collected += paid;
           byStatus[r.status] = (byStatus[r.status] ?? 0) + 1;
+          const key = monthKey(r);
+          const bucket = (byMonth[key] ??= { billed: 0, collected: 0, challans: 0 });
+          bucket.billed += net;
+          bucket.collected += paid;
+          bucket.challans += 1;
         }
         return {
+          month: normalizedWanted || "all",
           challans: rows.length,
           billed: Math.round(billed),
           collected: Math.round(collected),
           outstanding: Math.round(billed - collected),
           collection_rate_percent: billed ? Math.round((collected / billed) * 100) : 0,
           challans_by_status: byStatus,
+          by_month: Object.fromEntries(
+            Object.entries(byMonth)
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([k, v]) => [
+                k,
+                {
+                  challans: v.challans,
+                  billed: Math.round(v.billed),
+                  collected: Math.round(v.collected),
+                  outstanding: Math.round(v.billed - v.collected),
+                },
+              ]),
+          ),
         };
       },
     }),
+
 
     attendance_summary: tool({
       description: "Attendance summary over the last N days: present/absent/late counts and attendance rate.",
