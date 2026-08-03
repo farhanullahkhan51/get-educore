@@ -1,29 +1,31 @@
-# Add an "EduCore CEO" role with full platform access
+# Preview any tenant's interface and font from Platform Admin
 
-## Goal
-A new role, **EduCore CEO**, grantable from Users & Roles, that has the same platform-wide reach as Super Admin: open Platform Admin, select any tenant, and view, edit or delete anything inside it.
+Yes — this is worth adding. Today the branding a Super Admin sees is always resolved from the hostname they are on, so there is no way to check how another institution's portal actually looks. The tenant settings dialog lets you edit a logo, colours and font, but you cannot see the result applied to the real interface. That makes onboarding and support work guesswork.
 
 ## Current state (verified)
-- The database role list already contains `educore_ceo` (added in the migration run just before this plan).
-- The database's `is_super_admin` check already returns true for both `super_admin` and `educore_ceo`, so every access rule and security function built on it (campus access, fee management, tenant/plan/subscription rules, user deletion) already treats an EduCore CEO as a platform-wide administrator.
-- The app's front end does not know about the role yet: it is missing from the role list, the role labels, the sidebar visibility rules, and the Platform Admin entry check — so a user granted the role today would still be bounced to the dashboard.
+- Each tenant row in Platform Admin has three actions: branding settings, edit, delete. There is no preview action.
+- Branding is resolved once per session from the browser hostname and applied to the app's theme variables and font. Nothing in the app can currently be told to use a different tenant's branding.
 
 ## What will be built
-1. **Role becomes selectable and readable**
-   - "EduCore CEO" appears in the grant-role dropdown on Users & Roles and renders as a labelled badge.
-   - Ranked at the top of the role priority list, so it shows as the user's primary role.
-2. **Full navigation access**
-   - Every sidebar module a Super Admin sees is also shown to an EduCore CEO, including Campuses, Users & Roles and Platform Admin.
-3. **Platform Admin access**
-   - The Platform Admin page admits EduCore CEO users, giving them the existing tenant list with per-tenant branding/settings editing, tenant creation and deletion, plan tiers and subscriptions.
-   - Cross-campus/cross-tenant views elsewhere (Executive Overview, Campuses) treat them as platform-level users rather than campus-scoped.
-4. **Protection parity**
-   - Revoking an EduCore CEO role uses the same two-step confirmation already used for Super Admin.
+
+**1. A "Preview" action on every tenant row**
+An eye icon next to the existing actions. Tapping it switches the whole app into that tenant's look: their colours, logo, favicon and font applied to the real sidebar, headers, cards and buttons — not a mock-up.
+
+**2. A preview banner**
+While previewing, a slim bar sits at the top of the screen: "Previewing <Tenant name> — Exit preview". It stays visible on every page so a Super Admin can navigate the real modules and see how they render for that institution. Exiting restores their own branding immediately.
+
+**3. Preview is visual only**
+Data stays exactly as the signed-in user's permissions allow; nothing is impersonated at the database level and no records change. This keeps the feature safe and avoids any risk of editing the wrong tenant's data by accident.
+
+**4. Live preview inside the branding dialog**
+While editing a tenant's colours and font, a compact preview panel shows a sample header, button, badge and body text using the values currently in the form — so choices can be judged before saving.
 
 ## Technical notes
-- No further database migration is required; the enum value and `is_super_admin` update are already applied and every RLS policy routes through that function.
-- Front-end edits: `src/hooks/use-current-user.ts` (role union, priority order, label), `src/routes/_authenticated/users.tsx` (role list, double-confirm rule), `src/components/layout/app-shell.tsx` (add the role to each nav item's allowed roles), `src/routes/_authenticated/platform.tsx`, `src/routes/_authenticated/insights.tsx`, `src/routes/_authenticated/campuses.tsx` (treat the role as platform-level).
-- A shared helper for "is a platform-level admin" will be added to the current-user hook so the checks stay consistent instead of repeating role literals.
+- Add an optional preview override to the tenant context provider (`src/lib/tenant-context.tsx`): when set, its branding values drive the theme variables and `--font-sans` instead of the host-resolved tenant. Stored in `sessionStorage` so it survives navigation but never leaks into a new session.
+- The preview banner renders in `src/components/layout/app-shell.tsx`, shown only when an override is active.
+- `src/routes/_authenticated/platform.tsx`: add the preview action, load the target tenant's settings row, and set the override.
+- The in-dialog live preview is a local component driven by the existing form state — no new queries.
+- No database changes and no new permissions; only platform-level admins can reach this page.
 
 ## Out of scope
-- No change to what Platform Admin can already do per tenant; the CEO role reuses the existing screens.
+- Acting as a tenant for data purposes (viewing their students, fees, etc.). That is a separate, higher-risk "impersonation" feature and is not part of this change.
