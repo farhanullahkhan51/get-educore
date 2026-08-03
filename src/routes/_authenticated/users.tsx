@@ -99,6 +99,28 @@ function UsersPage() {
     qc.invalidateQueries({ queryKey: ["all-profiles"] });
   }
 
+  const { data: me } = useCurrentUser();
+  const removeUser = useServerFn(deleteAppUser);
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; label: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    try {
+      await removeUser({ data: { userId: pendingDelete.id } });
+      toast.success("User deleted");
+      setPendingDelete(null);
+      qc.invalidateQueries({ queryKey: ["all-profiles"] });
+      qc.invalidateQueries({ queryKey: ["all-roles"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not delete user");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+
   return (
     <>
       <PageHeader
