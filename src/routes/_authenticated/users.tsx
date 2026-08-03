@@ -19,9 +19,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { X } from "lucide-react";
+import { X, Trash2 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { deleteAppUser } from "@/lib/users.functions";
 import type { AppRole } from "@/hooks/use-current-user";
-import { roleLabel } from "@/hooks/use-current-user";
+import { roleLabel, useCurrentUser } from "@/hooks/use-current-user";
 
 export const Route = createFileRoute("/_authenticated/users")({
   component: UsersPage,
