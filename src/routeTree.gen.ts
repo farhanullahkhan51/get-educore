@@ -13,6 +13,7 @@ import { Route as InquireRouteImport } from './routes/inquire'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedTrackSwitchRouteImport } from './routes/_authenticated/track-switch'
@@ -53,6 +54,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTranscribeRoute = ApiTranscribeRouteImport.update({
+  id: '/api/transcribe',
+  path: '/api/transcribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiChatRoute = ApiChatRouteImport.update({
@@ -194,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/track-switch': typeof AuthenticatedTrackSwitchRoute
   '/users': typeof AuthenticatedUsersRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/transcribe': typeof ApiTranscribeRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/assistant/': typeof AuthenticatedAssistantIndexRoute
 }
@@ -221,6 +228,7 @@ export interface FileRoutesByTo {
   '/track-switch': typeof AuthenticatedTrackSwitchRoute
   '/users': typeof AuthenticatedUsersRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/transcribe': typeof ApiTranscribeRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/assistant': typeof AuthenticatedAssistantIndexRoute
 }
@@ -250,6 +258,7 @@ export interface FileRoutesById {
   '/_authenticated/track-switch': typeof AuthenticatedTrackSwitchRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/transcribe': typeof ApiTranscribeRoute
   '/_authenticated/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/_authenticated/assistant/': typeof AuthenticatedAssistantIndexRoute
 }
@@ -279,6 +288,7 @@ export interface FileRouteTypes {
     | '/track-switch'
     | '/users'
     | '/api/chat'
+    | '/api/transcribe'
     | '/assistant/$threadId'
     | '/assistant/'
   fileRoutesByTo: FileRoutesByTo
@@ -306,6 +316,7 @@ export interface FileRouteTypes {
     | '/track-switch'
     | '/users'
     | '/api/chat'
+    | '/api/transcribe'
     | '/assistant/$threadId'
     | '/assistant'
   id:
@@ -334,6 +345,7 @@ export interface FileRouteTypes {
     | '/_authenticated/track-switch'
     | '/_authenticated/users'
     | '/api/chat'
+    | '/api/transcribe'
     | '/_authenticated/assistant/$threadId'
     | '/_authenticated/assistant/'
   fileRoutesById: FileRoutesById
@@ -344,6 +356,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   InquireRoute: typeof InquireRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiTranscribeRoute: typeof ApiTranscribeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -374,6 +387,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/transcribe': {
+      id: '/api/transcribe'
+      path: '/api/transcribe'
+      fullPath: '/api/transcribe'
+      preLoaderRoute: typeof ApiTranscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/chat': {
@@ -590,7 +610,18 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   InquireRoute: InquireRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiTranscribeRoute: ApiTranscribeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
