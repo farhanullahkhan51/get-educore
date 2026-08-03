@@ -155,7 +155,29 @@ function UsersPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!pendingRevoke} onOpenChange={(o) => { if (!o) { setPendingRevoke(null); setConfirmStep(1); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmStep === 1 ? "Remove Super Admin access?" : "Final confirmation required"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmStep === 1
+                ? `You are about to revoke the Super Admin role from ${pendingRevoke?.userLabel}. Super Admins control every campus and tenant setting.`
+                : `This is the second and final confirmation. ${pendingRevoke?.userLabel} will immediately lose platform-wide administrative access.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); proceedRevoke(); }}>
+              {confirmStep === 1 ? "Continue" : "Yes, revoke Super Admin"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
+
   );
 }
 
