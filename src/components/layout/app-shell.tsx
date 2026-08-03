@@ -19,7 +19,6 @@ import {
   ClipboardCheck,
   Award,
   Landmark,
-  BarChart3,
   Menu,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
