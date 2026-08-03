@@ -60,7 +60,7 @@ const NAV: NavItem[] = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { data: user, isLoading } = useCurrentUser();
-  const { tenant } = useTenant();
+  const { tenant, preview, setPreview } = useTenant();
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
