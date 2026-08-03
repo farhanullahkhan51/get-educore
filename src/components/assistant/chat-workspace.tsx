@@ -294,9 +294,41 @@ export function ChatWorkspace({ threadId }: { threadId: string }) {
             value={input}
             autoFocus
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about students, fees, attendance, admissions…"
+            placeholder={
+              voice.state === "recording"
+                ? "Listening… speak your question, then tap the mic to send."
+                : "Ask about students, fees, attendance, admissions… or use the mic"
+            }
           />
-          <PromptInputFooter className="justify-end">
+          <PromptInputFooter className="justify-between">
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant={voice.state === "recording" ? "default" : "ghost"}
+                size="icon"
+                aria-label={voice.state === "recording" ? "Stop recording and send" : "Ask by voice"}
+                title={voice.state === "recording" ? "Stop recording and send" : "Ask by voice"}
+                disabled={busy || voice.state === "transcribing"}
+                onClick={() => void voice.toggle()}
+              >
+                {voice.state === "transcribing" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : voice.state === "recording" ? (
+                  <Square className="h-4 w-4" />
+                ) : (
+                  <Mic className="h-4 w-4" />
+                )}
+              </Button>
+              {voice.state === "recording" && (
+                <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-destructive" />
+                  Listening…
+                </span>
+              )}
+              {voice.state === "transcribing" && (
+                <span className="text-xs text-muted-foreground">Transcribing…</span>
+              )}
+            </div>
             <PromptInputSubmit status={status} disabled={busy || !input.trim()} />
           </PromptInputFooter>
         </PromptInput>
