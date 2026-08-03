@@ -138,7 +138,7 @@ function UsersPage() {
                           <Badge key={r.id} variant="secondary" className="gap-1">
                             {roleLabel(r.role as AppRole)}
                             {r.campus_id && <span className="opacity-60">· {campusMap.get(r.campus_id)}</span>}
-                            <button onClick={() => revokeRole(r.id)} className="ml-1 hover:text-destructive">
+                            <button onClick={() => requestRevoke(r, p.full_name ?? p.email ?? "this user")} className="ml-1 hover:text-destructive">
                               <X className="h-3 w-3" />
                             </button>
                           </Badge>
