@@ -100,7 +100,23 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     enabled: typeof window !== "undefined",
   });
 
-  const tenant = data ?? null;
+  const hostTenant = data ?? null;
+
+  const [preview, setPreviewState] = useState<TenantBranding | null>(() => readStoredPreview());
+
+  const setPreview = useCallback((t: TenantBranding | null) => {
+    setPreviewState(t);
+    if (typeof window === "undefined") return;
+    try {
+      if (t) window.sessionStorage.setItem(PREVIEW_KEY, JSON.stringify(t));
+      else window.sessionStorage.removeItem(PREVIEW_KEY);
+    } catch {
+      /* storage unavailable — preview stays in memory only */
+    }
+  }, []);
+
+  // Preview branding takes precedence over the host-resolved tenant (visual only).
+  const tenant = preview ?? hostTenant;
 
   // Apply branding: CSS variables, page title, favicon
   useEffect(() => {
@@ -140,6 +156,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     if (tenant.font) {
       loadGoogleFont(tenant.font);
       root.style.setProperty("--font-sans", `"${tenant.font}", ui-sans-serif, system-ui, sans-serif`);
+    } else {
+      root.style.removeProperty("--font-sans");
     }
 
 
@@ -160,12 +178,13 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
 
   const value = useMemo(
-    () => ({ tenant, hostname, isLoading }),
-    [tenant, hostname, isLoading],
+    () => ({ tenant, hostname, isLoading, preview, setPreview }),
+    [tenant, hostname, isLoading, preview, setPreview],
   );
 
   return <TenantContext.Provider value={value}>{children}</TenantContext.Provider>;
 }
+
 
 export function useTenant(): TenantContextValue {
   return useContext(TenantContext);
