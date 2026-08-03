@@ -147,15 +147,30 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <aside className="hidden w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground md:flex">
+      {preview && (
+        <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-3 bg-foreground px-4 py-1.5 text-xs text-background">
+          <span className="truncate">
+            Previewing <strong className="font-semibold">{preview.name}</strong> — branding only, data is unchanged
+          </span>
+          <button
+            type="button"
+            onClick={() => setPreview(null)}
+            className="shrink-0 rounded-sm border border-background/40 px-2 py-0.5 font-medium hover:bg-background/15"
+          >
+            Exit preview
+          </button>
+        </div>
+      )}
+      <aside className={`hidden w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground md:flex ${preview ? "pt-7" : ""}`}>
         {brandBlock}
         {navList()}
         {userBlock}
       </aside>
 
-      <main className="flex-1 overflow-x-hidden">
+      <main className={`flex-1 overflow-x-hidden ${preview ? "pt-7" : ""}`}>
         {/* Mobile top bar */}
         <div className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b bg-background px-4 py-3 md:hidden">
+
           <div className="flex items-center gap-2 min-w-0">
             {tenant?.logo_url ? (
               <img src={tenant.logo_url} alt="" className="h-7 w-7 rounded-sm object-contain" />
