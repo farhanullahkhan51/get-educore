@@ -10,9 +10,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { CalendarCheck, Wallet, Award, GraduationCap, FileText } from "lucide-react";
+import { CalendarCheck, Wallet, Award, FileText, CalendarClock } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/portal")({
+  head: () => ({
+    meta: [
+      { title: "My Portal | Student Dashboard" },
+      { name: "description", content: "View your attendance, fee challans, results, deadlines and certificates in one place." },
+      { property: "og:title", content: "My Portal | Student Dashboard" },
+      { property: "og:description", content: "Your attendance, fees, results, deadlines and certificates." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: StudentPortalPage,
 });
 
