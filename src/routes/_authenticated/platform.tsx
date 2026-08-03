@@ -137,6 +137,37 @@ function TenantsTab() {
     qc.invalidateQueries({ queryKey: ["platform.tenants"] });
   }
 
+  async function startPreview(t: Tenant) {
+    const { data, error } = await supabase
+      .from("tenant_settings")
+      .select("*")
+      .eq("tenant_id", t.id)
+      .maybeSingle();
+    if (error) return toast.error(error.message);
+    const s = data as TenantSettings | null;
+    setPreview({
+      id: t.id,
+      name: t.name,
+      slug: t.slug,
+      status: t.status,
+      custom_domain: t.custom_domain,
+      logo_url: s?.logo_url ?? null,
+      favicon_url: s?.favicon_url ?? null,
+      primary_color: s?.primary_color ?? null,
+      secondary_color: s?.secondary_color ?? null,
+      accent_color: s?.accent_color ?? null,
+      font: s?.font ?? null,
+      letterhead_url: s?.letterhead_url ?? null,
+      signature_url: s?.signature_url ?? null,
+      email_sender_name: s?.email_sender_name ?? null,
+      default_currency: s?.default_currency ?? "USD",
+      default_timezone: s?.default_timezone ?? "UTC",
+    } satisfies TenantBranding);
+    toast.success(`Previewing ${t.name}`);
+  }
+
+
+
   function planName(id: string | null) {
     return plans?.find((p) => p.id === id)?.name ?? "—";
   }
