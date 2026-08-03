@@ -183,7 +183,7 @@ export function ChatWorkspace({ threadId }: { threadId: string }) {
       new DefaultChatTransport({
         api: "/api/chat",
         body: { threadId },
-        headers: async () => {
+        headers: async (): Promise<Record<string, string>> => {
           const { data } = await supabase.auth.getSession();
           const token = data.session?.access_token;
           return token ? { Authorization: `Bearer ${token}` } : {};
@@ -255,8 +255,11 @@ export function ChatWorkspace({ threadId }: { threadId: string }) {
           {messages.map((m) => (
             <Message from={m.role} key={m.id}>
               <MessageContent
-                variant={m.role === "assistant" ? "flat" : "contained"}
-                className={m.role === "user" ? "bg-primary text-primary-foreground" : undefined}
+                className={
+                  m.role === "user"
+                    ? "group-[.is-user]:bg-primary group-[.is-user]:text-primary-foreground"
+                    : undefined
+                }
               >
                 <MessageParts message={m} />
               </MessageContent>
