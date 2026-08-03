@@ -80,7 +80,6 @@ export function AssistantMenu() {
         >
           <div className="flex items-center gap-2 border-b px-4 py-2.5">
             <Bot className="h-4 w-4 text-primary" />
-            <span className="font-serif text-sm font-semibold">AI Assistant</span>
             <div className="ml-auto flex items-center gap-1">
               <Button
                 variant="ghost"
