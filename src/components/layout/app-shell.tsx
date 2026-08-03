@@ -20,6 +20,7 @@ import {
   Award,
   Landmark,
   BarChart3,
+  Bot,
   Menu,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
@@ -37,6 +38,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["super_admin", "campus_admin", "admissions_officer", "finance_officer", "teacher"] },
   { to: "/insights", label: "Executive Overview", icon: BarChart3, roles: ["super_admin", "campus_admin"] },
+  { to: "/assistant", label: "AI Assistant", icon: Bot, roles: ["super_admin", "campus_admin", "admissions_officer", "finance_officer", "teacher"] },
   { to: "/portal", label: "My Portal", icon: GraduationCap, roles: ["student"] },
   { to: "/campuses", label: "Campuses", icon: Building2, roles: ["super_admin"] },
   { to: "/programs", label: "Programs", icon: BookOpen, roles: ["super_admin", "campus_admin"] },
