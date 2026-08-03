@@ -48,7 +48,7 @@ function StudentPortalPage() {
     queryKey: ["portal-att", studentId],
     enabled: !!studentId,
     queryFn: async () => (await supabase.from("attendance_records")
-      .select("id,date,status,course_id,remarks")
+      .select("id,date,status,remarks,course:course_id(code,title)")
       .eq("student_id", studentId!)
       .order("date", { ascending: false })
       .limit(500)).data ?? [],
@@ -63,12 +63,14 @@ function StudentPortalPage() {
       .order("issue_date", { ascending: false })).data ?? [],
   });
 
+  // Students only ever see published report cards (drafts stay internal).
   const { data: reports } = useQuery({
     queryKey: ["portal-rc", studentId],
     enabled: !!studentId,
     queryFn: async () => (await supabase.from("report_cards")
-      .select("*")
+      .select("id,term,academic_year,subjects,overall_percent,attendance_percent,remarks,published_at")
       .eq("student_id", studentId!)
+      .eq("status", "published")
       .order("created_at", { ascending: false })).data ?? [],
   });
 
@@ -82,23 +84,40 @@ function StudentPortalPage() {
       .limit(100)).data ?? [],
   });
 
+  // Upcoming deadlines for the student's own section only.
+  const { data: deadlines } = useQuery({
+    queryKey: ["portal-deadlines", student?.section_id],
+    enabled: !!student?.section_id,
+    queryFn: async () => (await supabase.from("assessments")
+      .select("id,title,type,max_marks,due_date,term,course:course_id(code,title)")
+      .eq("section_id", student!.section_id!)
+      .gte("due_date", new Date().toISOString().slice(0, 10))
+      .order("due_date", { ascending: true })
+      .limit(20)).data ?? [],
+  });
+
   const { data: certs } = useQuery({
     queryKey: ["portal-certs", studentId],
     enabled: !!studentId,
     queryFn: async () => (await supabase.from("certificates")
       .select("id,serial_no,title,type,issue_date,status")
       .eq("student_id", studentId!)
+      .eq("status", "issued")
       .order("issue_date", { ascending: false })).data ?? [],
   });
 
-  const { data: courses } = useQuery({
-    queryKey: ["portal-courses"],
-    queryFn: async () => (await supabase.from("courses").select("id,code,title")).data ?? [],
-  });
-  const courseName = (id: string | null) => {
-    if (!id) return "—";
-    const c = courses?.find((x) => x.id === id);
-    return c ? `${c.code} · ${c.title}` : "—";
+  const courseLabel = (c: { code?: string | null; title?: string | null } | null | undefined) =>
+    c ? `${c.code ?? ""}${c.code && c.title ? " · " : ""}${c.title ?? ""}` || "—" : "—";
+
+  const marksFor = (subjects: unknown) => {
+    if (!Array.isArray(subjects)) return null;
+    let obtained = 0;
+    let max = 0;
+    for (const s of subjects as Array<Record<string, unknown>>) {
+      obtained += Number(s.obtained ?? s.marks ?? 0) || 0;
+      max += Number(s.max ?? s.max_marks ?? s.total ?? 0) || 0;
+    }
+    return max ? { obtained, max } : null;
   };
 
   const attStats = useMemo(() => {
