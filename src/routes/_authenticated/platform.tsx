@@ -81,6 +81,8 @@ function PlatformPage() {
 
 function TenantsTab() {
   const qc = useQueryClient();
+  const { setPreview } = useTenant();
+
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Tenant | null>(null);
   const [settingsFor, setSettingsFor] = useState<Tenant | null>(null);
