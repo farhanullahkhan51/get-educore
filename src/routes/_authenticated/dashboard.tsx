@@ -65,24 +65,25 @@ function Dashboard() {
       <div className="mt-8 grid gap-4 md:grid-cols-2">
         <Card className="shadow-none">
           <CardHeader>
-            <CardTitle className="font-serif text-lg">Phase 1 · Foundation</CardTitle>
+            <CardTitle className="font-serif text-lg">Executive Overview</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p>Authentication with role-based access is live. The first account created is Super Admin automatically.</p>
-            <p>Manage <strong className="text-foreground">Campuses</strong>, <strong className="text-foreground">Programs</strong>, and <strong className="text-foreground">Classes & Sections</strong> from the sidebar.</p>
-            <p>Register <strong className="text-foreground">Students</strong> and <strong className="text-foreground">Staff</strong>, upload documents, and assign portal logins from <strong className="text-foreground">Users & Roles</strong>.</p>
+          <CardContent className="space-y-3 text-sm text-muted-foreground">
+            <p>Leadership analytics across enrollment, attendance, fee collection and the admissions funnel — with campus-by-campus comparison.</p>
+            <Link to="/insights" className="inline-flex items-center gap-2 text-sm font-medium text-foreground underline underline-offset-4">
+              Open Executive Overview
+            </Link>
           </CardContent>
         </Card>
         <Card className="shadow-none">
           <CardHeader>
-            <CardTitle className="font-serif text-lg">What's next</CardTitle>
+            <CardTitle className="font-serif text-lg">Quick links</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
             <ul className="space-y-1.5 list-disc pl-5">
-              <li>Phase 2 — Admissions inquiry pipeline (Kanban) & one-click registration</li>
-              <li>Phase 3 — Fee structures, challans, and bank reconciliation</li>
-              <li>Phase 4 — Attendance, gradebook, Board & Cambridge modules</li>
-              <li>Phase 5-8 — Certificates, student portal, principal dashboard, AI automations</li>
+              <li><Link to="/admissions" className="text-foreground underline underline-offset-4">Admissions pipeline</Link> — inquiries and one-click registration</li>
+              <li><Link to="/fees" className="text-foreground underline underline-offset-4">Fees &amp; Finance</Link> — challans, scholarships, reconciliation</li>
+              <li><Link to="/academics" className="text-foreground underline underline-offset-4">Academics</Link> — attendance and gradebook</li>
+              <li><Link to="/certificates" className="text-foreground underline underline-offset-4">Certificates</Link> — issue and manage documents</li>
             </ul>
           </CardContent>
         </Card>
