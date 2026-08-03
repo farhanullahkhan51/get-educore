@@ -20,13 +20,13 @@ import {
   Award,
   Landmark,
   BarChart3,
-  Bot,
   Menu,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import { AssistantMenu } from "@/components/assistant/assistant-menu";
 
 interface NavItem {
   to: string;
@@ -38,7 +38,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["super_admin", "campus_admin", "admissions_officer", "finance_officer", "teacher"] },
   { to: "/insights", label: "Executive Overview", icon: BarChart3, roles: ["super_admin", "campus_admin"] },
-  { to: "/assistant", label: "AI Assistant", icon: Bot, roles: ["super_admin", "campus_admin", "admissions_officer", "finance_officer", "teacher"] },
+  
   { to: "/portal", label: "My Portal", icon: GraduationCap, roles: ["student"] },
   { to: "/campuses", label: "Campuses", icon: Building2, roles: ["super_admin"] },
   { to: "/programs", label: "Programs", icon: BookOpen, roles: ["super_admin", "campus_admin"] },
@@ -168,22 +168,31 @@ export function AppShell({ children }: { children: ReactNode }) {
               {tenant?.name ?? "EduCore"}
             </div>
           </div>
-          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Open navigation">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-72 bg-sidebar text-sidebar-foreground p-0 flex flex-col">
-              <SheetTitle className="sr-only">Navigation</SheetTitle>
-              {brandBlock}
-              {navList(() => setMobileOpen(false))}
-              {userBlock}
-            </SheetContent>
-          </Sheet>
+          <div className="flex items-center gap-1">
+            <AssistantMenu />
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Open navigation">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-72 bg-sidebar text-sidebar-foreground p-0 flex flex-col">
+                <SheetTitle className="sr-only">Navigation</SheetTitle>
+                {brandBlock}
+                {navList(() => setMobileOpen(false))}
+                {userBlock}
+              </SheetContent>
+            </Sheet>
+          </div>
+        </div>
+
+        {/* Desktop top bar */}
+        <div className="sticky top-0 z-30 hidden items-center justify-end border-b bg-background px-6 py-2 md:flex">
+          <AssistantMenu />
         </div>
 
         <div className="mx-auto max-w-7xl px-6 py-8">{children}</div>
+
       </main>
     </div>
   );
