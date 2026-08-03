@@ -1,4 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
@@ -48,12 +59,37 @@ function UsersPage() {
     toast.success(`Granted ${roleLabel(role)}`);
     qc.invalidateQueries({ queryKey: ["all-roles"] });
   }
+  const [pendingRevoke, setPendingRevoke] = useState<{ id: string; label: string; userLabel: string } | null>(null);
+  const [confirmStep, setConfirmStep] = useState(1);
+
   async function revokeRole(id: string) {
     const { error } = await supabase.from("user_roles").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Role revoked");
     qc.invalidateQueries({ queryKey: ["all-roles"] });
   }
+
+  function requestRevoke(r: { id: string; role: string }, userLabel: string) {
+    if (r.role === "super_admin") {
+      setConfirmStep(1);
+      setPendingRevoke({ id: r.id, label: roleLabel(r.role as AppRole), userLabel });
+      return;
+    }
+    revokeRole(r.id);
+  }
+
+  async function proceedRevoke() {
+    if (!pendingRevoke) return;
+    if (confirmStep === 1) {
+      setConfirmStep(2);
+      return;
+    }
+    const target = pendingRevoke;
+    setPendingRevoke(null);
+    setConfirmStep(1);
+    await revokeRole(target.id);
+  }
+
   async function updateCampus(userId: string, campusId: string | null) {
     const { error } = await supabase.from("profiles").update({ campus_id: campusId }).eq("id", userId);
     if (error) return toast.error(error.message);
@@ -102,7 +138,7 @@ function UsersPage() {
                           <Badge key={r.id} variant="secondary" className="gap-1">
                             {roleLabel(r.role as AppRole)}
                             {r.campus_id && <span className="opacity-60">· {campusMap.get(r.campus_id)}</span>}
-                            <button onClick={() => revokeRole(r.id)} className="ml-1 hover:text-destructive">
+                            <button onClick={() => requestRevoke(r, p.full_name ?? p.email ?? "this user")} className="ml-1 hover:text-destructive">
                               <X className="h-3 w-3" />
                             </button>
                           </Badge>
@@ -119,7 +155,29 @@ function UsersPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!pendingRevoke} onOpenChange={(o) => { if (!o) { setPendingRevoke(null); setConfirmStep(1); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmStep === 1 ? "Remove Super Admin access?" : "Final confirmation required"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmStep === 1
+                ? `You are about to revoke the Super Admin role from ${pendingRevoke?.userLabel}. Super Admins control every campus and tenant setting.`
+                : `This is the second and final confirmation. ${pendingRevoke?.userLabel} will immediately lose platform-wide administrative access.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); proceedRevoke(); }}>
+              {confirmStep === 1 ? "Continue" : "Yes, revoke Super Admin"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
+
   );
 }
 
