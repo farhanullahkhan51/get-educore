@@ -338,6 +338,25 @@ export function ChatWorkspace({ threadId }: { threadId: string }) {
                   <Mic className="h-4 w-4" />
                 )}
               </Button>
+              <Select
+                value={voiceLanguage}
+                onValueChange={(v) => setVoiceLanguage(v as VoiceLanguage)}
+                disabled={voice.state !== "idle"}
+              >
+                <SelectTrigger
+                  size="sm"
+                  className="h-8 w-[104px] text-xs"
+                  aria-label="Voice transcription language"
+                  title="Voice transcription language"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">Auto</SelectItem>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="ur">اردو</SelectItem>
+                </SelectContent>
+              </Select>
               {voice.state === "recording" && (
                 <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <span className="h-2 w-2 animate-pulse rounded-full bg-destructive" />
