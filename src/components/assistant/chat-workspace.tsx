@@ -4,7 +4,8 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, MessageSquare, Trash2, PanelLeft } from "lucide-react";
+import { Plus, MessageSquare, Trash2, PanelLeft, Mic, Square, Loader2 } from "lucide-react";
+import { useVoiceInput } from "@/hooks/use-voice-input";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/use-current-user";
