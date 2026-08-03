@@ -168,22 +168,31 @@ export function AppShell({ children }: { children: ReactNode }) {
               {tenant?.name ?? "EduCore"}
             </div>
           </div>
-          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Open navigation">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-72 bg-sidebar text-sidebar-foreground p-0 flex flex-col">
-              <SheetTitle className="sr-only">Navigation</SheetTitle>
-              {brandBlock}
-              {navList(() => setMobileOpen(false))}
-              {userBlock}
-            </SheetContent>
-          </Sheet>
+          <div className="flex items-center gap-1">
+            <AssistantMenu />
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Open navigation">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-72 bg-sidebar text-sidebar-foreground p-0 flex flex-col">
+                <SheetTitle className="sr-only">Navigation</SheetTitle>
+                {brandBlock}
+                {navList(() => setMobileOpen(false))}
+                {userBlock}
+              </SheetContent>
+            </Sheet>
+          </div>
+        </div>
+
+        {/* Desktop top bar */}
+        <div className="sticky top-0 z-30 hidden items-center justify-end border-b bg-background px-6 py-2 md:flex">
+          <AssistantMenu />
         </div>
 
         <div className="mx-auto max-w-7xl px-6 py-8">{children}</div>
+
       </main>
     </div>
   );
