@@ -149,7 +149,8 @@ function MessageParts({ message }: { message: UIMessage }) {
           return (
             <Tool key={i} defaultOpen={false} className="my-2">
               <ToolHeader
-                type={toolPart.type.replace("tool-", "").replaceAll("_", " ") as never}
+                type={toolPart.type as never}
+                title={toolPart.type.replace("tool-", "").replaceAll("_", " ")}
                 state={toolPart.state as never}
               />
               <ToolContent>
