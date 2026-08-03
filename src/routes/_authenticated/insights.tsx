@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import type { LinkProps } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,14 +40,20 @@ const CURRENCY = (n: number) =>
 const PIE_COLORS = ["hsl(var(--chart-1, 215 40% 30%))", "#8ba3c7", "#c9a227", "#7f9e7f", "#b06a5b", "#8a8f98"];
 
 function Kpi({
-  label, value, sub, icon: Icon, tone = "default",
+  label, value, sub, icon: Icon, tone = "default", to,
 }: {
   label: string; value: string | number; sub?: string;
   icon: React.ComponentType<{ className?: string }>;
   tone?: "default" | "warn" | "good";
+  to?: LinkProps["to"];
 }) {
-  return (
-    <Card className="shadow-none">
+  const body = (
+    <Card
+      className={
+        "shadow-none transition-colors " +
+        (to ? "cursor-pointer hover:border-primary/40 hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" : "")
+      }
+    >
       <CardContent className="p-5">
         <div className="flex items-center justify-between">
           <div className="text-xs uppercase tracking-widest text-muted-foreground">{label}</div>
@@ -63,6 +70,14 @@ function Kpi({
         {sub ? <div className="mt-1 text-xs text-muted-foreground">{sub}</div> : null}
       </CardContent>
     </Card>
+  );
+
+  if (!to) return body;
+
+  return (
+    <Link to={to} className="block rounded-lg" aria-label={`Open ${label}`}>
+      {body}
+    </Link>
   );
 }
 
@@ -250,6 +265,7 @@ function Insights() {
           value={isLoading ? "—" : metrics.activeStudents}
           sub={`${metrics.studentTotal} on record`}
           icon={GraduationCap}
+          to="/students"
         />
         <Kpi
           label="Active Staff"
@@ -260,18 +276,21 @@ function Insights() {
               : undefined
           }
           icon={Users}
+          to="/staff"
         />
         <Kpi
           label="Fee Collection"
           value={isLoading ? "—" : `${metrics.collectionRate.toFixed(1)}%`}
           sub={`${CURRENCY(metrics.collected)} of ${CURRENCY(metrics.billed)}`}
           icon={Wallet}
+          to="/fees"
         />
         <Kpi
           label="Attendance (6 mo)"
           value={isLoading ? "—" : `${metrics.attendanceRate.toFixed(1)}%`}
           sub="Present or late over marked days"
           icon={ClipboardCheck}
+          to="/academics"
         />
       </div>
 
@@ -281,6 +300,7 @@ function Insights() {
           value={isLoading ? "—" : CURRENCY(metrics.outstanding)}
           sub={`${metrics.overdue} challans overdue`}
           icon={AlertTriangle}
+          to="/fees"
           tone={metrics.outstanding > 0 ? "warn" : "default"}
         />
         <Kpi
@@ -288,18 +308,21 @@ function Insights() {
           value={isLoading ? "—" : metrics.inquiryTotal}
           sub={`${metrics.conversionRate.toFixed(1)}% converted`}
           icon={Inbox}
+          to="/admissions"
         />
         <Kpi
           label="Collected"
           value={isLoading ? "—" : CURRENCY(metrics.collected)}
           sub="Received against issued challans"
           icon={TrendingUp}
+          to="/fees"
         />
         <Kpi
           label="Campuses in view"
           value={isLoading ? "—" : metrics.perCampus.length}
           sub={scopedCampus ? "Scoped to your campus" : "All campuses"}
           icon={Building2}
+          to="/campuses"
         />
       </div>
 
