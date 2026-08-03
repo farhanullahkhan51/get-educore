@@ -10,9 +10,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { CalendarCheck, Wallet, Award, GraduationCap, FileText } from "lucide-react";
+import { CalendarCheck, Wallet, Award, FileText, CalendarClock } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/portal")({
+  head: () => ({
+    meta: [
+      { title: "My Portal | Student Dashboard" },
+      { name: "description", content: "View your attendance, fee challans, results, deadlines and certificates in one place." },
+      { property: "og:title", content: "My Portal | Student Dashboard" },
+      { property: "og:description", content: "Your attendance, fees, results, deadlines and certificates." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: StudentPortalPage,
 });
 
@@ -38,7 +48,7 @@ function StudentPortalPage() {
     queryKey: ["portal-att", studentId],
     enabled: !!studentId,
     queryFn: async () => (await supabase.from("attendance_records")
-      .select("id,date,status,course_id,remarks")
+      .select("id,date,status,remarks,course:course_id(code,title)")
       .eq("student_id", studentId!)
       .order("date", { ascending: false })
       .limit(500)).data ?? [],
@@ -53,12 +63,14 @@ function StudentPortalPage() {
       .order("issue_date", { ascending: false })).data ?? [],
   });
 
+  // Students only ever see published report cards (drafts stay internal).
   const { data: reports } = useQuery({
     queryKey: ["portal-rc", studentId],
     enabled: !!studentId,
     queryFn: async () => (await supabase.from("report_cards")
-      .select("*")
+      .select("id,term,academic_year,subjects,overall_percent,attendance_percent,remarks,published_at")
       .eq("student_id", studentId!)
+      .eq("status", "published")
       .order("created_at", { ascending: false })).data ?? [],
   });
 
@@ -72,23 +84,40 @@ function StudentPortalPage() {
       .limit(100)).data ?? [],
   });
 
+  // Upcoming deadlines for the student's own section only.
+  const { data: deadlines } = useQuery({
+    queryKey: ["portal-deadlines", student?.section_id],
+    enabled: !!student?.section_id,
+    queryFn: async () => (await supabase.from("assessments")
+      .select("id,title,type,max_marks,due_date,term,course:course_id(code,title)")
+      .eq("section_id", student!.section_id!)
+      .gte("due_date", new Date().toISOString().slice(0, 10))
+      .order("due_date", { ascending: true })
+      .limit(20)).data ?? [],
+  });
+
   const { data: certs } = useQuery({
     queryKey: ["portal-certs", studentId],
     enabled: !!studentId,
     queryFn: async () => (await supabase.from("certificates")
       .select("id,serial_no,title,type,issue_date,status")
       .eq("student_id", studentId!)
+      .eq("status", "issued")
       .order("issue_date", { ascending: false })).data ?? [],
   });
 
-  const { data: courses } = useQuery({
-    queryKey: ["portal-courses"],
-    queryFn: async () => (await supabase.from("courses").select("id,code,title")).data ?? [],
-  });
-  const courseName = (id: string | null) => {
-    if (!id) return "—";
-    const c = courses?.find((x) => x.id === id);
-    return c ? `${c.code} · ${c.title}` : "—";
+  const courseLabel = (c: { code?: string | null; title?: string | null } | null | undefined) =>
+    c ? `${c.code ?? ""}${c.code && c.title ? " · " : ""}${c.title ?? ""}` || "—" : "—";
+
+  const marksFor = (subjects: unknown) => {
+    if (!Array.isArray(subjects)) return null;
+    let obtained = 0;
+    let max = 0;
+    for (const s of subjects as Array<Record<string, unknown>>) {
+      obtained += Number(s.obtained ?? s.marks ?? 0) || 0;
+      max += Number(s.max ?? s.max_marks ?? s.total ?? 0) || 0;
+    }
+    return max ? { obtained, max } : null;
   };
 
   const attStats = useMemo(() => {
@@ -147,13 +176,52 @@ function StudentPortalPage() {
       </div>
 
       <Tabs defaultValue="attendance">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="attendance">Attendance</TabsTrigger>
           <TabsTrigger value="fees">Fees</TabsTrigger>
           <TabsTrigger value="results">Results</TabsTrigger>
+          <TabsTrigger value="deadlines">Deadlines</TabsTrigger>
           <TabsTrigger value="certificates">Certificates</TabsTrigger>
           <TabsTrigger value="profile">Profile</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="deadlines">
+          <Card className="shadow-none">
+            <CardHeader>
+              <CardTitle className="text-base font-serif flex items-center gap-2">
+                <CalendarClock className="h-4 w-4" /> Upcoming assessments
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Due</TableHead>
+                    <TableHead>Assessment</TableHead>
+                    <TableHead>Course</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Max marks</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(deadlines ?? []).length === 0 && (
+                    <TableRow><TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">No upcoming deadlines.</TableCell></TableRow>
+                  )}
+                  {(deadlines ?? []).map((a: any) => (
+                    <TableRow key={a.id}>
+                      <TableCell className="text-sm">{a.due_date ? new Date(a.due_date).toLocaleDateString() : "—"}</TableCell>
+                      <TableCell className="text-sm">{a.title}</TableCell>
+                      <TableCell className="text-sm">{courseLabel(a.course)}</TableCell>
+                      <TableCell className="text-sm capitalize">{a.type}</TableCell>
+                      <TableCell className="text-right text-sm">{a.max_marks ?? "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
 
         <TabsContent value="attendance">
           <Card className="shadow-none">
@@ -174,7 +242,7 @@ function StudentPortalPage() {
                   {(attendance ?? []).map((r) => (
                     <TableRow key={r.id}>
                       <TableCell className="text-sm">{new Date(r.date).toLocaleDateString()}</TableCell>
-                      <TableCell className="text-sm">{courseName(r.course_id)}</TableCell>
+                      <TableCell className="text-sm">{courseLabel(r.course)}</TableCell>
                       <TableCell>
                         <Badge variant={r.status === "present" ? "secondary" : r.status === "absent" ? "destructive" : "outline"}>
                           {r.status}
@@ -249,17 +317,18 @@ function StudentPortalPage() {
                     {(reports ?? []).length === 0 && (
                       <TableRow><TableCell colSpan={3} className="py-6 text-center text-sm text-muted-foreground">No report cards published yet.</TableCell></TableRow>
                     )}
-                    {(reports ?? []).map((r: any) => (
-                      <TableRow key={r.id}>
-                        <TableCell className="text-sm">{r.term ?? "—"}</TableCell>
-                        <TableCell className="text-sm">{r.academic_year ?? "—"}</TableCell>
-                        <TableCell className="text-right text-sm">
-                          {r.total_obtained != null && r.total_max != null
-                            ? `${r.total_obtained} / ${r.total_max}`
-                            : "—"}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {(reports ?? []).map((r: any) => {
+                      const m = marksFor(r.subjects);
+                      return (
+                        <TableRow key={r.id}>
+                          <TableCell className="text-sm">{r.term ?? "—"}</TableCell>
+                          <TableCell className="text-sm">{r.academic_year ?? "—"}</TableCell>
+                          <TableCell className="text-right text-sm">
+                            {m ? `${m.obtained} / ${m.max}` : r.overall_percent != null ? `${r.overall_percent}%` : "—"}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </CardContent>
