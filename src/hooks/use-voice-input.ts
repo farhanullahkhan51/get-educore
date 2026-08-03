@@ -50,13 +50,16 @@ function encodeWav(chunks: Float32Array[], sampleRate: number, targetRate = 1600
 }
 
 export type VoiceState = "idle" | "recording" | "transcribing";
+export type VoiceLanguage = "auto" | "en" | "ur";
 
 export function useVoiceInput({
   onTranscript,
   onError,
+  language = "auto",
 }: {
   onTranscript: (text: string) => void;
   onError?: (message: string) => void;
+  language?: VoiceLanguage;
 }) {
   const [state, setState] = useState<VoiceState>("idle");
   const recorderRef = useRef<Recorder | null>(null);
@@ -133,6 +136,7 @@ export function useVoiceInput({
       const token = data.session?.access_token;
       const body = new FormData();
       body.append("audio", blob, "recording.wav");
+      body.append("language", language);
       const res = await fetch("/api/transcribe", {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -154,7 +158,7 @@ export function useVoiceInput({
     } catch {
       fail("Could not reach the transcription service.");
     }
-  }, [state, cleanup, fail, onTranscript, onError]);
+  }, [state, cleanup, fail, onTranscript, onError, language]);
 
   return { state, start, stop, cancel, toggle: () => (state === "recording" ? stop() : start()) };
 }

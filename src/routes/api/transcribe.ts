@@ -22,15 +22,28 @@ export const Route = createFileRoute("/api/transcribe")({
           return new Response("Recording is too long", { status: 413 });
         }
 
+        const requested = String(form.get("language") ?? "auto");
+        const language = requested === "en" || requested === "ur" ? requested : null;
+
         const upstream = new FormData();
         upstream.append("model", "openai/gpt-4o-transcribe");
         upstream.append("file", audio, "recording.wav");
-        // No `language` field: let the model auto-detect. The prompt keeps it from
-        // defaulting to Urdu script when the speaker is actually using English.
-        upstream.append(
-          "prompt",
-          "Transcribe verbatim in the language actually spoken. If the speaker uses English, output English in Latin script. If the speaker uses Urdu, output Urdu in Urdu script. Never translate or transliterate between the two.",
-        );
+        if (language) {
+          upstream.append("language", language);
+          upstream.append(
+            "prompt",
+            language === "en"
+              ? "Transcribe verbatim in English using Latin script. Never output Urdu script."
+              : "Transcribe verbatim in Urdu using Urdu script. Never transliterate into Latin script.",
+          );
+        } else {
+          // No `language` field: let the model auto-detect. The prompt keeps it from
+          // defaulting to Urdu script when the speaker is actually using English.
+          upstream.append(
+            "prompt",
+            "Transcribe verbatim in the language actually spoken. If the speaker uses English, output English in Latin script. If the speaker uses Urdu, output Urdu in Urdu script. Never translate or transliterate between the two.",
+          );
+        }
 
         const response = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
           method: "POST",
