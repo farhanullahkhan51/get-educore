@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import type { LinkProps } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,7 +45,7 @@ function Kpi({
   label: string; value: string | number; sub?: string;
   icon: React.ComponentType<{ className?: string }>;
   tone?: "default" | "warn" | "good";
-  to?: string;
+  to?: LinkProps["to"];
 }) {
   const body = (
     <Card
@@ -264,6 +265,7 @@ function Insights() {
           value={isLoading ? "—" : metrics.activeStudents}
           sub={`${metrics.studentTotal} on record`}
           icon={GraduationCap}
+          to="/students"
         />
         <Kpi
           label="Active Staff"
@@ -274,18 +276,21 @@ function Insights() {
               : undefined
           }
           icon={Users}
+          to="/staff"
         />
         <Kpi
           label="Fee Collection"
           value={isLoading ? "—" : `${metrics.collectionRate.toFixed(1)}%`}
           sub={`${CURRENCY(metrics.collected)} of ${CURRENCY(metrics.billed)}`}
           icon={Wallet}
+          to="/fees"
         />
         <Kpi
           label="Attendance (6 mo)"
           value={isLoading ? "—" : `${metrics.attendanceRate.toFixed(1)}%`}
           sub="Present or late over marked days"
           icon={ClipboardCheck}
+          to="/academics"
         />
       </div>
 
@@ -295,6 +300,7 @@ function Insights() {
           value={isLoading ? "—" : CURRENCY(metrics.outstanding)}
           sub={`${metrics.overdue} challans overdue`}
           icon={AlertTriangle}
+          to="/fees"
           tone={metrics.outstanding > 0 ? "warn" : "default"}
         />
         <Kpi
@@ -302,18 +308,21 @@ function Insights() {
           value={isLoading ? "—" : metrics.inquiryTotal}
           sub={`${metrics.conversionRate.toFixed(1)}% converted`}
           icon={Inbox}
+          to="/admissions"
         />
         <Kpi
           label="Collected"
           value={isLoading ? "—" : CURRENCY(metrics.collected)}
           sub="Received against issued challans"
           icon={TrendingUp}
+          to="/fees"
         />
         <Kpi
           label="Campuses in view"
           value={isLoading ? "—" : metrics.perCampus.length}
           sub={scopedCampus ? "Scoped to your campus" : "All campuses"}
           icon={Building2}
+          to="/campuses"
         />
       </div>
 
