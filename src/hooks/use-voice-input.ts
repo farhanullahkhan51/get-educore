@@ -50,13 +50,16 @@ function encodeWav(chunks: Float32Array[], sampleRate: number, targetRate = 1600
 }
 
 export type VoiceState = "idle" | "recording" | "transcribing";
+export type VoiceLanguage = "auto" | "en" | "ur";
 
 export function useVoiceInput({
   onTranscript,
   onError,
+  language = "auto",
 }: {
   onTranscript: (text: string) => void;
   onError?: (message: string) => void;
+  language?: VoiceLanguage;
 }) {
   const [state, setState] = useState<VoiceState>("idle");
   const recorderRef = useRef<Recorder | null>(null);
