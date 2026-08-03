@@ -135,9 +135,11 @@ function UsersPage() {
             <TableHeader><TableRow>
               <TableHead>User</TableHead><TableHead>Campus</TableHead>
               <TableHead>Roles</TableHead><TableHead>Assign role</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {isLoading && <TableRow><TableCell colSpan={4} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
+              {isLoading && <TableRow><TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
+
               {profiles?.map((p) => {
                 const userRoles = rolesByUser.get(p.id) ?? [];
                 return (
