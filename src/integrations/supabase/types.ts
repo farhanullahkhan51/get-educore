@@ -2593,6 +2593,7 @@ export type Database = {
         | "finance_officer"
         | "teacher"
         | "student"
+        | "educore_ceo"
       assessment_type:
         | "quiz"
         | "assignment"
@@ -2794,6 +2795,7 @@ export const Constants = {
         "finance_officer",
         "teacher",
         "student",
+        "educore_ceo",
       ],
       assessment_type: [
         "quiz",

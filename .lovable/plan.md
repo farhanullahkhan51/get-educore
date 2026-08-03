@@ -1,58 +1,29 @@
-# EduCore AI Integration Roadmap
+# Add an "EduCore CEO" role with full platform access
 
 ## Goal
-Map out the next AI-powered features that can be layered onto the existing EduCore ERP beyond the current AI Assistant.
+A new role, **EduCore CEO**, grantable from Users & Roles, that has the same platform-wide reach as Super Admin: open Platform Admin, select any tenant, and view, edit or delete anything inside it.
 
-## Current state
-- Phase 8 foundation is live: a database-backed, multi-thread AI Assistant (`/api/chat`) with read-only analytical tools for students, staff, fees, attendance, admissions, and results.
-- The system already has a multi-tenant architecture, role-based access, and a full academic/financial data model.
-- Lovable AI Gateway is already configured and ready to support additional model types (chat, vision, embeddings, image generation, text-to-speech, speech-to-text).
+## Current state (verified)
+- The database role list already contains `educore_ceo` (added in the migration run just before this plan).
+- The database's `is_super_admin` check already returns true for both `super_admin` and `educore_ceo`, so every access rule and security function built on it (campus access, fee management, tenant/plan/subscription rules, user deletion) already treats an EduCore CEO as a platform-wide administrator.
+- The app's front end does not know about the role yet: it is missing from the role list, the role labels, the sidebar visibility rules, and the Platform Admin entry check — so a user granted the role today would still be bounced to the dashboard.
 
-## Recommended AI integrations
+## What will be built
+1. **Role becomes selectable and readable**
+   - "EduCore CEO" appears in the grant-role dropdown on Users & Roles and renders as a labelled badge.
+   - Ranked at the top of the role priority list, so it shows as the user's primary role.
+2. **Full navigation access**
+   - Every sidebar module a Super Admin sees is also shown to an EduCore CEO, including Campuses, Users & Roles and Platform Admin.
+3. **Platform Admin access**
+   - The Platform Admin page admits EduCore CEO users, giving them the existing tenant list with per-tenant branding/settings editing, tenant creation and deletion, plan tiers and subscriptions.
+   - Cross-campus/cross-tenant views elsewhere (Executive Overview, Campuses) treat them as platform-level users rather than campus-scoped.
+4. **Protection parity**
+   - Revoking an EduCore CEO role uses the same two-step confirmation already used for Super Admin.
 
-### 1. Academic Content Generator (highest value, lowest risk)
-- Generate lesson plans, exam questions, and report-card comments for teachers.
-- Generate certificate/letter content and official announcement drafts.
-- Integration points: academics, certificates, classes, results, and a global "AI Writer" button.
+## Technical notes
+- No further database migration is required; the enum value and `is_super_admin` update are already applied and every RLS policy routes through that function.
+- Front-end edits: `src/hooks/use-current-user.ts` (role union, priority order, label), `src/routes/_authenticated/users.tsx` (role list, double-confirm rule), `src/components/layout/app-shell.tsx` (add the role to each nav item's allowed roles), `src/routes/_authenticated/platform.tsx`, `src/routes/_authenticated/insights.tsx`, `src/routes/_authenticated/campuses.tsx` (treat the role as platform-level).
+- A shared helper for "is a platform-level admin" will be added to the current-user hook so the checks stay consistent instead of repeating role literals.
 
-### 2. Document Intelligence / OCR (high value for admissions & records)
-- Extract text and key fields from scanned documents, report cards, certificates, and ID cards.
-- Auto-fill inquiry/student fields from uploaded documents.
-- Integration points: admissions upload, student documents, certificate verification.
-
-### 3. Predictive Analytics & Risk Alerts (high value for leadership)
-- At-risk student prediction based on attendance, fees, and marks.
-- Enrollment and fee-collection forecasting.
-- Automated insight summaries for the Insights dashboard.
-- Integration points: insights, academics, fees, attendance.
-
-### 4. Smart Communication Assistant (medium value, easy adoption)
-- Draft parent emails, SMS, and circulars in multiple languages.
-- Summarize student performance for parent-teacher meetings.
-- Integration points: students, academics, portal, announcements.
-
-### 5. Voice & Audio AI (medium value, optional)
-- Text-to-speech for announcements or reading assignments.
-- Speech-to-text for teacher notes or meeting minutes.
-- Integration points: announcements, academics, staff portal.
-
-### 6. Vision / Face Recognition (higher effort, optional)
-- Photo verification for student/staff IDs.
-- Optional face-recognition-based attendance.
-- Integration points: attendance, staff, students.
-
-## Proposed first step
-Build **Academic Content Generator** as the next AI feature because it directly serves existing teacher/admin workflows and reuses the existing AI Gateway setup. It can be implemented as a set of server functions + side-panel/canvas components for generating and editing content before saving.
-
-## Deliverables
-- New AI tools for lesson-plan, exam-question, and comment generation.
-- Reusable AI writing panel (`/ai-write` or slide-over component) across academic modules.
-- Server functions wired to the existing Lovable AI Gateway helper.
-- RLS-safe persistence so generated drafts are scoped to the user's tenant.
-
-## Out of scope (for this next step)
-- Real-time computer vision or biometric attendance.
-- Predictive model training (can use rule-based scoring + AI summaries as a lighter first version).
-
-## Next action
-Pick the first AI integration to build (default: Academic Content Generator) and confirm which modules should receive AI buttons first.
+## Out of scope
+- No change to what Platform Admin can already do per tenant; the CEO role reuses the existing screens.
