@@ -222,7 +222,7 @@ function Insights() {
   return (
     <>
       <PageHeader
-        eyebrow="\u00a0INSIGHTS"
+        eyebrow="INSIGHTS"
         title="Executive Overview"
         description="Institution-wide performance across enrollment, attendance, finance and admissions for the last six months."
       />
