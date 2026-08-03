@@ -589,7 +589,62 @@ function ColorField({
   );
 }
 
+function InterfacePreview({
+  name, logoUrl, primary, secondary, accent, font,
+}: {
+  name: string;
+  logoUrl: string;
+  primary: string;
+  secondary: string;
+  accent: string;
+  font: string;
+}) {
+  const nav = primary || "#0f172a";
+  const acc = accent || "#c9a24a";
+  const sec = secondary || "#475569";
+  const family = font ? `"${font}", ui-sans-serif, system-ui, sans-serif` : undefined;
+
+  return (
+    <div className="rounded-md border bg-card p-4">
+      <div className="mb-3 text-xs font-medium opacity-70">Interface preview</div>
+      <div className="overflow-hidden rounded-md border" style={{ fontFamily: family }}>
+        <div className="flex">
+          <div className="hidden w-32 shrink-0 p-3 text-[11px] sm:block" style={{ backgroundColor: nav, color: "#fff" }}>
+            <div className="mb-3 flex items-center gap-2">
+              {logoUrl
+                ? <img src={logoUrl} alt="" className="h-5 w-5 rounded-sm object-contain" />
+                : <div className="h-5 w-5 rounded-sm" style={{ backgroundColor: acc }} />}
+              <span className="truncate font-semibold">{name}</span>
+            </div>
+            {["Dashboard", "Students", "Fees"].map((l, i) => (
+              <div key={l} className="rounded-sm px-2 py-1" style={i === 0 ? { backgroundColor: sec } : undefined}>{l}</div>
+            ))}
+          </div>
+          <div className="flex-1 bg-background p-4">
+            <div className="text-base font-semibold" style={{ color: nav }}>Student Overview</div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              The quick brown fox jumps over the lazy dog — 0123456789
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="rounded-md px-3 py-1.5 text-xs font-medium text-white" style={{ backgroundColor: nav }}>
+                Primary action
+              </span>
+              <span className="rounded-md px-3 py-1.5 text-xs font-medium text-white" style={{ backgroundColor: sec }}>
+                Secondary
+              </span>
+              <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold" style={{ backgroundColor: acc, color: "#1a1a1a" }}>
+                Accent badge
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ColorPreview({ primary, secondary, accent }: { primary: string; secondary: string; accent: string }) {
+
   const swatches = [
     { label: "Primary", color: primary },
     { label: "Secondary", color: secondary },
