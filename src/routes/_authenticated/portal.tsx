@@ -203,7 +203,7 @@ function StudentPortalPage() {
                   {(attendance ?? []).map((r) => (
                     <TableRow key={r.id}>
                       <TableCell className="text-sm">{new Date(r.date).toLocaleDateString()}</TableCell>
-                      <TableCell className="text-sm">{courseName(r.course_id)}</TableCell>
+                      <TableCell className="text-sm">{courseLabel(r.course)}</TableCell>
                       <TableCell>
                         <Badge variant={r.status === "present" ? "secondary" : r.status === "absent" ? "destructive" : "outline"}>
                           {r.status}
