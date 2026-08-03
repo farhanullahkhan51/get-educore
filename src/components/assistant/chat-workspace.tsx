@@ -226,6 +226,14 @@ export function ChatWorkspace({ threadId }: { threadId: string }) {
 
   const busy = status === "submitted" || status === "streaming";
 
+  const voice = useVoiceInput({
+    onTranscript: (text) => {
+      setInput(text);
+      void handleSend(text);
+    },
+    onError: (message) => toast.error(message),
+  });
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <Conversation className="flex-1">
