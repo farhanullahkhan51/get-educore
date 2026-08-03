@@ -174,6 +174,19 @@ function UsersPage() {
                     <TableCell>
                       <RoleAssigner onAssign={(role) => assignRole(p.id, role, p.campus_id)} />
                     </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Delete ${p.full_name ?? p.email ?? "user"}`}
+                        disabled={p.id === me?.userId}
+                        onClick={() => setPendingDelete({ id: p.id, label: p.full_name ?? p.email ?? "this user" })}
+                        className="text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+
                   </TableRow>
                 );
               })}
