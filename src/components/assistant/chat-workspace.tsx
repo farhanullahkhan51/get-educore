@@ -344,7 +344,6 @@ export function ChatWorkspace({ threadId }: { threadId: string }) {
                 disabled={voice.state !== "idle"}
               >
                 <SelectTrigger
-                  size="sm"
                   className="h-8 w-[104px] text-xs"
                   aria-label="Voice transcription language"
                   title="Voice transcription language"
