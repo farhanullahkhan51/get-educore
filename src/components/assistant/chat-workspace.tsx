@@ -5,7 +5,14 @@ import { DefaultChatTransport, type UIMessage } from "ai";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus, MessageSquare, Trash2, PanelLeft, Mic, Square, Loader2 } from "lucide-react";
-import { useVoiceInput } from "@/hooks/use-voice-input";
+import { useVoiceInput, type VoiceLanguage } from "@/hooks/use-voice-input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/use-current-user";
