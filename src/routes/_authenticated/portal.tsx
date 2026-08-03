@@ -176,13 +176,52 @@ function StudentPortalPage() {
       </div>
 
       <Tabs defaultValue="attendance">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="attendance">Attendance</TabsTrigger>
           <TabsTrigger value="fees">Fees</TabsTrigger>
           <TabsTrigger value="results">Results</TabsTrigger>
+          <TabsTrigger value="deadlines">Deadlines</TabsTrigger>
           <TabsTrigger value="certificates">Certificates</TabsTrigger>
           <TabsTrigger value="profile">Profile</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="deadlines">
+          <Card className="shadow-none">
+            <CardHeader>
+              <CardTitle className="text-base font-serif flex items-center gap-2">
+                <CalendarClock className="h-4 w-4" /> Upcoming assessments
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Due</TableHead>
+                    <TableHead>Assessment</TableHead>
+                    <TableHead>Course</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Max marks</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(deadlines ?? []).length === 0 && (
+                    <TableRow><TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">No upcoming deadlines.</TableCell></TableRow>
+                  )}
+                  {(deadlines ?? []).map((a: any) => (
+                    <TableRow key={a.id}>
+                      <TableCell className="text-sm">{a.due_date ? new Date(a.due_date).toLocaleDateString() : "—"}</TableCell>
+                      <TableCell className="text-sm">{a.title}</TableCell>
+                      <TableCell className="text-sm">{courseLabel(a.course)}</TableCell>
+                      <TableCell className="text-sm capitalize">{a.type}</TableCell>
+                      <TableCell className="text-right text-sm">{a.max_marks ?? "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
 
         <TabsContent value="attendance">
           <Card className="shadow-none">
