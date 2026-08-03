@@ -15,8 +15,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Settings2, Building2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Settings2, Building2, Eye } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { useTenant, type TenantBranding } from "@/lib/tenant-context";
+
 
 export const Route = createFileRoute("/_authenticated/platform")({
   component: PlatformPage,
@@ -79,6 +81,8 @@ function PlatformPage() {
 
 function TenantsTab() {
   const qc = useQueryClient();
+  const { setPreview } = useTenant();
+
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Tenant | null>(null);
   const [settingsFor, setSettingsFor] = useState<Tenant | null>(null);
@@ -135,6 +139,37 @@ function TenantsTab() {
     qc.invalidateQueries({ queryKey: ["platform.tenants"] });
   }
 
+  async function startPreview(t: Tenant) {
+    const { data, error } = await supabase
+      .from("tenant_settings")
+      .select("*")
+      .eq("tenant_id", t.id)
+      .maybeSingle();
+    if (error) return toast.error(error.message);
+    const s = data as TenantSettings | null;
+    setPreview({
+      id: t.id,
+      name: t.name,
+      slug: t.slug,
+      status: t.status,
+      custom_domain: t.custom_domain,
+      logo_url: s?.logo_url ?? null,
+      favicon_url: s?.favicon_url ?? null,
+      primary_color: s?.primary_color ?? null,
+      secondary_color: s?.secondary_color ?? null,
+      accent_color: s?.accent_color ?? null,
+      font: s?.font ?? null,
+      letterhead_url: s?.letterhead_url ?? null,
+      signature_url: s?.signature_url ?? null,
+      email_sender_name: s?.email_sender_name ?? null,
+      default_currency: s?.default_currency ?? "USD",
+      default_timezone: s?.default_timezone ?? "UTC",
+    } satisfies TenantBranding);
+    toast.success(`Previewing ${t.name}`);
+  }
+
+
+
   function planName(id: string | null) {
     return plans?.find((p) => p.id === id)?.name ?? "—";
   }
@@ -177,6 +212,15 @@ function TenantsTab() {
                       <Badge variant={t.status === "active" ? "default" : "secondary"}>{t.status}</Badge>
                     </TableCell>
                     <TableCell className="text-right space-x-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        aria-label={`Preview ${t.name} interface`}
+                        title="Preview this tenant's interface & font"
+                        onClick={() => startPreview(t)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
                       <Button size="sm" variant="ghost" onClick={() => setSettingsFor(t)}>
                         <Settings2 className="h-4 w-4" />
                       </Button>
@@ -187,6 +231,7 @@ function TenantsTab() {
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </TableCell>
+
                   </TableRow>
                 ))}
                 {!tenants?.length && (
@@ -387,6 +432,15 @@ function SettingsForm({
               Choose from 50 pre-integrated Google Fonts. Preview updates instantly; saved only when you click Save.
             </p>
             <FontPicker value={font} onChange={setFont} />
+            <InterfacePreview
+              name={tenant.name}
+              logoUrl={logoUrl}
+              primary={primary}
+              secondary={secondary}
+              accent={accent}
+              font={font}
+            />
+
           </section>
 
           {/* Meta */}
@@ -535,7 +589,62 @@ function ColorField({
   );
 }
 
+function InterfacePreview({
+  name, logoUrl, primary, secondary, accent, font,
+}: {
+  name: string;
+  logoUrl: string;
+  primary: string;
+  secondary: string;
+  accent: string;
+  font: string;
+}) {
+  const nav = primary || "#0f172a";
+  const acc = accent || "#c9a24a";
+  const sec = secondary || "#475569";
+  const family = font ? `"${font}", ui-sans-serif, system-ui, sans-serif` : undefined;
+
+  return (
+    <div className="rounded-md border bg-card p-4">
+      <div className="mb-3 text-xs font-medium opacity-70">Interface preview</div>
+      <div className="overflow-hidden rounded-md border" style={{ fontFamily: family }}>
+        <div className="flex">
+          <div className="hidden w-32 shrink-0 p-3 text-[11px] sm:block" style={{ backgroundColor: nav, color: "#fff" }}>
+            <div className="mb-3 flex items-center gap-2">
+              {logoUrl
+                ? <img src={logoUrl} alt="" className="h-5 w-5 rounded-sm object-contain" />
+                : <div className="h-5 w-5 rounded-sm" style={{ backgroundColor: acc }} />}
+              <span className="truncate font-semibold">{name}</span>
+            </div>
+            {["Dashboard", "Students", "Fees"].map((l, i) => (
+              <div key={l} className="rounded-sm px-2 py-1" style={i === 0 ? { backgroundColor: sec } : undefined}>{l}</div>
+            ))}
+          </div>
+          <div className="flex-1 bg-background p-4">
+            <div className="text-base font-semibold" style={{ color: nav }}>Student Overview</div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              The quick brown fox jumps over the lazy dog — 0123456789
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="rounded-md px-3 py-1.5 text-xs font-medium text-white" style={{ backgroundColor: nav }}>
+                Primary action
+              </span>
+              <span className="rounded-md px-3 py-1.5 text-xs font-medium text-white" style={{ backgroundColor: sec }}>
+                Secondary
+              </span>
+              <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold" style={{ backgroundColor: acc, color: "#1a1a1a" }}>
+                Accent badge
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ColorPreview({ primary, secondary, accent }: { primary: string; secondary: string; accent: string }) {
+
   const swatches = [
     { label: "Primary", color: primary },
     { label: "Secondary", color: secondary },

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { loadGoogleFont } from "@/lib/google-fonts";
@@ -27,18 +27,36 @@ type TenantContextValue = {
   tenant: TenantBranding | null;
   hostname: string;
   isLoading: boolean;
+  /** Tenant whose branding is being previewed (visual only), if any. */
+  preview: TenantBranding | null;
+  setPreview: (t: TenantBranding | null) => void;
 };
 
 const TenantContext = createContext<TenantContextValue>({
   tenant: null,
   hostname: "",
   isLoading: true,
+  preview: null,
+  setPreview: () => {},
 });
+
+const PREVIEW_KEY = "educore.tenant-preview";
+
+function readStoredPreview(): TenantBranding | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(PREVIEW_KEY);
+    return raw ? (JSON.parse(raw) as TenantBranding) : null;
+  } catch {
+    return null;
+  }
+}
 
 function getHostname(): string {
   if (typeof window === "undefined") return "";
   return window.location.hostname;
 }
+
 
 /**
  * Module-level cache of the last resolved tenant branding.
@@ -82,7 +100,23 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     enabled: typeof window !== "undefined",
   });
 
-  const tenant = data ?? null;
+  const hostTenant = data ?? null;
+
+  const [preview, setPreviewState] = useState<TenantBranding | null>(() => readStoredPreview());
+
+  const setPreview = useCallback((t: TenantBranding | null) => {
+    setPreviewState(t);
+    if (typeof window === "undefined") return;
+    try {
+      if (t) window.sessionStorage.setItem(PREVIEW_KEY, JSON.stringify(t));
+      else window.sessionStorage.removeItem(PREVIEW_KEY);
+    } catch {
+      /* storage unavailable — preview stays in memory only */
+    }
+  }, []);
+
+  // Preview branding takes precedence over the host-resolved tenant (visual only).
+  const tenant = preview ?? hostTenant;
 
   // Apply branding: CSS variables, page title, favicon
   useEffect(() => {
@@ -122,6 +156,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     if (tenant.font) {
       loadGoogleFont(tenant.font);
       root.style.setProperty("--font-sans", `"${tenant.font}", ui-sans-serif, system-ui, sans-serif`);
+    } else {
+      root.style.removeProperty("--font-sans");
     }
 
 
@@ -142,12 +178,13 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
 
   const value = useMemo(
-    () => ({ tenant, hostname, isLoading }),
-    [tenant, hostname, isLoading],
+    () => ({ tenant, hostname, isLoading, preview, setPreview }),
+    [tenant, hostname, isLoading, preview, setPreview],
   );
 
   return <TenantContext.Provider value={value}>{children}</TenantContext.Provider>;
 }
+
 
 export function useTenant(): TenantContextValue {
   return useContext(TenantContext);
