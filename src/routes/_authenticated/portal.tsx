@@ -278,17 +278,18 @@ function StudentPortalPage() {
                     {(reports ?? []).length === 0 && (
                       <TableRow><TableCell colSpan={3} className="py-6 text-center text-sm text-muted-foreground">No report cards published yet.</TableCell></TableRow>
                     )}
-                    {(reports ?? []).map((r: any) => (
-                      <TableRow key={r.id}>
-                        <TableCell className="text-sm">{r.term ?? "—"}</TableCell>
-                        <TableCell className="text-sm">{r.academic_year ?? "—"}</TableCell>
-                        <TableCell className="text-right text-sm">
-                          {r.total_obtained != null && r.total_max != null
-                            ? `${r.total_obtained} / ${r.total_max}`
-                            : "—"}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {(reports ?? []).map((r: any) => {
+                      const m = marksFor(r.subjects);
+                      return (
+                        <TableRow key={r.id}>
+                          <TableCell className="text-sm">{r.term ?? "—"}</TableCell>
+                          <TableCell className="text-sm">{r.academic_year ?? "—"}</TableCell>
+                          <TableCell className="text-right text-sm">
+                            {m ? `${m.obtained} / ${m.max}` : r.overall_percent != null ? `${r.overall_percent}%` : "—"}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </CardContent>
