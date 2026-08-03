@@ -1,51 +1,58 @@
-# Multi-tenant conversion — Step 1 only
+# EduCore AI Integration Roadmap
 
-Scope of this plan is exactly Step 1 from your list: introduce the tenancy tables, seed plan tiers, and create the default tenant + its tenant_settings row. No existing tables are touched, no RLS is changed, no UI is added yet. Steps 2–8 will each get their own plan once Step 1 is verified.
+## Goal
+Map out the next AI-powered features that can be layered onto the existing EduCore ERP beyond the current AI Assistant.
 
-## What gets created (single migration)
+## Current state
+- Phase 8 foundation is live: a database-backed, multi-thread AI Assistant (`/api/chat`) with read-only analytical tools for students, staff, fees, attendance, admissions, and results.
+- The system already has a multi-tenant architecture, role-based access, and a full academic/financial data model.
+- Lovable AI Gateway is already configured and ready to support additional model types (chat, vision, embeddings, image generation, text-to-speech, speech-to-text).
 
-1. `plan_tiers`
-   - `name` (unique), `feature_flags jsonb default '{}'::jsonb`, `student_limit int`, `campus_limit int`
-   - Seeded: **Starter / Pro / Enterprise** with escalating limits and empty feature_flags you can fill later.
+## Recommended AI integrations
 
-2. `tenants`
-   - `name`, `slug` (unique, lowercase, url-safe), `custom_domain` (nullable, unique when set), `custom_domain_status` (enum: `pending | verifying | verified | active | failed`, default `pending`), `domain_verification_token` (random text, generated on insert), `plan_tier_id` (fk plan_tiers), `status` (enum: `active | suspended | trial`, default `active`).
+### 1. Academic Content Generator (highest value, lowest risk)
+- Generate lesson plans, exam questions, and report-card comments for teachers.
+- Generate certificate/letter content and official announcement drafts.
+- Integration points: academics, certificates, classes, results, and a global "AI Writer" button.
 
-3. `tenant_settings` (1-to-1 with tenants; pk = tenant_id)
-   - `logo_url`, `favicon_url`, `primary_color`, `secondary_color`, `accent_color`, `font`, `letterhead_url`, `signature_url`, `email_sender_name`, `default_currency` (default `PKR`), `default_timezone` (default `Asia/Karachi`).
+### 2. Document Intelligence / OCR (high value for admissions & records)
+- Extract text and key fields from scanned documents, report cards, certificates, and ID cards.
+- Auto-fill inquiry/student fields from uploaded documents.
+- Integration points: admissions upload, student documents, certificate verification.
 
-4. `subscriptions`
-   - `tenant_id` (fk), `plan_tier_id` (fk), `billing_cycle` (enum: `monthly | yearly`), `status` (enum: `active | past_due | canceled | trialing`), `current_period_end timestamptz`.
+### 3. Predictive Analytics & Risk Alerts (high value for leadership)
+- At-risk student prediction based on attendance, fees, and marks.
+- Enrollment and fee-collection forecasting.
+- Automated insight summaries for the Insights dashboard.
+- Integration points: insights, academics, fees, attendance.
 
-All four get `id uuid pk default gen_random_uuid()`, `created_at`, `updated_at` + update trigger, GRANTs, RLS enabled.
+### 4. Smart Communication Assistant (medium value, easy adoption)
+- Draft parent emails, SMS, and circulars in multiple languages.
+- Summarize student performance for parent-teacher meetings.
+- Integration points: students, academics, portal, announcements.
 
-## Row-Level Security for these new tables (Step 1 only)
+### 5. Voice & Audio AI (medium value, optional)
+- Text-to-speech for announcements or reading assignments.
+- Speech-to-text for teacher notes or meeting minutes.
+- Integration points: announcements, academics, staff portal.
 
-Step 1 has no tenant_id column on existing tables yet, so policies here are minimal and safe:
-- `plan_tiers`: `SELECT` for `authenticated` (everyone can see tier metadata); writes restricted to `super_admin` via existing `has_role`.
-- `tenants`, `tenant_settings`, `subscriptions`: `SELECT/ALL` restricted to `super_admin` for now. In Step 6 we'll introduce the `platform_super_admin` role and rewrite these; in Step 3 we'll add tenant-scoped read for a tenant's own row.
-- `anon` gets no access to any of these tables in Step 1.
+### 6. Vision / Face Recognition (higher effort, optional)
+- Photo verification for student/staff IDs.
+- Optional face-recognition-based attendance.
+- Integration points: attendance, staff, students.
 
-## Seed data
+## Proposed first step
+Build **Academic Content Generator** as the next AI feature because it directly serves existing teacher/admin workflows and reuses the existing AI Gateway setup. It can be implemented as a set of server functions + side-panel/canvas components for generating and editing content before saving.
 
-- `plan_tiers`: Starter (500 students / 1 campus), Pro (5,000 / 5), Enterprise (unlimited, stored as NULL).
-- Default `tenants` row: `name = 'EduCore'`, `slug = 'educore'`, `plan_tier_id = Enterprise`, `status = 'active'`. (Say the word if you want a different name/slug — easy one-line change before I run the migration.)
-- Default `tenant_settings` row referencing that tenant, all branding fields left NULL — you'll fill them in after Step 1 as you noted.
+## Deliverables
+- New AI tools for lesson-plan, exam-question, and comment generation.
+- Reusable AI writing panel (`/ai-write` or slide-over component) across academic modules.
+- Server functions wired to the existing Lovable AI Gateway helper.
+- RLS-safe persistence so generated drafts are scoped to the user's tenant.
 
-## Explicitly NOT in this step
+## Out of scope (for this next step)
+- Real-time computer vision or biometric attendance.
+- Predictive model training (can use rule-based scoring + AI summaries as a lighter first version).
 
-- No `tenant_id` column added to existing tables (that's Step 2).
-- No changes to existing RLS policies (Step 3).
-- No hostname resolution, theme context, or UI (Steps 4–7).
-- No Platform Super Admin role or console (Step 6).
-- Nothing removed or renamed.
-
-## Verification before moving to Step 2
-
-After the migration runs I'll query and show you:
-- The 3 plan_tiers rows
-- The default tenants row (with its generated verification token)
-- The default tenant_settings row
-- That existing tables/policies/data are untouched (row counts unchanged on `profiles`, `students`, `campuses`).
-
-Once you confirm, I'll produce the Step 2 plan (adding `tenant_id` to every existing table, backfilled to the default tenant id, NOT NULL).
+## Next action
+Pick the first AI integration to build (default: Academic Content Generator) and confirm which modules should receive AI buttons first.
