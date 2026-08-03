@@ -59,12 +59,37 @@ function UsersPage() {
     toast.success(`Granted ${roleLabel(role)}`);
     qc.invalidateQueries({ queryKey: ["all-roles"] });
   }
+  const [pendingRevoke, setPendingRevoke] = useState<{ id: string; label: string; userLabel: string } | null>(null);
+  const [confirmStep, setConfirmStep] = useState(1);
+
   async function revokeRole(id: string) {
     const { error } = await supabase.from("user_roles").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Role revoked");
     qc.invalidateQueries({ queryKey: ["all-roles"] });
   }
+
+  function requestRevoke(r: { id: string; role: string }, userLabel: string) {
+    if (r.role === "super_admin") {
+      setConfirmStep(1);
+      setPendingRevoke({ id: r.id, label: roleLabel(r.role as AppRole), userLabel });
+      return;
+    }
+    revokeRole(r.id);
+  }
+
+  async function proceedRevoke() {
+    if (!pendingRevoke) return;
+    if (confirmStep === 1) {
+      setConfirmStep(2);
+      return;
+    }
+    const target = pendingRevoke;
+    setPendingRevoke(null);
+    setConfirmStep(1);
+    await revokeRole(target.id);
+  }
+
   async function updateCampus(userId: string, campusId: string | null) {
     const { error } = await supabase.from("profiles").update({ campus_id: campusId }).eq("id", userId);
     if (error) return toast.error(error.message);
