@@ -20,13 +20,13 @@ import {
   Award,
   Landmark,
   BarChart3,
-  Bot,
   Menu,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import { AssistantMenu } from "@/components/assistant/assistant-menu";
 
 interface NavItem {
   to: string;
