@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { loadGoogleFont } from "@/lib/google-fonts";
@@ -27,18 +27,36 @@ type TenantContextValue = {
   tenant: TenantBranding | null;
   hostname: string;
   isLoading: boolean;
+  /** Tenant whose branding is being previewed (visual only), if any. */
+  preview: TenantBranding | null;
+  setPreview: (t: TenantBranding | null) => void;
 };
 
 const TenantContext = createContext<TenantContextValue>({
   tenant: null,
   hostname: "",
   isLoading: true,
+  preview: null,
+  setPreview: () => {},
 });
+
+const PREVIEW_KEY = "educore.tenant-preview";
+
+function readStoredPreview(): TenantBranding | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(PREVIEW_KEY);
+    return raw ? (JSON.parse(raw) as TenantBranding) : null;
+  } catch {
+    return null;
+  }
+}
 
 function getHostname(): string {
   if (typeof window === "undefined") return "";
   return window.location.hostname;
 }
+
 
 /**
  * Module-level cache of the last resolved tenant branding.
