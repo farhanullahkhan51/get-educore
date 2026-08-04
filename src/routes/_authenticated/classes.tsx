@@ -32,6 +32,10 @@ type Section = {
   capacity: number | null; room: string | null;
   academic_system: "board" | "cambridge" | "both";
 };
+type StudentRow = {
+  id: string; student_code: string; first_name: string; last_name: string;
+  class_id: string | null; section_id: string | null; status: string; guardian_name: string | null;
+};
 
 function ClassesPage() {
   const qc = useQueryClient();
