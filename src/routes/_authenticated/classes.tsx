@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { Plus, Trash2, Pencil, ChevronRight } from "lucide-react";
 import { SystemBadge } from "./campuses";
 
 export const Route = createFileRoute("/_authenticated/classes")({
@@ -32,6 +32,10 @@ type Section = {
   capacity: number | null; room: string | null;
   academic_system: "board" | "cambridge" | "both";
 };
+type StudentRow = {
+  id: string; student_code: string; first_name: string; last_name: string;
+  class_id: string | null; section_id: string | null; status: string; guardian_name: string | null;
+};
 
 function ClassesPage() {
   const qc = useQueryClient();
@@ -39,6 +43,7 @@ function ClassesPage() {
   const [openSec, setOpenSec] = useState<string | null>(null);
   const [editCls, setEditCls] = useState<Klass | null>(null);
   const [editSec, setEditSec] = useState<Section | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   const { data: campuses } = useQuery({
     queryKey: ["campuses"],
@@ -55,6 +60,16 @@ function ClassesPage() {
   const { data: sections } = useQuery({
     queryKey: ["sections"],
     queryFn: async () => (await supabase.from("sections").select("*").order("name")).data as Section[] | null,
+  });
+  const { data: students } = useQuery({
+    queryKey: ["class-students"],
+    queryFn: async () =>
+      (
+        await supabase
+          .from("students")
+          .select("id, student_code, first_name, last_name, class_id, section_id, status, guardian_name")
+          .order("first_name")
+      ).data as StudentRow[] | null,
   });
 
   const campusMap = new Map(campuses?.map((c) => [c.id, c.name]));
@@ -209,18 +224,34 @@ function ClassesPage() {
         )}
         {classes?.map((cls) => {
           const clsSections = sections?.filter((s) => s.class_id === cls.id) ?? [];
+          const sectionNames = new Map(clsSections.map((s) => [s.id, s.name]));
+          const clsStudents =
+            students?.filter(
+              (st) => st.class_id === cls.id || (st.section_id && sectionNames.has(st.section_id)),
+            ) ?? [];
+          const isOpen = expanded === cls.id;
           return (
             <Card key={cls.id} className="shadow-none">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <div>
-                  <CardTitle className="font-serif text-lg">{cls.name}</CardTitle>
-                  <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>{campusMap.get(cls.campus_id)}</span>
-                    <span>·</span>
-                    <span>{cls.academic_year ?? "—"}</span>
-                    <SystemBadge system={cls.academic_system} />
+                <button
+                  type="button"
+                  onClick={() => setExpanded(isOpen ? null : cls.id)}
+                  className="flex items-start gap-2 text-left"
+                  aria-expanded={isOpen}
+                >
+                  <ChevronRight className={`mt-1 h-4 w-4 shrink-0 transition-transform ${isOpen ? "rotate-90" : ""}`} />
+                  <div>
+                    <CardTitle className="font-serif text-lg">{cls.name}</CardTitle>
+                    <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>{campusMap.get(cls.campus_id)}</span>
+                      <span>·</span>
+                      <span>{cls.academic_year ?? "—"}</span>
+                      <span>·</span>
+                      <span>{clsStudents.length} student{clsStudents.length === 1 ? "" : "s"}</span>
+                      <SystemBadge system={cls.academic_system} />
+                    </div>
                   </div>
-                </div>
+                </button>
                 <div className="flex gap-1">
                   <Dialog open={openSec === cls.id} onOpenChange={(o) => setOpenSec(o ? cls.id : null)}>
                     <DialogTrigger asChild><Button size="sm" variant="outline"><Plus className="mr-1 h-3 w-3" /> Section</Button></DialogTrigger>
@@ -272,6 +303,35 @@ function ClassesPage() {
                       ))}
                     </TableBody>
                   </Table>
+                )}
+
+                {isOpen && (
+                  <div className="mt-6 border-t pt-4">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Students in {cls.name}
+                    </p>
+                    {clsStudents.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">No students enrolled in this class yet.</p>
+                    ) : (
+                      <Table>
+                        <TableHeader><TableRow>
+                          <TableHead>Student ID</TableHead><TableHead>Name</TableHead>
+                          <TableHead>Section</TableHead><TableHead>Guardian</TableHead><TableHead>Status</TableHead>
+                        </TableRow></TableHeader>
+                        <TableBody>
+                          {clsStudents.map((st) => (
+                            <TableRow key={st.id}>
+                              <TableCell className="font-mono text-xs">{st.student_code}</TableCell>
+                              <TableCell className="font-medium">{st.first_name} {st.last_name}</TableCell>
+                              <TableCell>{st.section_id ? (sectionNames.get(st.section_id) ?? "—") : "—"}</TableCell>
+                              <TableCell>{st.guardian_name ?? "—"}</TableCell>
+                              <TableCell className="capitalize">{st.status}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>
