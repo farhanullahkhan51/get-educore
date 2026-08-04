@@ -99,6 +99,15 @@ function TrackSwitchPage() {
       return toast.error(`This campus only supports ${campusOfStudent.academic_system.toUpperCase()}. Switch the campus academic system to "Both" first.`);
     }
     if (!classId) return toast.error(`Select the ${toSystem} class to move the student into`);
+    if (sectionId) {
+      const sec = sections?.find((s) => s.id === sectionId);
+      if (!sec || sec.class_id !== classId) {
+        return toast.error("The selected section does not belong to the chosen class");
+      }
+      if (!systemsMatch(sec.academic_system)) {
+        return toast.error(`Section "${sec.name}" is a ${sec.academic_system} section and does not match the ${toSystem} track`);
+      }
+    }
     if (!tenantId) return toast.error("Tenant not resolved");
     const { error: swErr } = await supabase.from("track_switches").insert({
       tenant_id: tenantId,
