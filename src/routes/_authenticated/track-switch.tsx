@@ -192,12 +192,36 @@ function TrackSwitchPage() {
             )}
             <div className="space-y-2">
               <Label>Switch to *</Label>
-              <Select value={toSystem} onValueChange={(v: any) => setToSystem(v)}>
+              <Select value={toSystem} onValueChange={(v: any) => { setToSystem(v); setClassId(""); setSectionId(""); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {SYSTEMS.map((s) => <SelectItem key={s.v} value={s.v}>{s.l}</SelectItem>)}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>New class *</Label>
+              <Select value={classId} onValueChange={(v) => { setClassId(v); setSectionId(""); }} disabled={!studentId}>
+                <SelectTrigger><SelectValue placeholder={studentId ? "Select class" : "Select a student first"} /></SelectTrigger>
+                <SelectContent>
+                  {targetClasses.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name} <span className="text-muted-foreground">({c.academic_system})</span></SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {studentId && targetClasses.length === 0 && (
+                <p className="text-xs text-destructive">No {toSystem} classes exist for this campus. Create one in Classes &amp; Sections first.</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>New section</Label>
+              <Select value={sectionId} onValueChange={setSectionId} disabled={!classId}>
+                <SelectTrigger><SelectValue placeholder={classId ? "Select section (optional)" : "Select a class first"} /></SelectTrigger>
+                <SelectContent>
+                  {targetSections.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+
             </div>
             <div className="space-y-2">
               <Label>Effective date *</Label>
