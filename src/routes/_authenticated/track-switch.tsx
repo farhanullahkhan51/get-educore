@@ -38,6 +38,8 @@ function TrackSwitchPage() {
   const [toSystem, setToSystem] = useState<"board" | "cambridge" | "both">("cambridge");
   const [effectiveDate, setEffectiveDate] = useState(new Date().toISOString().slice(0, 10));
   const [reason, setReason] = useState("");
+  const [classId, setClassId] = useState("");
+  const [sectionId, setSectionId] = useState("");
 
   const { data: students } = useQuery({
     queryKey: ["students-for-switch"],
@@ -48,6 +50,16 @@ function TrackSwitchPage() {
     queryKey: ["campuses-for-switch"],
     queryFn: async () => (await supabase.from("campuses").select("id,name,academic_system")).data ?? [],
   });
+  const { data: classes } = useQuery({
+    queryKey: ["classes-for-switch"],
+    queryFn: async () => (await supabase.from("classes")
+      .select("id,name,campus_id,academic_system").order("name")).data ?? [],
+  });
+  const { data: sections } = useQuery({
+    queryKey: ["sections-for-switch"],
+    queryFn: async () => (await supabase.from("sections")
+      .select("id,name,class_id").order("name")).data ?? [],
+  });
   const { data: switches, refetch } = useQuery({
     queryKey: ["track_switches"],
     queryFn: async () => (await supabase.from("track_switches")
@@ -56,9 +68,20 @@ function TrackSwitchPage() {
 
   const student = useMemo(() => students?.find((s) => s.id === studentId), [students, studentId]);
   const campusOfStudent = useMemo(() => campuses?.find((c) => c.id === student?.campus_id), [campuses, student]);
+  const targetClasses = useMemo(
+    () => (classes ?? []).filter((c) =>
+      c.campus_id === student?.campus_id &&
+      (c.academic_system === toSystem || c.academic_system === "both" || toSystem === "both")),
+    [classes, student, toSystem],
+  );
+  const targetSections = useMemo(
+    () => (sections ?? []).filter((s) => s.class_id === classId),
+    [sections, classId],
+  );
 
   function reset() {
     setStudentId(""); setToSystem("cambridge"); setReason("");
+    setClassId(""); setSectionId("");
     setEffectiveDate(new Date().toISOString().slice(0, 10));
   }
 
@@ -69,6 +92,7 @@ function TrackSwitchPage() {
     if (campusOfStudent && campusOfStudent.academic_system !== "both" && campusOfStudent.academic_system !== toSystem && toSystem !== "both") {
       return toast.error(`This campus only supports ${campusOfStudent.academic_system.toUpperCase()}. Switch the campus academic system to "Both" first.`);
     }
+    if (!classId) return toast.error(`Select the ${toSystem} class to move the student into`);
     if (!tenantId) return toast.error("Tenant not resolved");
     const { error: swErr } = await supabase.from("track_switches").insert({
       tenant_id: tenantId,
@@ -77,11 +101,16 @@ function TrackSwitchPage() {
       effective_date: effectiveDate, reason: reason || null,
     });
     if (swErr) return toast.error(swErr.message);
-    const { error: upErr } = await supabase.from("students").update({ academic_system: toSystem }).eq("id", studentId);
+    const { error: upErr } = await supabase.from("students").update({
+      academic_system: toSystem,
+      class_id: classId,
+      section_id: sectionId || null,
+    }).eq("id", studentId);
     if (upErr) return toast.error(upErr.message);
-    toast.success("Academic track switched");
+    toast.success("Academic track switched and student moved to the new class");
     setOpen(false); reset(); refetch();
   }
+
 
   const nameOf = (id: string) => {
     const s = students?.find((x) => x.id === id);
@@ -163,12 +192,36 @@ function TrackSwitchPage() {
             )}
             <div className="space-y-2">
               <Label>Switch to *</Label>
-              <Select value={toSystem} onValueChange={(v: any) => setToSystem(v)}>
+              <Select value={toSystem} onValueChange={(v: any) => { setToSystem(v); setClassId(""); setSectionId(""); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {SYSTEMS.map((s) => <SelectItem key={s.v} value={s.v}>{s.l}</SelectItem>)}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>New class *</Label>
+              <Select value={classId} onValueChange={(v) => { setClassId(v); setSectionId(""); }} disabled={!studentId}>
+                <SelectTrigger><SelectValue placeholder={studentId ? "Select class" : "Select a student first"} /></SelectTrigger>
+                <SelectContent>
+                  {targetClasses.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name} <span className="text-muted-foreground">({c.academic_system})</span></SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {studentId && targetClasses.length === 0 && (
+                <p className="text-xs text-destructive">No {toSystem} classes exist for this campus. Create one in Classes &amp; Sections first.</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>New section</Label>
+              <Select value={sectionId} onValueChange={setSectionId} disabled={!classId}>
+                <SelectTrigger><SelectValue placeholder={classId ? "Select section (optional)" : "Select a class first"} /></SelectTrigger>
+                <SelectContent>
+                  {targetSections.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+
             </div>
             <div className="space-y-2">
               <Label>Effective date *</Label>
