@@ -244,6 +244,59 @@ function buildTools(supabase: Db) {
         };
       },
     }),
+    class_roster: tool({
+      description:
+        "List the students enrolled in a specific class (grade group) and optionally a section. Use this whenever the user asks who studies in a class, e.g. 'show students of Grade 9' or 'O-Level Year 1 section A'.",
+      inputSchema: z.object({
+        class_name: z
+          .string()
+          .describe("Class or grade name as the user said it, e.g. 'Grade 9', '9', 'O-Level Year 1'."),
+        section_name: z.string().describe("Section name such as 'A'. Use an empty string for all sections."),
+      }),
+      execute: async ({ class_name, section_name }) => {
+        const term = class_name.trim();
+        let cq = supabase.from("classes").select("id, name, grade_level, academic_year, campus_id, academic_system");
+        if (term) cq = cq.or(`name.ilike.%${term}%,grade_level.ilike.%${term}%`);
+        const { data: classes, error: cErr } = await cq.limit(10);
+        if (cErr) return { error: cErr.message };
+        if (!classes?.length) return { error: `No class matching "${term}" was found.` };
+
+        const classIds = classes.map((c) => c.id);
+        const { data: sections } = await supabase
+          .from("sections")
+          .select("id, name, class_id")
+          .in("class_id", classIds);
+
+        let sectionIds = (sections ?? []).map((s) => s.id);
+        const sec = section_name.trim();
+        if (sec) {
+          sectionIds = (sections ?? []).filter((s) => s.name.toLowerCase() === sec.toLowerCase()).map((s) => s.id);
+        }
+
+        let sq = supabase
+          .from("students")
+          .select("id, student_code, first_name, last_name, grade, status, section_id, class_id, guardian_name")
+          .limit(300);
+        sq = sec && sectionIds.length ? sq.in("section_id", sectionIds) : sq.in("class_id", classIds);
+        const { data: students, error: sErr } = await sq.order("first_name");
+        if (sErr) return { error: sErr.message };
+
+        const sectionMap = new Map((sections ?? []).map((s) => [s.id, s.name]));
+        return {
+          matched_classes: classes.map((c) => ({ id: c.id, name: c.name, academic_year: c.academic_year })),
+          section_filter: sec || "all sections",
+          total_students: students?.length ?? 0,
+          students: (students ?? []).map((s) => ({
+            student_code: s.student_code,
+            name: `${s.first_name} ${s.last_name}`,
+            section: s.section_id ? (sectionMap.get(s.section_id) ?? null) : null,
+            grade: s.grade,
+            status: s.status,
+            guardian_name: s.guardian_name,
+          })),
+        };
+      },
+    }),
   };
 }
 
