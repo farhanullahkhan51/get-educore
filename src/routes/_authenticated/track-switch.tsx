@@ -233,9 +233,16 @@ function TrackSwitchPage() {
               <Select value={sectionId} onValueChange={setSectionId} disabled={!classId}>
                 <SelectTrigger><SelectValue placeholder={classId ? "Select section (optional)" : "Select a class first"} /></SelectTrigger>
                 <SelectContent>
-                  {targetSections.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  {targetSections.map((s) => <SelectItem key={s.id} value={s.id}>{s.name} <span className="text-muted-foreground">({s.academic_system})</span></SelectItem>)}
                 </SelectContent>
               </Select>
+              {classId && targetSections.length === 0 && (
+                <p className="text-xs text-destructive">No sections in this class match the {toSystem} track. Leave blank or create a matching section.</p>
+              )}
+              {classId && incompatibleSections > 0 && targetSections.length > 0 && (
+                <p className="text-xs text-muted-foreground">{incompatibleSections} section(s) hidden — they don&apos;t match the {toSystem} track.</p>
+              )}
+
 
             </div>
             <div className="space-y-2">
