@@ -304,6 +304,35 @@ function ClassesPage() {
                     </TableBody>
                   </Table>
                 )}
+
+                {isOpen && (
+                  <div className="mt-6 border-t pt-4">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Students in {cls.name}
+                    </p>
+                    {clsStudents.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">No students enrolled in this class yet.</p>
+                    ) : (
+                      <Table>
+                        <TableHeader><TableRow>
+                          <TableHead>Student ID</TableHead><TableHead>Name</TableHead>
+                          <TableHead>Section</TableHead><TableHead>Guardian</TableHead><TableHead>Status</TableHead>
+                        </TableRow></TableHeader>
+                        <TableBody>
+                          {clsStudents.map((st) => (
+                            <TableRow key={st.id}>
+                              <TableCell className="font-mono text-xs">{st.student_code}</TableCell>
+                              <TableCell className="font-medium">{st.first_name} {st.last_name}</TableCell>
+                              <TableCell>{st.section_id ? (sectionNames.get(st.section_id) ?? "—") : "—"}</TableCell>
+                              <TableCell>{st.guardian_name ?? "—"}</TableCell>
+                              <TableCell className="capitalize">{st.status}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           );
