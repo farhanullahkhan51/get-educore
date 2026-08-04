@@ -56,6 +56,16 @@ function ClassesPage() {
     queryKey: ["sections"],
     queryFn: async () => (await supabase.from("sections").select("*").order("name")).data as Section[] | null,
   });
+  const { data: students } = useQuery({
+    queryKey: ["class-students"],
+    queryFn: async () =>
+      (
+        await supabase
+          .from("students")
+          .select("id, student_code, first_name, last_name, class_id, section_id, status, guardian_name")
+          .order("first_name")
+      ).data as StudentRow[] | null,
+  });
 
   const campusMap = new Map(campuses?.map((c) => [c.id, c.name]));
 
