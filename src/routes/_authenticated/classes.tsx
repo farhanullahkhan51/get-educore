@@ -223,18 +223,34 @@ function ClassesPage() {
         )}
         {classes?.map((cls) => {
           const clsSections = sections?.filter((s) => s.class_id === cls.id) ?? [];
+          const sectionNames = new Map(clsSections.map((s) => [s.id, s.name]));
+          const clsStudents =
+            students?.filter(
+              (st) => st.class_id === cls.id || (st.section_id && sectionNames.has(st.section_id)),
+            ) ?? [];
+          const isOpen = expanded === cls.id;
           return (
             <Card key={cls.id} className="shadow-none">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <div>
-                  <CardTitle className="font-serif text-lg">{cls.name}</CardTitle>
-                  <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>{campusMap.get(cls.campus_id)}</span>
-                    <span>·</span>
-                    <span>{cls.academic_year ?? "—"}</span>
-                    <SystemBadge system={cls.academic_system} />
+                <button
+                  type="button"
+                  onClick={() => setExpanded(isOpen ? null : cls.id)}
+                  className="flex items-start gap-2 text-left"
+                  aria-expanded={isOpen}
+                >
+                  <ChevronRight className={`mt-1 h-4 w-4 shrink-0 transition-transform ${isOpen ? "rotate-90" : ""}`} />
+                  <div>
+                    <CardTitle className="font-serif text-lg">{cls.name}</CardTitle>
+                    <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>{campusMap.get(cls.campus_id)}</span>
+                      <span>·</span>
+                      <span>{cls.academic_year ?? "—"}</span>
+                      <span>·</span>
+                      <span>{clsStudents.length} student{clsStudents.length === 1 ? "" : "s"}</span>
+                      <SystemBadge system={cls.academic_system} />
+                    </div>
                   </div>
-                </div>
+                </button>
                 <div className="flex gap-1">
                   <Dialog open={openSec === cls.id} onOpenChange={(o) => setOpenSec(o ? cls.id : null)}>
                     <DialogTrigger asChild><Button size="sm" variant="outline"><Plus className="mr-1 h-3 w-3" /> Section</Button></DialogTrigger>
