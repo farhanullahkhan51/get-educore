@@ -44,7 +44,7 @@ function TrackSwitchPage() {
   const { data: students } = useQuery({
     queryKey: ["students-for-switch"],
     queryFn: async () => (await supabase.from("students")
-      .select("id, first_name, last_name, student_code, academic_system, campus_id").order("first_name")).data ?? [],
+      .select("id, first_name, last_name, student_code, academic_system, campus_id, class_id, section_id").order("first_name")).data ?? [],
   });
   const { data: campuses } = useQuery({
     queryKey: ["campuses-for-switch"],
