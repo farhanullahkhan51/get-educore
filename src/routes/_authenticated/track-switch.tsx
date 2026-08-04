@@ -58,7 +58,7 @@ function TrackSwitchPage() {
   const { data: sections } = useQuery({
     queryKey: ["sections-for-switch"],
     queryFn: async () => (await supabase.from("sections")
-      .select("id,name,class_id").order("name")).data ?? [],
+      .select("id,name,class_id,academic_system").order("name")).data ?? [],
   });
   const { data: switches, refetch } = useQuery({
     queryKey: ["track_switches"],
@@ -74,9 +74,15 @@ function TrackSwitchPage() {
       (c.academic_system === toSystem || c.academic_system === "both" || toSystem === "both")),
     [classes, student, toSystem],
   );
+  const systemsMatch = (sys?: string | null) =>
+    !sys || sys === "both" || toSystem === "both" || sys === toSystem;
   const targetSections = useMemo(
-    () => (sections ?? []).filter((s) => s.class_id === classId),
-    [sections, classId],
+    () => (sections ?? []).filter((s) => s.class_id === classId && systemsMatch(s.academic_system)),
+    [sections, classId, toSystem],
+  );
+  const incompatibleSections = useMemo(
+    () => (sections ?? []).filter((s) => s.class_id === classId && !systemsMatch(s.academic_system)).length,
+    [sections, classId, toSystem],
   );
 
   function reset() {
