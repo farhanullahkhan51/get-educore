@@ -38,6 +38,8 @@ function TrackSwitchPage() {
   const [toSystem, setToSystem] = useState<"board" | "cambridge" | "both">("cambridge");
   const [effectiveDate, setEffectiveDate] = useState(new Date().toISOString().slice(0, 10));
   const [reason, setReason] = useState("");
+  const [classId, setClassId] = useState("");
+  const [sectionId, setSectionId] = useState("");
 
   const { data: students } = useQuery({
     queryKey: ["students-for-switch"],
@@ -47,6 +49,16 @@ function TrackSwitchPage() {
   const { data: campuses } = useQuery({
     queryKey: ["campuses-for-switch"],
     queryFn: async () => (await supabase.from("campuses").select("id,name,academic_system")).data ?? [],
+  });
+  const { data: classes } = useQuery({
+    queryKey: ["classes-for-switch"],
+    queryFn: async () => (await supabase.from("classes")
+      .select("id,name,campus_id,academic_system").order("name")).data ?? [],
+  });
+  const { data: sections } = useQuery({
+    queryKey: ["sections-for-switch"],
+    queryFn: async () => (await supabase.from("sections")
+      .select("id,name,class_id").order("name")).data ?? [],
   });
   const { data: switches, refetch } = useQuery({
     queryKey: ["track_switches"],
