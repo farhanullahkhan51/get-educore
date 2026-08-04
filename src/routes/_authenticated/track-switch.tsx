@@ -58,7 +58,7 @@ function TrackSwitchPage() {
   const { data: sections } = useQuery({
     queryKey: ["sections-for-switch"],
     queryFn: async () => (await supabase.from("sections")
-      .select("id,name,class_id").order("name")).data ?? [],
+      .select("id,name,class_id,academic_system").order("name")).data ?? [],
   });
   const { data: switches, refetch } = useQuery({
     queryKey: ["track_switches"],
@@ -74,9 +74,15 @@ function TrackSwitchPage() {
       (c.academic_system === toSystem || c.academic_system === "both" || toSystem === "both")),
     [classes, student, toSystem],
   );
+  const systemsMatch = (sys?: string | null) =>
+    !sys || sys === "both" || toSystem === "both" || sys === toSystem;
   const targetSections = useMemo(
-    () => (sections ?? []).filter((s) => s.class_id === classId),
-    [sections, classId],
+    () => (sections ?? []).filter((s) => s.class_id === classId && systemsMatch(s.academic_system)),
+    [sections, classId, toSystem],
+  );
+  const incompatibleSections = useMemo(
+    () => (sections ?? []).filter((s) => s.class_id === classId && !systemsMatch(s.academic_system)).length,
+    [sections, classId, toSystem],
   );
 
   function reset() {
@@ -93,6 +99,15 @@ function TrackSwitchPage() {
       return toast.error(`This campus only supports ${campusOfStudent.academic_system.toUpperCase()}. Switch the campus academic system to "Both" first.`);
     }
     if (!classId) return toast.error(`Select the ${toSystem} class to move the student into`);
+    if (sectionId) {
+      const sec = sections?.find((s) => s.id === sectionId);
+      if (!sec || sec.class_id !== classId) {
+        return toast.error("The selected section does not belong to the chosen class");
+      }
+      if (!systemsMatch(sec.academic_system)) {
+        return toast.error(`Section "${sec.name}" is a ${sec.academic_system} section and does not match the ${toSystem} track`);
+      }
+    }
     if (!tenantId) return toast.error("Tenant not resolved");
     const { error: swErr } = await supabase.from("track_switches").insert({
       tenant_id: tenantId,
@@ -218,9 +233,16 @@ function TrackSwitchPage() {
               <Select value={sectionId} onValueChange={setSectionId} disabled={!classId}>
                 <SelectTrigger><SelectValue placeholder={classId ? "Select section (optional)" : "Select a class first"} /></SelectTrigger>
                 <SelectContent>
-                  {targetSections.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  {targetSections.map((s) => <SelectItem key={s.id} value={s.id}>{s.name} <span className="text-muted-foreground">({s.academic_system})</span></SelectItem>)}
                 </SelectContent>
               </Select>
+              {classId && targetSections.length === 0 && (
+                <p className="text-xs text-destructive">No sections in this class match the {toSystem} track. Leave blank or create a matching section.</p>
+              )}
+              {classId && incompatibleSections > 0 && targetSections.length > 0 && (
+                <p className="text-xs text-muted-foreground">{incompatibleSections} section(s) hidden — they don&apos;t match the {toSystem} track.</p>
+              )}
+
 
             </div>
             <div className="space-y-2">
