@@ -116,13 +116,60 @@ function TrackSwitchPage() {
       effective_date: effectiveDate, reason: reason || null,
     });
     if (swErr) return toast.error(swErr.message);
+    const oldSectionId = student.section_id ?? null;
+    const newSectionId = sectionId || null;
     const { error: upErr } = await supabase.from("students").update({
       academic_system: toSystem,
       class_id: classId,
-      section_id: sectionId || null,
+      section_id: newSectionId,
     }).eq("id", studentId);
     if (upErr) return toast.error(upErr.message);
-    toast.success("Academic track switched and student moved to the new class");
+
+    // Propagate to dependent records so attendance, assessments and grading
+    // follow the new roster from the effective date onward. History is kept.
+    const notes: string[] = [];
+    if (oldSectionId !== newSectionId) {
+      if (newSectionId) {
+        const { count } = await supabase.from("attendance_records")
+          .update({ section_id: newSectionId, course_id: null }, { count: "exact" })
+          .eq("student_id", studentId)
+          .gte("date", effectiveDate)
+          .neq("section_id", newSectionId)
+          .select("id");
+        if (count) notes.push(`${count} attendance record(s) re-pointed`);
+      }
+      if (oldSectionId) {
+        // Drop un-marked scores for the old section's upcoming assessments.
+        const { data: staleAssessments } = await supabase.from("assessments")
+          .select("id, due_date").eq("section_id", oldSectionId);
+        const staleIds = (staleAssessments ?? [])
+          .filter((a) => !a.due_date || a.due_date >= effectiveDate)
+          .map((a) => a.id);
+        if (staleIds.length) {
+          const { count } = await supabase.from("assessment_scores")
+            .delete({ count: "exact" })
+            .eq("student_id", studentId)
+            .in("assessment_id", staleIds)
+            .is("marks", null)
+            .eq("is_absent", false)
+            .select("id");
+          if (count) notes.push(`${count} pending score row(s) cleared`);
+        }
+        // Draft report cards should grade against the new section.
+        const { count: rcCount } = await supabase.from("report_cards")
+          .update({ section_id: newSectionId }, { count: "exact" })
+          .eq("student_id", studentId)
+          .eq("status", "draft")
+          .eq("section_id", oldSectionId)
+          .select("id");
+        if (rcCount) notes.push(`${rcCount} draft report card(s) moved`);
+      }
+    }
+    toast.success(
+      notes.length
+        ? `Track switched and roster updated — ${notes.join(", ")}.`
+        : "Academic track switched and student moved to the new class",
+    );
     setOpen(false); reset(); refetch();
   }
 
