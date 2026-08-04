@@ -68,9 +68,20 @@ function TrackSwitchPage() {
 
   const student = useMemo(() => students?.find((s) => s.id === studentId), [students, studentId]);
   const campusOfStudent = useMemo(() => campuses?.find((c) => c.id === student?.campus_id), [campuses, student]);
+  const targetClasses = useMemo(
+    () => (classes ?? []).filter((c) =>
+      c.campus_id === student?.campus_id &&
+      (c.academic_system === toSystem || c.academic_system === "both" || toSystem === "both")),
+    [classes, student, toSystem],
+  );
+  const targetSections = useMemo(
+    () => (sections ?? []).filter((s) => s.class_id === classId),
+    [sections, classId],
+  );
 
   function reset() {
     setStudentId(""); setToSystem("cambridge"); setReason("");
+    setClassId(""); setSectionId("");
     setEffectiveDate(new Date().toISOString().slice(0, 10));
   }
 
@@ -81,6 +92,7 @@ function TrackSwitchPage() {
     if (campusOfStudent && campusOfStudent.academic_system !== "both" && campusOfStudent.academic_system !== toSystem && toSystem !== "both") {
       return toast.error(`This campus only supports ${campusOfStudent.academic_system.toUpperCase()}. Switch the campus academic system to "Both" first.`);
     }
+    if (!classId) return toast.error(`Select the ${toSystem} class to move the student into`);
     if (!tenantId) return toast.error("Tenant not resolved");
     const { error: swErr } = await supabase.from("track_switches").insert({
       tenant_id: tenantId,
@@ -89,11 +101,16 @@ function TrackSwitchPage() {
       effective_date: effectiveDate, reason: reason || null,
     });
     if (swErr) return toast.error(swErr.message);
-    const { error: upErr } = await supabase.from("students").update({ academic_system: toSystem }).eq("id", studentId);
+    const { error: upErr } = await supabase.from("students").update({
+      academic_system: toSystem,
+      class_id: classId,
+      section_id: sectionId || null,
+    }).eq("id", studentId);
     if (upErr) return toast.error(upErr.message);
-    toast.success("Academic track switched");
+    toast.success("Academic track switched and student moved to the new class");
     setOpen(false); reset(); refetch();
   }
+
 
   const nameOf = (id: string) => {
     const s = students?.find((x) => x.id === id);
