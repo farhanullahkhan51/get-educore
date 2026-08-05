@@ -81,12 +81,46 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
     queryFn: async () => {
       const { data } = await supabase
         .from("staff")
-        .select("id, first_name, last_name, designation")
+        .select("id, first_name, last_name, designation, academic_system")
         .eq("campus_id", section.campus_id)
         .order("first_name");
-      return data ?? [];
+      return (data ?? []) as Array<{
+        id: string; first_name: string; last_name: string; designation: string | null;
+        academic_system: "board" | "cambridge" | "both" | null;
+      }>;
     },
   });
+
+  // sections that already have a class teacher (used to enforce one class per teacher)
+  const { data: assignedSections } = useQuery({
+    queryKey: ["section-teachers"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("sections")
+        .select("id, name, class_id, class_teacher_id")
+        .not("class_teacher_id", "is", null);
+      return (data ?? []) as Array<{ id: string; name: string; class_id: string; class_teacher_id: string }>;
+    },
+  });
+
+  /** Returns a reason string when this teacher cannot take this section's desk, else null. */
+  function teacherError(teacherId: string): string | null {
+    const t = staff?.find((s) => s.id === teacherId);
+    if (!t) return "That teacher is not on this campus.";
+    const track = t.academic_system ?? "both";
+    if (
+      section.academic_system &&
+      section.academic_system !== "both" &&
+      track !== "both" &&
+      track !== section.academic_system
+    ) {
+      return `${t.first_name} teaches the ${track} track — this section is ${section.academic_system}.`;
+    }
+    const other = (assignedSections ?? []).find((s) => s.class_teacher_id === teacherId && s.id !== section.id);
+    if (other) return `${t.first_name} ${t.last_name} is already the class teacher of section ${other.name}.`;
+    return null;
+  }
+
 
   const seatByIndex = useMemo(() => new Map((seats ?? []).map((s) => [s.seat_index, s])), [seats]);
   const studentById = useMemo(() => new Map((students ?? []).map((s) => [s.id, s])), [students]);
@@ -203,17 +237,28 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   }
 
   async function assignTeacher(id: string) {
+    if (id !== "none") {
+      const problem = teacherError(id);
+      if (problem) return toast.error(problem);
+    }
     const { error } = await supabase
       .from("sections")
       .update({ class_teacher_id: id === "none" ? null : id })
       .eq("id", section.id);
-    if (error) return toast.error(error.message);
+    if (error) {
+      return toast.error(
+        error.code === "23505"
+          ? "That teacher is already assigned to another classroom."
+          : error.message,
+      );
+    }
     const t = staff?.find((s) => s.id === id);
     toast.success(id === "none" ? "Teacher's desk cleared" : `${t?.first_name ?? "Teacher"} assigned to the teacher's desk`);
     setPickedTeacher(null);
     qc.invalidateQueries({ queryKey: ["sections"] });
     qc.invalidateQueries({ queryKey: ["section-teachers"] });
   }
+
 
   const teacher = staff?.find((s) => s.id === section.class_teacher_id);
 
@@ -248,7 +293,17 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   const [hoverSeat, setHoverSeat] = useState<number | null>(null);
   const [hoverDesk, setHoverDesk] = useState(false);
 
+  /** Rect-based hit test for the teacher's desk (3D transforms break elementFromPoint). */
+  function isOverDesk(x: number, y: number): boolean {
+    const el = document.querySelector<HTMLElement>("[data-drop='desk']");
+    if (!el) return false;
+    const r = el.getBoundingClientRect();
+    const pad = 12;
+    return x >= r.left - pad && x <= r.right + pad && y >= r.top - pad && y <= r.bottom + pad;
+  }
+
   function seatIndexAtPoint(x: number, y: number): number | null {
+
     const candidates = Array.from(document.querySelectorAll<HTMLElement>("[data-seat-index]"))
       .map((element) => {
         const rect = element.getBoundingClientRect();
@@ -313,9 +368,9 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
       }
       ev.preventDefault();
       setDrag({ label, x: ev.clientX, y: ev.clientY });
-      const el = document.elementFromPoint(ev.clientX, ev.clientY);
       setHoverSeat(seatIndexAtPoint(ev.clientX, ev.clientY));
-      setHoverDesk(!!el?.closest("[data-drop='desk']"));
+      setHoverDesk(isOverDesk(ev.clientX, ev.clientY));
+
     };
 
     const onUp = (ev: PointerEvent) => {
@@ -335,9 +390,10 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
       if (!payload || !dragged) return;
       const el = document.elementFromPoint(ev.clientX, ev.clientY);
       if (payload.kind === "teacher") {
-        if (el?.closest("[data-drop='desk']")) void assignTeacher(payload.id);
+        if (isOverDesk(ev.clientX, ev.clientY)) void assignTeacher(payload.id);
         return;
       }
+
       const seatIndex = seatIndexAtPoint(ev.clientX, ev.clientY);
       if (seatIndex !== null) {
         void seatStudent(payload.id, seatIndex);
@@ -374,29 +430,46 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
             <SelectTrigger className="mt-2"><SelectValue placeholder="Assign teacher" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="none">— Unassigned —</SelectItem>
-              {staff?.map((s) => (
-                <SelectItem key={s.id} value={s.id}>{s.first_name} {s.last_name}</SelectItem>
-              ))}
+              {staff?.map((s) => {
+                const blocked = s.id === section.class_teacher_id ? null : teacherError(s.id);
+                return (
+                  <SelectItem key={s.id} value={s.id} disabled={!!blocked}>
+                    {s.first_name} {s.last_name}
+                    <span className="text-muted-foreground"> · {s.academic_system ?? "both"}</span>
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
           <p className="mt-2 text-[11px] text-muted-foreground">
-            Or drag a teacher below onto the teacher's desk.
+            Or drag a teacher below onto the teacher's desk. A teacher can lead only one classroom.
           </p>
           <div className="mt-2 max-h-[160px] space-y-1 overflow-y-auto rounded-md border border-dashed p-1">
             {(staff ?? []).length === 0 && <p className="text-xs text-muted-foreground">No staff on this campus.</p>}
             {staff?.map((s) => {
               const assigned = s.id === section.class_teacher_id;
               const active = pickedTeacher === s.id;
+              const blocked = assigned ? null : teacherError(s.id);
               return (
                 <button
                   key={s.id}
                   type="button"
+                  title={blocked ?? undefined}
                   style={{ touchAction: "none" }}
-                  onPointerDown={(e) => startDrag("teacher", s.id, `${s.first_name} ${s.last_name}`, e)}
-                  onClick={() => { if (!suppressClick()) setPickedTeacher(active ? null : s.id); }}
-
-                  className={`flex w-full cursor-grab items-center gap-2 rounded-md border px-2 py-1.5 text-left text-xs transition-colors ${
-                    active ? "border-primary bg-primary/10" : assigned ? "border-primary/40 bg-muted" : "hover:bg-muted"
+                  onPointerDown={(e) => { if (!blocked) startDrag("teacher", s.id, `${s.first_name} ${s.last_name}`, e); }}
+                  onClick={() => {
+                    if (suppressClick()) return;
+                    if (blocked) return void toast.error(blocked);
+                    setPickedTeacher(active ? null : s.id);
+                  }}
+                  className={`flex w-full items-center gap-2 rounded-md border px-2 py-1.5 text-left text-xs transition-colors ${
+                    blocked
+                      ? "cursor-not-allowed opacity-50"
+                      : active
+                        ? "cursor-grab border-primary bg-primary/10"
+                        : assigned
+                          ? "cursor-grab border-primary/40 bg-muted"
+                          : "cursor-grab hover:bg-muted"
                   }`}
                 >
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold">
@@ -405,13 +478,14 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
                   <span className="truncate">
                     <span className="font-medium">{s.first_name} {s.last_name}</span>
                     <span className="block text-[10px] text-muted-foreground">
-                      {assigned ? "At the desk" : s.designation ?? "Staff"}
+                      {assigned ? "At the desk" : blocked ? blocked : `${s.designation ?? "Staff"} · ${s.academic_system ?? "both"}`}
                     </span>
                   </span>
                 </button>
               );
             })}
           </div>
+
         </div>
 
 
@@ -605,7 +679,9 @@ function TeacherDesk({
       className={`group relative flex w-40 shrink-0 cursor-pointer flex-col items-center rounded-lg p-1 transition-all ${
         highlight ? "ring-2 ring-primary ring-offset-2" : ""
       }`}
+      data-drop="desk"
       onDragOver={(e) => e.preventDefault()}
+
       onDrop={onDrop}
       onClick={onClick}
       title="Assign the class teacher to this desk"

@@ -22,6 +22,7 @@ type Staff = {
   campus_id: string; designation: string | null; department: string | null;
   email: string | null; phone: string | null;
   qualification: string | null; address: string | null;
+  academic_system: "board" | "cambridge" | "both" | null;
   documents: Array<{ name: string; path: string }> | null;
   profile_id: string | null;
 };
@@ -68,6 +69,7 @@ function StaffPage() {
       email: String(fd.get("email") || "") || null,
       phone: String(fd.get("phone") || "") || null,
       qualification: String(fd.get("qualification") || "") || null,
+      academic_system: String(fd.get("academic_system") || "both") as NonNullable<Staff["academic_system"]>,
       address: String(fd.get("address") || "") || null,
     });
     if (error) return toast.error(error.message);
@@ -89,6 +91,7 @@ function StaffPage() {
       email: String(fd.get("email") || "") || null,
       phone: String(fd.get("phone") || "") || null,
       qualification: String(fd.get("qualification") || "") || null,
+      academic_system: String(fd.get("academic_system") || "both") as NonNullable<Staff["academic_system"]>,
       address: String(fd.get("address") || "") || null,
     }).eq("id", editing.id);
     if (error) return toast.error(error.message);
@@ -146,6 +149,17 @@ function StaffPage() {
                     </Select>
                   </div>
                 </div>
+                <div className="space-y-2">
+                  <Label>Teaching track</Label>
+                  <Select name="academic_system" defaultValue="both">
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="board">Board</SelectItem>
+                      <SelectItem value="cambridge">Cambridge</SelectItem>
+                      <SelectItem value="both">Both</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="space-y-2"><Label>Address</Label><Input name="address" /></div>
                 <DialogFooter><Button type="submit">Add staff</Button></DialogFooter>
               </form>
@@ -159,13 +173,13 @@ function StaffPage() {
           <Table>
             <TableHeader><TableRow>
               <TableHead>Staff ID</TableHead><TableHead>Name</TableHead>
-              <TableHead>Designation</TableHead><TableHead>Campus</TableHead>
+              <TableHead>Designation</TableHead><TableHead>Track</TableHead><TableHead>Campus</TableHead>
               <TableHead>Contact</TableHead><TableHead>Docs</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {isLoading && <TableRow><TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
-              {staff?.length === 0 && <TableRow><TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">No staff yet.</TableCell></TableRow>}
+              {isLoading && <TableRow><TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
+              {staff?.length === 0 && <TableRow><TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">No staff yet.</TableCell></TableRow>}
               {staff?.map((s) => (
                 <TableRow key={s.id}>
                   <TableCell><code className="rounded bg-muted px-1.5 py-0.5 text-xs">{s.staff_code}</code></TableCell>
@@ -178,6 +192,7 @@ function StaffPage() {
                     </button>
                   </TableCell>
                   <TableCell className="text-sm">{s.designation ?? "—"} <span className="text-muted-foreground">· {s.department ?? ""}</span></TableCell>
+                  <TableCell className="text-sm capitalize">{s.academic_system ?? "both"}</TableCell>
                   <TableCell className="text-sm">{campusMap.get(s.campus_id) ?? "—"}</TableCell>
                   <TableCell className="text-sm text-muted-foreground"><div>{s.email ?? "—"}</div><div className="text-xs">{s.phone ?? ""}</div></TableCell>
                   <TableCell className="text-sm text-muted-foreground"><FileText className="mr-1 inline h-3 w-3" />{s.documents?.length ?? 0}</TableCell>
@@ -226,6 +241,17 @@ function StaffPage() {
                     <SelectContent>{campuses?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Teaching track</Label>
+                <Select name="academic_system" defaultValue={editing.academic_system ?? "both"}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="board">Board</SelectItem>
+                    <SelectItem value="cambridge">Cambridge</SelectItem>
+                    <SelectItem value="both">Both</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2"><Label>Address</Label><Input name="address" defaultValue={editing.address ?? ""} /></div>
               <DialogFooter><Button type="submit">Save changes</Button></DialogFooter>
