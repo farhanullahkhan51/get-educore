@@ -430,29 +430,46 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
             <SelectTrigger className="mt-2"><SelectValue placeholder="Assign teacher" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="none">— Unassigned —</SelectItem>
-              {staff?.map((s) => (
-                <SelectItem key={s.id} value={s.id}>{s.first_name} {s.last_name}</SelectItem>
-              ))}
+              {staff?.map((s) => {
+                const blocked = s.id === section.class_teacher_id ? null : teacherError(s.id);
+                return (
+                  <SelectItem key={s.id} value={s.id} disabled={!!blocked}>
+                    {s.first_name} {s.last_name}
+                    <span className="text-muted-foreground"> · {s.academic_system ?? "both"}</span>
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
           <p className="mt-2 text-[11px] text-muted-foreground">
-            Or drag a teacher below onto the teacher's desk.
+            Or drag a teacher below onto the teacher's desk. A teacher can lead only one classroom.
           </p>
           <div className="mt-2 max-h-[160px] space-y-1 overflow-y-auto rounded-md border border-dashed p-1">
             {(staff ?? []).length === 0 && <p className="text-xs text-muted-foreground">No staff on this campus.</p>}
             {staff?.map((s) => {
               const assigned = s.id === section.class_teacher_id;
               const active = pickedTeacher === s.id;
+              const blocked = assigned ? null : teacherError(s.id);
               return (
                 <button
                   key={s.id}
                   type="button"
+                  title={blocked ?? undefined}
                   style={{ touchAction: "none" }}
-                  onPointerDown={(e) => startDrag("teacher", s.id, `${s.first_name} ${s.last_name}`, e)}
-                  onClick={() => { if (!suppressClick()) setPickedTeacher(active ? null : s.id); }}
-
-                  className={`flex w-full cursor-grab items-center gap-2 rounded-md border px-2 py-1.5 text-left text-xs transition-colors ${
-                    active ? "border-primary bg-primary/10" : assigned ? "border-primary/40 bg-muted" : "hover:bg-muted"
+                  onPointerDown={(e) => { if (!blocked) startDrag("teacher", s.id, `${s.first_name} ${s.last_name}`, e); }}
+                  onClick={() => {
+                    if (suppressClick()) return;
+                    if (blocked) return void toast.error(blocked);
+                    setPickedTeacher(active ? null : s.id);
+                  }}
+                  className={`flex w-full items-center gap-2 rounded-md border px-2 py-1.5 text-left text-xs transition-colors ${
+                    blocked
+                      ? "cursor-not-allowed opacity-50"
+                      : active
+                        ? "cursor-grab border-primary bg-primary/10"
+                        : assigned
+                          ? "cursor-grab border-primary/40 bg-muted"
+                          : "cursor-grab hover:bg-muted"
                   }`}
                 >
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold">
@@ -461,13 +478,14 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
                   <span className="truncate">
                     <span className="font-medium">{s.first_name} {s.last_name}</span>
                     <span className="block text-[10px] text-muted-foreground">
-                      {assigned ? "At the desk" : s.designation ?? "Staff"}
+                      {assigned ? "At the desk" : blocked ? blocked : `${s.designation ?? "Staff"} · ${s.academic_system ?? "both"}`}
                     </span>
                   </span>
                 </button>
               );
             })}
           </div>
+
         </div>
 
 
