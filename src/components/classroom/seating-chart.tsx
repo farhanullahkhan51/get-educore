@@ -535,8 +535,18 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
           {section.room ?? "no room"}
         </p>
       </div>
+      {drag && (
+        <div
+          className="pointer-events-none fixed z-[100] flex items-center gap-2 rounded-md border bg-background px-2 py-1 text-xs font-medium shadow-lg"
+          style={{ left: drag.x + 12, top: drag.y + 12 }}
+        >
+          <Armchair className="h-3 w-3 text-primary" />
+          {drag.label}
+        </div>
+      )}
     </div>
   );
+
 }
 
 function TeacherDesk({
