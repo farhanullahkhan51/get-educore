@@ -363,14 +363,14 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
         const dist = Math.hypot(ev.clientX - originRef.current.x, ev.clientY - originRef.current.y);
         if (dist < 5) return;
         movedRef.current = true;
-        setDrag({ label, x: ev.clientX, y: ev.clientY });
+        setDrag({ label, x: ev.clientX, y: ev.clientY, kind });
         if (rafRef.current === null) rafRef.current = requestAnimationFrame(autoScrollTick);
       }
       ev.preventDefault();
-      setDrag({ label, x: ev.clientX, y: ev.clientY });
-      setHoverSeat(seatIndexAtPoint(ev.clientX, ev.clientY));
-      setHoverDesk(isOverDesk(ev.clientX, ev.clientY));
-
+      setDrag({ label, x: ev.clientX, y: ev.clientY, kind });
+      // Only the matching drop targets light up: chairs for students, the desk for teachers.
+      setHoverSeat(kind === "student" ? seatIndexAtPoint(ev.clientX, ev.clientY) : null);
+      setHoverDesk(kind === "teacher" ? isOverDesk(ev.clientX, ev.clientY) : false);
     };
 
     const onUp = (ev: PointerEvent) => {
