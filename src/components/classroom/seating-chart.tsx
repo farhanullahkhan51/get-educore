@@ -432,6 +432,7 @@ function ChairSeat({
   index,
   student,
   active,
+  unavailable,
   onClick,
   onDrop,
   draggable,
@@ -441,6 +442,7 @@ function ChairSeat({
   index: number;
   student?: Student;
   active: boolean;
+  unavailable?: boolean;
   onClick: () => void;
   onDrop: (e: React.DragEvent) => void;
   draggable: boolean;
