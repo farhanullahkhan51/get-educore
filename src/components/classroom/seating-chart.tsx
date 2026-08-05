@@ -367,18 +367,21 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
                           const seat = seatByIndex.get(i);
                           const st = seat ? studentById.get(seat.student_id) : undefined;
                           const active = picked?.type === "seat" && picked.seatIndex === i;
+                          const unavailable = picked ? !!seatingError(picked.id, i) : false;
                           return (
                             <ChairSeat
                               key={i}
                               index={i}
                               student={st}
                               active={active}
+                              unavailable={unavailable}
                               onClick={() => onSeatClick(i)}
                               onDrop={(e) => onSeatDrop(e, i)}
                               draggable={!!seat}
                               onDragStart={(e) => seat && e.dataTransfer.setData("text/student", seat.student_id)}
                               onRemove={seat ? () => void unseat(seat) : undefined}
                             />
+
                           );
                         })}
                       </div>
