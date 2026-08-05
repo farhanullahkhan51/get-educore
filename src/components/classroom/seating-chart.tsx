@@ -8,7 +8,7 @@ import { Armchair, Presentation, RotateCcw, Sparkles, UserRound, X } from "lucid
 
 export type SeatSection = {
   id: string;
-  tenant_id?: string;
+  tenant_id: string;
   campus_id: string;
   class_id: string;
   name: string;
