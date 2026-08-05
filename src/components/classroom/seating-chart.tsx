@@ -289,7 +289,7 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   const pointerRef = useRef({ x: 0, y: 0 });
   const movedRef = useRef(false);
   const rafRef = useRef<number | null>(null);
-  const [drag, setDrag] = useState<{ label: string; x: number; y: number } | null>(null);
+  const [drag, setDrag] = useState<{ label: string; x: number; y: number; kind: "student" | "teacher" } | null>(null);
   const [hoverSeat, setHoverSeat] = useState<number | null>(null);
   const [hoverDesk, setHoverDesk] = useState(false);
 
