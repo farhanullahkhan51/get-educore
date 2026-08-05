@@ -11,8 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Trash2, Pencil, ChevronRight } from "lucide-react";
+import { Plus, Trash2, Pencil, ChevronRight, LayoutGrid } from "lucide-react";
 import { SystemBadge } from "./campuses";
+import { SeatingChart } from "@/components/classroom/seating-chart";
 
 export const Route = createFileRoute("/_authenticated/classes")({
   component: ClassesPage,
