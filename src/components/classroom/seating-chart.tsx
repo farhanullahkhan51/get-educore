@@ -15,6 +15,7 @@ export type SeatSection = {
   capacity: number | null;
   room: string | null;
   class_teacher_id?: string | null;
+  academic_system?: "board" | "cambridge" | "both" | null;
 };
 
 type Seat = { id: string; seat_index: number; student_id: string };
@@ -27,6 +28,8 @@ type Student = {
   section_id: string | null;
   guardian_name: string | null;
   campus_id: string;
+  status?: string | null;
+  academic_system?: "board" | "cambridge" | "both" | null;
 };
 
 function initials(s: Student) {
