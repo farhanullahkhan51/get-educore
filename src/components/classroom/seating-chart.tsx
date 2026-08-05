@@ -401,13 +401,7 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
             <span className="text-xs text-muted-foreground">{seats?.length ?? 0} / {capacity} seated</span>
           </div>
           <div
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              const id = e.dataTransfer.getData("text/student");
-              const seat = (seats ?? []).find((s) => s.student_id === id);
-              if (seat) void unseat(seat);
-            }}
+            data-drop="unseated"
             className="mt-2 max-h-[320px] space-y-1 overflow-y-auto rounded-md border border-dashed p-1"
           >
             {unseated.length === 0 && <p className="text-xs text-muted-foreground">Everyone has a seat.</p>}
@@ -417,9 +411,10 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
                 <button
                   key={st.id}
                   type="button"
-                  draggable
-                  onDragStart={(e) => e.dataTransfer.setData("text/student", st.id)}
-                  onClick={() => setPicked(active ? null : { type: "student", id: st.id })}
+                  style={{ touchAction: "none" }}
+                  onPointerDown={(e) => startDrag("student", st.id, `${st.first_name} ${st.last_name}`, e)}
+                  onClick={() => { if (!suppressClick()) setPicked(active ? null : { type: "student", id: st.id }); }}
+
                   className={`flex w-full cursor-grab items-center gap-2 rounded-md border px-2 py-1.5 text-left text-xs transition-colors ${
                     active ? "border-primary bg-primary/10" : "hover:bg-muted"
                   }`}
