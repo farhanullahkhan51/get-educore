@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -238,6 +238,113 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
     else setPicked(null);
   }
 
+  // ---- pointer-based drag & drop (works on mouse + touch, with edge auto-scroll) ----
+  const dragRef = useRef<{ kind: "student" | "teacher"; id: string; label: string } | null>(null);
+  const originRef = useRef({ x: 0, y: 0 });
+  const pointerRef = useRef({ x: 0, y: 0 });
+  const movedRef = useRef(false);
+  const rafRef = useRef<number | null>(null);
+  const [drag, setDrag] = useState<{ label: string; x: number; y: number } | null>(null);
+  const [hoverSeat, setHoverSeat] = useState<number | null>(null);
+  const [hoverDesk, setHoverDesk] = useState(false);
+
+  function scrollableAncestor(el: Element | null, dy: number): Element | null {
+    let node: Element | null = el;
+    while (node && node !== document.body) {
+      const style = window.getComputedStyle(node);
+      const scrolls = /(auto|scroll|overlay)/.test(style.overflowY);
+      if (scrolls && node.scrollHeight > node.clientHeight + 2) {
+        const atEnd = dy > 0 ? node.scrollTop + node.clientHeight >= node.scrollHeight - 1 : node.scrollTop <= 0;
+        if (!atEnd) return node;
+      }
+      node = node.parentElement;
+    }
+    return null;
+  }
+
+  function autoScrollTick() {
+    if (!dragRef.current) return;
+    const { x, y } = pointerRef.current;
+    const h = window.innerHeight;
+    const edge = 140;
+    let dy = 0;
+    if (y > h - edge) dy = Math.min(26, ((y - (h - edge)) / edge) * 26);
+    else if (y < edge) dy = -Math.min(26, ((edge - y) / edge) * 26);
+    if (dy !== 0) {
+      const target = scrollableAncestor(document.elementFromPoint(x, y), dy);
+      if (target) target.scrollTop += dy;
+      else window.scrollBy(0, dy);
+    }
+    rafRef.current = requestAnimationFrame(autoScrollTick);
+  }
+
+  function startDrag(kind: "student" | "teacher", id: string, label: string, e: React.PointerEvent) {
+    if (e.button !== undefined && e.button !== 0) return;
+    dragRef.current = { kind, id, label };
+    originRef.current = { x: e.clientX, y: e.clientY };
+    pointerRef.current = { x: e.clientX, y: e.clientY };
+    movedRef.current = false;
+
+    const onMove = (ev: PointerEvent) => {
+      pointerRef.current = { x: ev.clientX, y: ev.clientY };
+      if (!movedRef.current) {
+        const dist = Math.hypot(ev.clientX - originRef.current.x, ev.clientY - originRef.current.y);
+        if (dist < 5) return;
+        movedRef.current = true;
+        setDrag({ label, x: ev.clientX, y: ev.clientY });
+        if (rafRef.current === null) rafRef.current = requestAnimationFrame(autoScrollTick);
+      }
+      ev.preventDefault();
+      setDrag({ label, x: ev.clientX, y: ev.clientY });
+      const el = document.elementFromPoint(ev.clientX, ev.clientY);
+      const seatEl = el?.closest("[data-seat-index]") as HTMLElement | null;
+      setHoverSeat(seatEl ? Number(seatEl.dataset.seatIndex) : null);
+      setHoverDesk(!!el?.closest("[data-drop='desk']"));
+    };
+
+    const onUp = (ev: PointerEvent) => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      const payload = dragRef.current;
+      const dragged = movedRef.current;
+      dragRef.current = null;
+      setDrag(null);
+      setHoverSeat(null);
+      setHoverDesk(false);
+      if (!payload || !dragged) return;
+      const el = document.elementFromPoint(ev.clientX, ev.clientY);
+      if (payload.kind === "teacher") {
+        if (el?.closest("[data-drop='desk']")) void assignTeacher(payload.id);
+        return;
+      }
+      const seatEl = el?.closest("[data-seat-index]") as HTMLElement | null;
+      if (seatEl) {
+        void seatStudent(payload.id, Number(seatEl.dataset.seatIndex));
+        return;
+      }
+      if (el?.closest("[data-drop='unseated']")) {
+        const seat = (seats ?? []).find((s) => s.student_id === payload.id);
+        if (seat) void unseat(seat);
+      }
+    };
+
+    window.addEventListener("pointermove", onMove, { passive: false });
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+  }
+
+  useEffect(() => () => {
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+  }, []);
+
+  const suppressClick = () => movedRef.current;
+
+
   return (
     <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
       <div className="space-y-4">
@@ -264,9 +371,10 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
                 <button
                   key={s.id}
                   type="button"
-                  draggable
-                  onDragStart={(e) => e.dataTransfer.setData("text/teacher", s.id)}
-                  onClick={() => setPickedTeacher(active ? null : s.id)}
+                  style={{ touchAction: "none" }}
+                  onPointerDown={(e) => startDrag("teacher", s.id, `${s.first_name} ${s.last_name}`, e)}
+                  onClick={() => { if (!suppressClick()) setPickedTeacher(active ? null : s.id); }}
+
                   className={`flex w-full cursor-grab items-center gap-2 rounded-md border px-2 py-1.5 text-left text-xs transition-colors ${
                     active ? "border-primary bg-primary/10" : assigned ? "border-primary/40 bg-muted" : "hover:bg-muted"
                   }`}
@@ -293,13 +401,7 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
             <span className="text-xs text-muted-foreground">{seats?.length ?? 0} / {capacity} seated</span>
           </div>
           <div
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              const id = e.dataTransfer.getData("text/student");
-              const seat = (seats ?? []).find((s) => s.student_id === id);
-              if (seat) void unseat(seat);
-            }}
+            data-drop="unseated"
             className="mt-2 max-h-[320px] space-y-1 overflow-y-auto rounded-md border border-dashed p-1"
           >
             {unseated.length === 0 && <p className="text-xs text-muted-foreground">Everyone has a seat.</p>}
@@ -309,9 +411,10 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
                 <button
                   key={st.id}
                   type="button"
-                  draggable
-                  onDragStart={(e) => e.dataTransfer.setData("text/student", st.id)}
-                  onClick={() => setPicked(active ? null : { type: "student", id: st.id })}
+                  style={{ touchAction: "none" }}
+                  onPointerDown={(e) => startDrag("student", st.id, `${st.first_name} ${st.last_name}`, e)}
+                  onClick={() => { if (!suppressClick()) setPicked(active ? null : { type: "student", id: st.id }); }}
+
                   className={`flex w-full cursor-grab items-center gap-2 rounded-md border px-2 py-1.5 text-left text-xs transition-colors ${
                     active ? "border-primary bg-primary/10" : "hover:bg-muted"
                   }`}
@@ -359,11 +462,12 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
             <div className="mb-6 flex items-end gap-4">
               <TeacherDesk
                 name={teacher ? `${teacher.first_name} ${teacher.last_name}` : null}
-                highlight={!!pickedTeacher}
+                highlight={!!pickedTeacher || hoverDesk}
                 onDrop={onDeskDrop}
                 onClick={() => { if (pickedTeacher) void assignTeacher(pickedTeacher); }}
                 onRemove={() => void assignTeacher("none")}
               />
+
 
               <div
                 className="mb-2 flex h-16 flex-1 items-center justify-center rounded-md text-xs font-semibold uppercase tracking-[0.25em] text-white/80 shadow-inner"
@@ -396,22 +500,27 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
                           const seat = seatByIndex.get(i);
                           const st = seat ? studentById.get(seat.student_id) : undefined;
                           const active = picked?.type === "seat" && picked.seatIndex === i;
-                          const unavailable = picked ? !!seatingError(picked.id, i) : false;
+                          const dragStudentId = drag && dragRef.current?.kind === "student" ? dragRef.current.id : null;
+                          const probeId = dragStudentId ?? (picked ? picked.id : null);
+                          const unavailable = probeId ? !!seatingError(probeId, i) : false;
                           return (
                             <ChairSeat
                               key={i}
                               index={i}
                               student={st}
                               active={active}
+                              hovered={hoverSeat === i}
                               unavailable={unavailable}
-                              onClick={() => onSeatClick(i)}
+                              onClick={() => { if (!suppressClick()) onSeatClick(i); }}
                               onDrop={(e) => onSeatDrop(e, i)}
-                              draggable={!!seat}
-                              onDragStart={(e) => seat && e.dataTransfer.setData("text/student", seat.student_id)}
+                              onPointerDown={(e) => {
+                                if (seat && st) startDrag("student", seat.student_id, `${st.first_name} ${st.last_name}`, e);
+                              }}
                               onRemove={seat ? () => void unseat(seat) : undefined}
                             />
 
                           );
+
                         })}
                       </div>
                     ))}
@@ -426,8 +535,18 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
           {section.room ?? "no room"}
         </p>
       </div>
+      {drag && (
+        <div
+          className="pointer-events-none fixed z-[100] flex items-center gap-2 rounded-md border bg-background px-2 py-1 text-xs font-medium shadow-lg"
+          style={{ left: drag.x + 12, top: drag.y + 12 }}
+        >
+          <Armchair className="h-3 w-3 text-primary" />
+          {drag.label}
+        </div>
+      )}
     </div>
   );
+
 }
 
 function TeacherDesk({
@@ -491,30 +610,31 @@ function ChairSeat({
   index,
   student,
   active,
+  hovered,
   unavailable,
   onClick,
   onDrop,
-  draggable,
-  onDragStart,
+  onPointerDown,
   onRemove,
 }: {
   index: number;
   student?: Student;
   active: boolean;
+  hovered?: boolean;
   unavailable?: boolean;
   onClick: () => void;
   onDrop: (e: React.DragEvent) => void;
-  draggable: boolean;
-  onDragStart: (e: React.DragEvent) => void;
+  onPointerDown: (e: React.PointerEvent) => void;
   onRemove?: () => void;
 }) {
   return (
     <div
+      data-seat-index={index}
       onDragOver={(e) => e.preventDefault()}
       onDrop={onDrop}
       onClick={onClick}
-      draggable={draggable}
-      onDragStart={onDragStart}
+      onPointerDown={onPointerDown}
+      style={{ touchAction: "none" }}
       title={
         student
           ? `${student.first_name} ${student.last_name} · ${student.student_code}${student.guardian_name ? ` · ${student.guardian_name}` : ""}`
@@ -522,8 +642,11 @@ function ChairSeat({
       }
       className={`group relative flex w-14 flex-col items-center rounded-md p-1 transition-transform ${
         unavailable ? "cursor-not-allowed opacity-40 grayscale" : "cursor-pointer hover:-translate-y-1"
-      } ${active ? "ring-2 ring-primary" : ""}`}
+      } ${active ? "ring-2 ring-primary" : ""} ${
+        hovered && !unavailable ? "-translate-y-1 ring-2 ring-primary ring-offset-1" : ""
+      }`}
     >
+
       {/* desk top */}
       <div
         className="h-2.5 w-12 rounded-t-sm shadow-sm"
