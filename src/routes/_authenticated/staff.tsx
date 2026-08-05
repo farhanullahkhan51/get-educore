@@ -69,7 +69,7 @@ function StaffPage() {
       email: String(fd.get("email") || "") || null,
       phone: String(fd.get("phone") || "") || null,
       qualification: String(fd.get("qualification") || "") || null,
-      academic_system: String(fd.get("academic_system") || "both") as Staff["academic_system"],
+      academic_system: String(fd.get("academic_system") || "both") as NonNullable<Staff["academic_system"]>,
       address: String(fd.get("address") || "") || null,
     });
     if (error) return toast.error(error.message);
@@ -91,7 +91,7 @@ function StaffPage() {
       email: String(fd.get("email") || "") || null,
       phone: String(fd.get("phone") || "") || null,
       qualification: String(fd.get("qualification") || "") || null,
-      academic_system: String(fd.get("academic_system") || "both") as Staff["academic_system"],
+      academic_system: String(fd.get("academic_system") || "both") as NonNullable<Staff["academic_system"]>,
       address: String(fd.get("address") || "") || null,
     }).eq("id", editing.id);
     if (error) return toast.error(error.message);
