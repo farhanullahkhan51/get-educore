@@ -1936,12 +1936,75 @@ export type Database = {
           },
         ]
       }
+      section_seats: {
+        Row: {
+          campus_id: string
+          created_at: string
+          id: string
+          seat_index: number
+          section_id: string
+          student_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          campus_id: string
+          created_at?: string
+          id?: string
+          seat_index: number
+          section_id: string
+          student_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          campus_id?: string
+          created_at?: string
+          id?: string
+          seat_index?: number
+          section_id?: string
+          student_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "section_seats_campus_id_fkey"
+            columns: ["campus_id"]
+            isOneToOne: false
+            referencedRelation: "campuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "section_seats_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "sections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "section_seats_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "section_seats_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sections: {
         Row: {
           academic_system: Database["public"]["Enums"]["academic_system"]
           campus_id: string
           capacity: number | null
           class_id: string
+          class_teacher_id: string | null
           created_at: string
           id: string
           name: string
@@ -1954,6 +2017,7 @@ export type Database = {
           campus_id: string
           capacity?: number | null
           class_id: string
+          class_teacher_id?: string | null
           created_at?: string
           id?: string
           name: string
@@ -1966,6 +2030,7 @@ export type Database = {
           campus_id?: string
           capacity?: number | null
           class_id?: string
+          class_teacher_id?: string | null
           created_at?: string
           id?: string
           name?: string
@@ -1986,6 +2051,13 @@ export type Database = {
             columns: ["class_id"]
             isOneToOne: false
             referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sections_class_teacher_id_fkey"
+            columns: ["class_teacher_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
             referencedColumns: ["id"]
           },
           {

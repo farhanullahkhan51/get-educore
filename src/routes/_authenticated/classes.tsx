@@ -11,8 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Trash2, Pencil, ChevronRight } from "lucide-react";
+import { Plus, Trash2, Pencil, ChevronRight, LayoutGrid } from "lucide-react";
 import { SystemBadge } from "./campuses";
+import { SeatingChart } from "@/components/classroom/seating-chart";
 
 export const Route = createFileRoute("/_authenticated/classes")({
   component: ClassesPage,
@@ -28,9 +29,10 @@ type Klass = {
   academic_year: string | null;
 };
 type Section = {
-  id: string; campus_id: string; class_id: string; name: string;
+  id: string; tenant_id: string; campus_id: string; class_id: string; name: string;
   capacity: number | null; room: string | null;
   academic_system: "board" | "cambridge" | "both";
+  class_teacher_id: string | null;
 };
 type StudentRow = {
   id: string; student_code: string; first_name: string; last_name: string;
@@ -44,6 +46,7 @@ function ClassesPage() {
   const [editCls, setEditCls] = useState<Klass | null>(null);
   const [editSec, setEditSec] = useState<Section | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [seatSec, setSeatSec] = useState<{ section: Section; className: string } | null>(null);
 
   const { data: campuses } = useQuery({
     queryKey: ["campuses"],
@@ -296,6 +299,9 @@ function ClassesPage() {
                           <TableCell>{s.room ?? "—"}</TableCell>
                           <TableCell>{s.capacity}</TableCell>
                           <TableCell className="text-right">
+                            <Button size="sm" variant="outline" className="mr-1" onClick={() => setSeatSec({ section: s, className: `${cls.name} · ${s.name}` })}>
+                              <LayoutGrid className="mr-1 h-3 w-3" /> Seating
+                            </Button>
                             <Button size="icon" variant="ghost" onClick={() => setEditSec(s)}><Pencil className="h-4 w-4" /></Button>
                             <Button size="icon" variant="ghost" onClick={() => delSection(s.id)}><Trash2 className="h-4 w-4" /></Button>
                           </TableCell>
@@ -399,6 +405,23 @@ function ClassesPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!seatSec} onOpenChange={(o) => !o && setSeatSec(null)}>
+        <DialogContent className="max-w-5xl">
+          <DialogHeader>
+            <DialogTitle className="font-serif">Classroom — {seatSec?.className}</DialogTitle>
+          </DialogHeader>
+          {seatSec && (
+            <div className="max-h-[70vh] overflow-y-auto pr-1">
+              <SeatingChart
+                section={sections?.find((s) => s.id === seatSec.section.id) ?? seatSec.section}
+                className={seatSec.className}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
+
   );
 }
