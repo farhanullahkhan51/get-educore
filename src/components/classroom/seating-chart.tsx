@@ -227,7 +227,16 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Unseated</p>
             <span className="text-xs text-muted-foreground">{seats?.length ?? 0} / {capacity} seated</span>
           </div>
-          <div className="mt-2 max-h-[320px] space-y-1 overflow-y-auto pr-1">
+          <div
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              const id = e.dataTransfer.getData("text/student");
+              const seat = (seats ?? []).find((s) => s.student_id === id);
+              if (seat) void unseat(seat);
+            }}
+            className="mt-2 max-h-[320px] space-y-1 overflow-y-auto rounded-md border border-dashed p-1"
+          >
             {unseated.length === 0 && <p className="text-xs text-muted-foreground">Everyone has a seat.</p>}
             {unseated.map((st) => {
               const active = picked?.type === "student" && picked.id === st.id;
