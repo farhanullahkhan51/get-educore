@@ -238,6 +238,113 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
     else setPicked(null);
   }
 
+  // ---- pointer-based drag & drop (works on mouse + touch, with edge auto-scroll) ----
+  const dragRef = useRef<{ kind: "student" | "teacher"; id: string; label: string } | null>(null);
+  const originRef = useRef({ x: 0, y: 0 });
+  const pointerRef = useRef({ x: 0, y: 0 });
+  const movedRef = useRef(false);
+  const rafRef = useRef<number | null>(null);
+  const [drag, setDrag] = useState<{ label: string; x: number; y: number } | null>(null);
+  const [hoverSeat, setHoverSeat] = useState<number | null>(null);
+  const [hoverDesk, setHoverDesk] = useState(false);
+
+  function scrollableAncestor(el: Element | null, dy: number): Element | null {
+    let node: Element | null = el;
+    while (node && node !== document.body) {
+      const style = window.getComputedStyle(node);
+      const scrolls = /(auto|scroll|overlay)/.test(style.overflowY);
+      if (scrolls && node.scrollHeight > node.clientHeight + 2) {
+        const atEnd = dy > 0 ? node.scrollTop + node.clientHeight >= node.scrollHeight - 1 : node.scrollTop <= 0;
+        if (!atEnd) return node;
+      }
+      node = node.parentElement;
+    }
+    return null;
+  }
+
+  function autoScrollTick() {
+    if (!dragRef.current) return;
+    const { x, y } = pointerRef.current;
+    const h = window.innerHeight;
+    const edge = 140;
+    let dy = 0;
+    if (y > h - edge) dy = Math.min(26, ((y - (h - edge)) / edge) * 26);
+    else if (y < edge) dy = -Math.min(26, ((edge - y) / edge) * 26);
+    if (dy !== 0) {
+      const target = scrollableAncestor(document.elementFromPoint(x, y), dy);
+      if (target) target.scrollTop += dy;
+      else window.scrollBy(0, dy);
+    }
+    rafRef.current = requestAnimationFrame(autoScrollTick);
+  }
+
+  function startDrag(kind: "student" | "teacher", id: string, label: string, e: React.PointerEvent) {
+    if (e.button !== undefined && e.button !== 0) return;
+    dragRef.current = { kind, id, label };
+    originRef.current = { x: e.clientX, y: e.clientY };
+    pointerRef.current = { x: e.clientX, y: e.clientY };
+    movedRef.current = false;
+
+    const onMove = (ev: PointerEvent) => {
+      pointerRef.current = { x: ev.clientX, y: ev.clientY };
+      if (!movedRef.current) {
+        const dist = Math.hypot(ev.clientX - originRef.current.x, ev.clientY - originRef.current.y);
+        if (dist < 5) return;
+        movedRef.current = true;
+        setDrag({ label, x: ev.clientX, y: ev.clientY });
+        if (rafRef.current === null) rafRef.current = requestAnimationFrame(autoScrollTick);
+      }
+      ev.preventDefault();
+      setDrag({ label, x: ev.clientX, y: ev.clientY });
+      const el = document.elementFromPoint(ev.clientX, ev.clientY);
+      const seatEl = el?.closest("[data-seat-index]") as HTMLElement | null;
+      setHoverSeat(seatEl ? Number(seatEl.dataset.seatIndex) : null);
+      setHoverDesk(!!el?.closest("[data-drop='desk']"));
+    };
+
+    const onUp = (ev: PointerEvent) => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      const payload = dragRef.current;
+      const dragged = movedRef.current;
+      dragRef.current = null;
+      setDrag(null);
+      setHoverSeat(null);
+      setHoverDesk(false);
+      if (!payload || !dragged) return;
+      const el = document.elementFromPoint(ev.clientX, ev.clientY);
+      if (payload.kind === "teacher") {
+        if (el?.closest("[data-drop='desk']")) void assignTeacher(payload.id);
+        return;
+      }
+      const seatEl = el?.closest("[data-seat-index]") as HTMLElement | null;
+      if (seatEl) {
+        void seatStudent(payload.id, Number(seatEl.dataset.seatIndex));
+        return;
+      }
+      if (el?.closest("[data-drop='unseated']")) {
+        const seat = (seats ?? []).find((s) => s.student_id === payload.id);
+        if (seat) void unseat(seat);
+      }
+    };
+
+    window.addEventListener("pointermove", onMove, { passive: false });
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+  }
+
+  useEffect(() => () => {
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+  }, []);
+
+  const suppressClick = () => movedRef.current;
+
+
   return (
     <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
       <div className="space-y-4">
