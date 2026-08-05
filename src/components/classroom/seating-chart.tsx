@@ -56,7 +56,9 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
     queryFn: async () => {
       const { data, error } = await supabase
         .from("students")
-        .select("id, student_code, first_name, last_name, class_id, section_id, guardian_name, campus_id")
+        .select(
+          "id, student_code, first_name, last_name, class_id, section_id, guardian_name, campus_id, status, academic_system",
+        )
         .or(`class_id.eq.${section.class_id},section_id.eq.${section.id}`)
         .order("first_name");
       if (error) throw error;
@@ -82,6 +84,32 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   const unseated = (students ?? []).filter((s) => !seatedIds.has(s.id));
   const cols = Math.min(8, Math.max(4, Math.ceil(Math.sqrt(capacity))));
 
+  /** Returns a reason string when the student cannot take this seat, otherwise null. */
+  function seatingError(studentId: string, seatIndex: number): string | null {
+    const st = studentById.get(studentId);
+    if (!st) return "That student is not part of this class.";
+    if (seatIndex < 0 || seatIndex >= capacity) return `This room only has ${capacity} seats.`;
+    if (st.campus_id !== section.campus_id) return `${st.first_name} belongs to a different campus.`;
+    if (st.status && st.status !== "active") return `${st.first_name} is ${st.status} and cannot be seated.`;
+    if (
+      section.academic_system &&
+      section.academic_system !== "both" &&
+      st.academic_system &&
+      st.academic_system !== "both" &&
+      st.academic_system !== section.academic_system
+    ) {
+      return `${st.first_name} is on the ${st.academic_system} track — this section is ${section.academic_system}.`;
+    }
+    const occupant = seatByIndex.get(seatIndex);
+    const alreadySeated = seatedIds.has(studentId);
+    if (occupant && occupant.student_id !== studentId && !alreadySeated) {
+      const other = studentById.get(occupant.student_id);
+      return `Seat ${seatIndex + 1} is taken${other ? ` by ${other.first_name}` : ""}. Free it first, or drag a seated student onto it to swap.`;
+    }
+    if (!occupant && !alreadySeated && (seats?.length ?? 0) >= capacity) return "The classroom is full.";
+    return null;
+  }
+
   function refresh() {
     qc.invalidateQueries({ queryKey: ["section-seats", section.id] });
     qc.invalidateQueries({ queryKey: ["seating-students", section.class_id, section.id] });
@@ -90,11 +118,20 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   }
 
   async function seatStudent(studentId: string, seatIndex: number) {
-    setBusy(true);
     const existing = seatByIndex.get(seatIndex);
+    if (existing && existing.student_id === studentId) {
+      setPicked(null);
+      return;
+    }
+    const problem = seatingError(studentId, seatIndex);
+    if (problem) {
+      toast.error(problem);
+      setPicked(null);
+      return;
+    }
+    setBusy(true);
     const current = (seats ?? []).find((s) => s.student_id === studentId);
     try {
-      if (existing && existing.student_id === studentId) return;
       if (existing) {
         // swap or evict
         if (current) {
