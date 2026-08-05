@@ -502,62 +502,69 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
             </div>
 
             {/* seat columns: 3 columns x 10 chairs (5 rows of 2 side-by-side) */}
-            <div className="flex justify-center gap-16">
-              {Array.from({ length: Math.max(3, Math.ceil(capacity / 10)) }).map((_, col) => {
+            {/* compute only columns that actually contain seats */}
+            {(() => {
+              const allColumns = Array.from({ length: Math.max(3, Math.ceil(capacity / 10)) }, (_, col) => {
                 const seatsInCol = Math.max(0, Math.min(10, capacity - col * 10));
-                if (seatsInCol === 0) return null;
-                return (
-                  <div key={col} className="flex gap-5">
-                    {/* visible column divider on the left (except first column) */}
-                    {col > 0 && (
-                      <div
-                        className="mx-1 w-1.5 self-stretch rounded-full"
-                        style={{ background: "rgba(120, 80, 40, 0.35)" }}
-                        aria-hidden="true"
-                      />
-                    )}
-                    <div className="space-y-5">
-                      {Array.from({ length: Math.ceil(seatsInCol / 2) }).map((_, pair) => {
-                        const depth = 1 + pair * 0.06;
-                        return (
+                return { col, seatsInCol };
+              }).filter((c) => c.seatsInCol > 0);
+
+              return (
+                <div className="flex justify-center gap-16">
+                  {allColumns.map(({ col, seatsInCol }, index) => {
+                    const isLast = index === allColumns.length - 1;
+                    return (
+                      <div key={col} className="relative space-y-5">
+                        {/* divider stays exactly in the middle of the gap between columns */}
+                        {!isLast && (
                           <div
-                            key={pair}
-                            className="flex gap-1.5"
-                            style={{ transform: `scale(${depth})`, transformOrigin: "center top" }}
-                          >
-                            {Array.from({ length: Math.min(2, seatsInCol - pair * 2) }).map((__, k) => {
-                              const i = col * 10 + pair * 2 + k;
-                              const seat = seatByIndex.get(i);
-                              const st = seat ? studentById.get(seat.student_id) : undefined;
-                              const active = picked?.type === "seat" && picked.seatIndex === i;
-                              const dragStudentId = drag && dragRef.current?.kind === "student" ? dragRef.current.id : null;
-                              const probeId = dragStudentId ?? (picked ? picked.id : null);
-                              const unavailable = probeId ? !!seatingError(probeId, i) : false;
-                              return (
-                                <ChairSeat
-                                  key={i}
-                                  index={i}
-                                  student={st}
-                                  active={active}
-                                  hovered={hoverSeat === i}
-                                  unavailable={unavailable}
-                                  onClick={() => { if (!suppressClick()) onSeatClick(i); }}
-                                  onDrop={(e) => onSeatDrop(e, i)}
-                                  onPointerDown={(e) => {
-                                    if (seat && st) startDrag("student", seat.student_id, `${st.first_name} ${st.last_name}`, e);
-                                  }}
-                                  onRemove={seat ? () => void unseat(seat) : undefined}
-                                />
-                              );
-                            })}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                            className="absolute -right-8 top-1 bottom-1 w-1.5 rounded-full"
+                            style={{ background: "rgba(120, 80, 40, 0.35)" }}
+                            aria-hidden="true"
+                          />
+                        )}
+                        {Array.from({ length: Math.ceil(seatsInCol / 2) }).map((_, pair) => {
+                          const depth = 1 + pair * 0.06;
+                          return (
+                            <div
+                              key={pair}
+                              className="flex gap-1.5"
+                              style={{ transform: `scale(${depth})`, transformOrigin: "center top" }}
+                            >
+                              {Array.from({ length: Math.min(2, seatsInCol - pair * 2) }).map((__, k) => {
+                                const i = col * 10 + pair * 2 + k;
+                                const seat = seatByIndex.get(i);
+                                const st = seat ? studentById.get(seat.student_id) : undefined;
+                                const active = picked?.type === "seat" && picked.seatIndex === i;
+                                const dragStudentId = drag && dragRef.current?.kind === "student" ? dragRef.current.id : null;
+                                const probeId = dragStudentId ?? (picked ? picked.id : null);
+                                const unavailable = probeId ? !!seatingError(probeId, i) : false;
+                                return (
+                                  <ChairSeat
+                                    key={i}
+                                    index={i}
+                                    student={st}
+                                    active={active}
+                                    hovered={hoverSeat === i}
+                                    unavailable={unavailable}
+                                    onClick={() => { if (!suppressClick()) onSeatClick(i); }}
+                                    onDrop={(e) => onSeatDrop(e, i)}
+                                    onPointerDown={(e) => {
+                                      if (seat && st) startDrag("student", seat.student_id, `${st.first_name} ${st.last_name}`, e);
+                                    }}
+                                    onRemove={seat ? () => void unseat(seat) : undefined}
+                                  />
+                                );
+                              })}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
 
           </div>
         </div>
