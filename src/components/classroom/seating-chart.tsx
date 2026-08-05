@@ -358,9 +358,9 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
       }
       ev.preventDefault();
       setDrag({ label, x: ev.clientX, y: ev.clientY });
-      const el = document.elementFromPoint(ev.clientX, ev.clientY);
       setHoverSeat(seatIndexAtPoint(ev.clientX, ev.clientY));
-      setHoverDesk(!!el?.closest("[data-drop='desk']"));
+      setHoverDesk(isOverDesk(ev.clientX, ev.clientY));
+
     };
 
     const onUp = (ev: PointerEvent) => {
