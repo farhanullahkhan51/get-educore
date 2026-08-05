@@ -600,30 +600,31 @@ function ChairSeat({
   index,
   student,
   active,
+  hovered,
   unavailable,
   onClick,
   onDrop,
-  draggable,
-  onDragStart,
+  onPointerDown,
   onRemove,
 }: {
   index: number;
   student?: Student;
   active: boolean;
+  hovered?: boolean;
   unavailable?: boolean;
   onClick: () => void;
   onDrop: (e: React.DragEvent) => void;
-  draggable: boolean;
-  onDragStart: (e: React.DragEvent) => void;
+  onPointerDown: (e: React.PointerEvent) => void;
   onRemove?: () => void;
 }) {
   return (
     <div
+      data-seat-index={index}
       onDragOver={(e) => e.preventDefault()}
       onDrop={onDrop}
       onClick={onClick}
-      draggable={draggable}
-      onDragStart={onDragStart}
+      onPointerDown={onPointerDown}
+      style={{ touchAction: "none" }}
       title={
         student
           ? `${student.first_name} ${student.last_name} · ${student.student_code}${student.guardian_name ? ` · ${student.guardian_name}` : ""}`
@@ -631,8 +632,11 @@ function ChairSeat({
       }
       className={`group relative flex w-14 flex-col items-center rounded-md p-1 transition-transform ${
         unavailable ? "cursor-not-allowed opacity-40 grayscale" : "cursor-pointer hover:-translate-y-1"
-      } ${active ? "ring-2 ring-primary" : ""}`}
+      } ${active ? "ring-2 ring-primary" : ""} ${
+        hovered && !unavailable ? "-translate-y-1 ring-2 ring-primary ring-offset-1" : ""
+      }`}
     >
+
       {/* desk top */}
       <div
         className="h-2.5 w-12 rounded-t-sm shadow-sm"
