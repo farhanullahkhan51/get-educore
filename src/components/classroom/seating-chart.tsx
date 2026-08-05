@@ -401,9 +401,29 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   );
 }
 
-function TeacherDesk({ name }: { name: string | null }) {
+function TeacherDesk({
+  name,
+  highlight,
+  onDrop,
+  onClick,
+  onRemove,
+}: {
+  name: string | null;
+  highlight?: boolean;
+  onDrop?: (e: React.DragEvent) => void;
+  onClick?: () => void;
+  onRemove?: () => void;
+}) {
   return (
-    <div className="flex w-40 shrink-0 flex-col items-center">
+    <div
+      className={`group relative flex w-40 shrink-0 cursor-pointer flex-col items-center rounded-lg p-1 transition-all ${
+        highlight ? "ring-2 ring-primary ring-offset-2" : ""
+      }`}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={onDrop}
+      onClick={onClick}
+      title="Assign the class teacher to this desk"
+    >
       <div
         className="flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-white shadow"
         style={{ background: "var(--classroom-wood-dark)" }}
@@ -422,11 +442,21 @@ function TeacherDesk({ name }: { name: string | null }) {
         }}
       />
       <span className="mt-1 max-w-36 truncate text-[10px] font-medium text-muted-foreground">
-        {name ?? "Teacher's desk"}
+        {name ?? "Drop a teacher here"}
       </span>
+      {name && onRemove && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onRemove(); }}
+          className="absolute right-0 top-0 hidden h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground group-hover:flex"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      )}
     </div>
   );
 }
+
 
 function ChairSeat({
   index,
