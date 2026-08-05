@@ -275,7 +275,40 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
               ))}
             </SelectContent>
           </Select>
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Or drag a teacher below onto the teacher's desk.
+          </p>
+          <div className="mt-2 max-h-[160px] space-y-1 overflow-y-auto rounded-md border border-dashed p-1">
+            {(staff ?? []).length === 0 && <p className="text-xs text-muted-foreground">No staff on this campus.</p>}
+            {staff?.map((s) => {
+              const assigned = s.id === section.class_teacher_id;
+              const active = pickedTeacher === s.id;
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  draggable
+                  onDragStart={(e) => e.dataTransfer.setData("text/teacher", s.id)}
+                  onClick={() => setPickedTeacher(active ? null : s.id)}
+                  className={`flex w-full cursor-grab items-center gap-2 rounded-md border px-2 py-1.5 text-left text-xs transition-colors ${
+                    active ? "border-primary bg-primary/10" : assigned ? "border-primary/40 bg-muted" : "hover:bg-muted"
+                  }`}
+                >
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold">
+                    {`${s.first_name[0] ?? ""}${s.last_name[0] ?? ""}`.toUpperCase()}
+                  </span>
+                  <span className="truncate">
+                    <span className="font-medium">{s.first_name} {s.last_name}</span>
+                    <span className="block text-[10px] text-muted-foreground">
+                      {assigned ? "At the desk" : s.designation ?? "Staff"}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
+
 
         <div>
           <div className="flex items-center justify-between">
