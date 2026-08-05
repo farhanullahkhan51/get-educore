@@ -64,6 +64,12 @@ function ClassesPage() {
     queryKey: ["sections"],
     queryFn: async () => (await supabase.from("sections").select("*").order("name")).data as Section[] | null,
   });
+  const { data: teachers } = useQuery({
+    queryKey: ["section-teachers"],
+    queryFn: async () =>
+      (await supabase.from("staff").select("id, first_name, last_name").order("first_name")).data ?? [],
+  });
+
   const { data: students } = useQuery({
     queryKey: ["class-students"],
     queryFn: async () =>
