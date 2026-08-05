@@ -405,6 +405,23 @@ function ClassesPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!seatSec} onOpenChange={(o) => !o && setSeatSec(null)}>
+        <DialogContent className="max-w-5xl">
+          <DialogHeader>
+            <DialogTitle className="font-serif">Classroom — {seatSec?.className}</DialogTitle>
+          </DialogHeader>
+          {seatSec && (
+            <div className="max-h-[70vh] overflow-y-auto pr-1">
+              <SeatingChart
+                section={sections?.find((s) => s.id === seatSec.section.id) ?? seatSec.section}
+                className={seatSec.className}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
+
   );
 }
