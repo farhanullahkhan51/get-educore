@@ -15,6 +15,7 @@ export type SeatSection = {
   capacity: number | null;
   room: string | null;
   class_teacher_id?: string | null;
+  academic_system?: "board" | "cambridge" | "both" | null;
 };
 
 type Seat = { id: string; seat_index: number; student_id: string };
@@ -27,6 +28,8 @@ type Student = {
   section_id: string | null;
   guardian_name: string | null;
   campus_id: string;
+  status?: string | null;
+  academic_system?: "board" | "cambridge" | "both" | null;
 };
 
 function initials(s: Student) {
@@ -56,7 +59,9 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
     queryFn: async () => {
       const { data, error } = await supabase
         .from("students")
-        .select("id, student_code, first_name, last_name, class_id, section_id, guardian_name, campus_id")
+        .select(
+          "id, student_code, first_name, last_name, class_id, section_id, guardian_name, campus_id, status, academic_system",
+        )
         .or(`class_id.eq.${section.class_id},section_id.eq.${section.id}`)
         .order("first_name");
       if (error) throw error;
@@ -82,6 +87,32 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   const unseated = (students ?? []).filter((s) => !seatedIds.has(s.id));
   const cols = Math.min(8, Math.max(4, Math.ceil(Math.sqrt(capacity))));
 
+  /** Returns a reason string when the student cannot take this seat, otherwise null. */
+  function seatingError(studentId: string, seatIndex: number): string | null {
+    const st = studentById.get(studentId);
+    if (!st) return "That student is not part of this class.";
+    if (seatIndex < 0 || seatIndex >= capacity) return `This room only has ${capacity} seats.`;
+    if (st.campus_id !== section.campus_id) return `${st.first_name} belongs to a different campus.`;
+    if (st.status && st.status !== "active") return `${st.first_name} is ${st.status} and cannot be seated.`;
+    if (
+      section.academic_system &&
+      section.academic_system !== "both" &&
+      st.academic_system &&
+      st.academic_system !== "both" &&
+      st.academic_system !== section.academic_system
+    ) {
+      return `${st.first_name} is on the ${st.academic_system} track — this section is ${section.academic_system}.`;
+    }
+    const occupant = seatByIndex.get(seatIndex);
+    const alreadySeated = seatedIds.has(studentId);
+    if (occupant && occupant.student_id !== studentId && !alreadySeated) {
+      const other = studentById.get(occupant.student_id);
+      return `Seat ${seatIndex + 1} is taken${other ? ` by ${other.first_name}` : ""}. Free it first, or drag a seated student onto it to swap.`;
+    }
+    if (!occupant && !alreadySeated && (seats?.length ?? 0) >= capacity) return "The classroom is full.";
+    return null;
+  }
+
   function refresh() {
     qc.invalidateQueries({ queryKey: ["section-seats", section.id] });
     qc.invalidateQueries({ queryKey: ["seating-students", section.class_id, section.id] });
@@ -90,11 +121,20 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   }
 
   async function seatStudent(studentId: string, seatIndex: number) {
-    setBusy(true);
     const existing = seatByIndex.get(seatIndex);
+    if (existing && existing.student_id === studentId) {
+      setPicked(null);
+      return;
+    }
+    const problem = seatingError(studentId, seatIndex);
+    if (problem) {
+      toast.error(problem);
+      setPicked(null);
+      return;
+    }
+    setBusy(true);
     const current = (seats ?? []).find((s) => s.student_id === studentId);
     try {
-      if (existing && existing.student_id === studentId) return;
       if (existing) {
         // swap or evict
         if (current) {
@@ -149,14 +189,17 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   async function autoFill() {
     const free: number[] = [];
     for (let i = 0; i < capacity; i++) if (!seatByIndex.has(i)) free.push(i);
-    const rows = unseated.slice(0, free.length).map((st, i) => ({
+    const eligible = unseated.filter((st) => !seatingError(st.id, free[0] ?? 0));
+    const skipped = unseated.length - eligible.length;
+    const rows = eligible.slice(0, free.length).map((st, i) => ({
       tenant_id: section.tenant_id,
       campus_id: section.campus_id,
       section_id: section.id,
       seat_index: free[i],
       student_id: st.id,
     }));
-    if (rows.length === 0) return toast.info("Nothing to seat");
+    if (rows.length === 0) return toast.info(skipped > 0 ? "No eligible students to seat" : "Nothing to seat");
+    if (skipped > 0) toast.warning(`${skipped} student(s) skipped — campus, track, or status mismatch`);
     setBusy(true);
     const { error } = await supabase.from("section_seats").insert(rows);
     if (!error) {
@@ -324,18 +367,21 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
                           const seat = seatByIndex.get(i);
                           const st = seat ? studentById.get(seat.student_id) : undefined;
                           const active = picked?.type === "seat" && picked.seatIndex === i;
+                          const unavailable = picked ? !!seatingError(picked.id, i) : false;
                           return (
                             <ChairSeat
                               key={i}
                               index={i}
                               student={st}
                               active={active}
+                              unavailable={unavailable}
                               onClick={() => onSeatClick(i)}
                               onDrop={(e) => onSeatDrop(e, i)}
                               draggable={!!seat}
                               onDragStart={(e) => seat && e.dataTransfer.setData("text/student", seat.student_id)}
                               onRemove={seat ? () => void unseat(seat) : undefined}
                             />
+
                           );
                         })}
                       </div>
@@ -386,6 +432,7 @@ function ChairSeat({
   index,
   student,
   active,
+  unavailable,
   onClick,
   onDrop,
   draggable,
@@ -395,6 +442,7 @@ function ChairSeat({
   index: number;
   student?: Student;
   active: boolean;
+  unavailable?: boolean;
   onClick: () => void;
   onDrop: (e: React.DragEvent) => void;
   draggable: boolean;
@@ -413,9 +461,9 @@ function ChairSeat({
           ? `${student.first_name} ${student.last_name} · ${student.student_code}${student.guardian_name ? ` · ${student.guardian_name}` : ""}`
           : `Seat ${index + 1}`
       }
-      className={`group relative flex w-14 cursor-pointer flex-col items-center rounded-md p-1 transition-transform hover:-translate-y-1 ${
-        active ? "ring-2 ring-primary" : ""
-      }`}
+      className={`group relative flex w-14 flex-col items-center rounded-md p-1 transition-transform ${
+        unavailable ? "cursor-not-allowed opacity-40 grayscale" : "cursor-pointer hover:-translate-y-1"
+      } ${active ? "ring-2 ring-primary" : ""}`}
     >
       {/* desk top */}
       <div
