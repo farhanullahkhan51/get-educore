@@ -81,12 +81,46 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
     queryFn: async () => {
       const { data } = await supabase
         .from("staff")
-        .select("id, first_name, last_name, designation")
+        .select("id, first_name, last_name, designation, academic_system")
         .eq("campus_id", section.campus_id)
         .order("first_name");
-      return data ?? [];
+      return (data ?? []) as Array<{
+        id: string; first_name: string; last_name: string; designation: string | null;
+        academic_system: "board" | "cambridge" | "both" | null;
+      }>;
     },
   });
+
+  // sections that already have a class teacher (used to enforce one class per teacher)
+  const { data: assignedSections } = useQuery({
+    queryKey: ["section-teachers"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("sections")
+        .select("id, name, class_id, class_teacher_id")
+        .not("class_teacher_id", "is", null);
+      return (data ?? []) as Array<{ id: string; name: string; class_id: string; class_teacher_id: string }>;
+    },
+  });
+
+  /** Returns a reason string when this teacher cannot take this section's desk, else null. */
+  function teacherError(teacherId: string): string | null {
+    const t = staff?.find((s) => s.id === teacherId);
+    if (!t) return "That teacher is not on this campus.";
+    const track = t.academic_system ?? "both";
+    if (
+      section.academic_system &&
+      section.academic_system !== "both" &&
+      track !== "both" &&
+      track !== section.academic_system
+    ) {
+      return `${t.first_name} teaches the ${track} track — this section is ${section.academic_system}.`;
+    }
+    const other = (assignedSections ?? []).find((s) => s.class_teacher_id === teacherId && s.id !== section.id);
+    if (other) return `${t.first_name} ${t.last_name} is already the class teacher of section ${other.name}.`;
+    return null;
+  }
+
 
   const seatByIndex = useMemo(() => new Map((seats ?? []).map((s) => [s.seat_index, s])), [seats]);
   const studentById = useMemo(() => new Map((students ?? []).map((s) => [s.id, s])), [students]);
