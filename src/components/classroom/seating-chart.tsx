@@ -248,6 +248,23 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   const [hoverSeat, setHoverSeat] = useState<number | null>(null);
   const [hoverDesk, setHoverDesk] = useState(false);
 
+  function seatIndexAtPoint(x: number, y: number): number | null {
+    const candidates = Array.from(document.querySelectorAll<HTMLElement>("[data-seat-index]"))
+      .map((element) => {
+        const rect = element.getBoundingClientRect();
+        const contains = x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+        const distance = Math.hypot(x - (rect.left + rect.width / 2), y - (rect.top + rect.height / 2));
+        return { element, contains, distance };
+      })
+      .filter((candidate) => candidate.contains)
+      .sort((a, b) => a.distance - b.distance);
+
+    const value = candidates[0]?.element.dataset.seatIndex;
+    if (value === undefined) return null;
+    const index = Number(value);
+    return Number.isFinite(index) ? index : null;
+  }
+
   function scrollableAncestor(el: Element | null, dy: number): Element | null {
     let node: Element | null = el;
     while (node && node !== document.body) {
@@ -297,8 +314,7 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
       ev.preventDefault();
       setDrag({ label, x: ev.clientX, y: ev.clientY });
       const el = document.elementFromPoint(ev.clientX, ev.clientY);
-      const seatEl = el?.closest("[data-seat-index]") as HTMLElement | null;
-      setHoverSeat(seatEl ? Number(seatEl.dataset.seatIndex) : null);
+      setHoverSeat(seatIndexAtPoint(ev.clientX, ev.clientY));
       setHoverDesk(!!el?.closest("[data-drop='desk']"));
     };
 
@@ -322,9 +338,9 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
         if (el?.closest("[data-drop='desk']")) void assignTeacher(payload.id);
         return;
       }
-      const seatEl = el?.closest("[data-seat-index]") as HTMLElement | null;
-      if (seatEl) {
-        void seatStudent(payload.id, Number(seatEl.dataset.seatIndex));
+      const seatIndex = seatIndexAtPoint(ev.clientX, ev.clientY);
+      if (seatIndex !== null) {
+        void seatStudent(payload.id, seatIndex);
         return;
       }
       if (el?.closest("[data-drop='unseated']")) {
@@ -342,7 +358,11 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
     if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
   }, []);
 
-  const suppressClick = () => movedRef.current;
+  const suppressClick = () => {
+    const shouldSuppress = movedRef.current;
+    movedRef.current = false;
+    return shouldSuppress;
+  };
 
 
   return (
