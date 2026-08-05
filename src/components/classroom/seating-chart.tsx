@@ -380,9 +380,10 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
       if (!payload || !dragged) return;
       const el = document.elementFromPoint(ev.clientX, ev.clientY);
       if (payload.kind === "teacher") {
-        if (el?.closest("[data-drop='desk']")) void assignTeacher(payload.id);
+        if (isOverDesk(ev.clientX, ev.clientY)) void assignTeacher(payload.id);
         return;
       }
+
       const seatIndex = seatIndexAtPoint(ev.clientX, ev.clientY);
       if (seatIndex !== null) {
         void seatStudent(payload.id, seatIndex);
