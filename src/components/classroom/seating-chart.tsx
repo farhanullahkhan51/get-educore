@@ -40,7 +40,9 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   const qc = useQueryClient();
   const capacity = section.capacity ?? 40;
   const [picked, setPicked] = useState<{ type: "student" | "seat"; id: string; seatIndex?: number } | null>(null);
+  const [pickedTeacher, setPickedTeacher] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
 
   const { data: seats } = useQuery({
     queryKey: ["section-seats", section.id],
