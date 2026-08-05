@@ -46,15 +46,20 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
 
   const { data: seats } = useQuery({
     queryKey: ["section-seats", section.id],
+    staleTime: 0,
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("section_seats")
         .select("id, seat_index, student_id")
-        .eq("section_id", section.id);
+        .eq("section_id", section.id)
+        .gte("seat_index", 0)
+        .order("seat_index");
       if (error) throw error;
       return (data ?? []) as Seat[];
     },
   });
+
 
   const { data: students } = useQuery({
     queryKey: ["seating-students", section.class_id, section.id],
