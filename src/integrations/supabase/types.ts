@@ -2071,6 +2071,7 @@ export type Database = {
       }
       staff: {
         Row: {
+          academic_system: Database["public"]["Enums"]["academic_system"]
           address: string | null
           campus_id: string
           created_at: string
@@ -2091,6 +2092,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          academic_system?: Database["public"]["Enums"]["academic_system"]
           address?: string | null
           campus_id: string
           created_at?: string
@@ -2111,6 +2113,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          academic_system?: Database["public"]["Enums"]["academic_system"]
           address?: string | null
           campus_id?: string
           created_at?: string
