@@ -462,11 +462,12 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
             <div className="mb-6 flex items-end gap-4">
               <TeacherDesk
                 name={teacher ? `${teacher.first_name} ${teacher.last_name}` : null}
-                highlight={!!pickedTeacher}
+                highlight={!!pickedTeacher || hoverDesk}
                 onDrop={onDeskDrop}
                 onClick={() => { if (pickedTeacher) void assignTeacher(pickedTeacher); }}
                 onRemove={() => void assignTeacher("none")}
               />
+
 
               <div
                 className="mb-2 flex h-16 flex-1 items-center justify-center rounded-md text-xs font-semibold uppercase tracking-[0.25em] text-white/80 shadow-inner"
