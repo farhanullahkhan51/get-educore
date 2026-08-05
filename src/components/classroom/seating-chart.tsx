@@ -293,7 +293,17 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   const [hoverSeat, setHoverSeat] = useState<number | null>(null);
   const [hoverDesk, setHoverDesk] = useState(false);
 
+  /** Rect-based hit test for the teacher's desk (3D transforms break elementFromPoint). */
+  function isOverDesk(x: number, y: number): boolean {
+    const el = document.querySelector<HTMLElement>("[data-drop='desk']");
+    if (!el) return false;
+    const r = el.getBoundingClientRect();
+    const pad = 12;
+    return x >= r.left - pad && x <= r.right + pad && y >= r.top - pad && y <= r.bottom + pad;
+  }
+
   function seatIndexAtPoint(x: number, y: number): number | null {
+
     const candidates = Array.from(document.querySelectorAll<HTMLElement>("[data-seat-index]"))
       .map((element) => {
         const rect = element.getBoundingClientRect();
