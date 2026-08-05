@@ -461,9 +461,9 @@ function ChairSeat({
           ? `${student.first_name} ${student.last_name} · ${student.student_code}${student.guardian_name ? ` · ${student.guardian_name}` : ""}`
           : `Seat ${index + 1}`
       }
-      className={`group relative flex w-14 cursor-pointer flex-col items-center rounded-md p-1 transition-transform hover:-translate-y-1 ${
-        active ? "ring-2 ring-primary" : ""
-      }`}
+      className={`group relative flex w-14 flex-col items-center rounded-md p-1 transition-transform ${
+        unavailable ? "cursor-not-allowed opacity-40 grayscale" : "cursor-pointer hover:-translate-y-1"
+      } ${active ? "ring-2 ring-primary" : ""}`}
     >
       {/* desk top */}
       <div
