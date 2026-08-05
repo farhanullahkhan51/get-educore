@@ -298,6 +298,9 @@ function ClassesPage() {
                           <TableCell>{s.room ?? "—"}</TableCell>
                           <TableCell>{s.capacity}</TableCell>
                           <TableCell className="text-right">
+                            <Button size="sm" variant="outline" className="mr-1" onClick={() => setSeatSec({ section: s, className: `${cls.name} · ${s.name}` })}>
+                              <LayoutGrid className="mr-1 h-3 w-3" /> Seating
+                            </Button>
                             <Button size="icon" variant="ghost" onClick={() => setEditSec(s)}><Pencil className="h-4 w-4" /></Button>
                             <Button size="icon" variant="ghost" onClick={() => delSection(s.id)}><Trash2 className="h-4 w-4" /></Button>
                           </TableCell>
