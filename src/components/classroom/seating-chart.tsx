@@ -189,14 +189,17 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   async function autoFill() {
     const free: number[] = [];
     for (let i = 0; i < capacity; i++) if (!seatByIndex.has(i)) free.push(i);
-    const rows = unseated.slice(0, free.length).map((st, i) => ({
+    const eligible = unseated.filter((st) => !seatingError(st.id, free[0] ?? 0));
+    const skipped = unseated.length - eligible.length;
+    const rows = eligible.slice(0, free.length).map((st, i) => ({
       tenant_id: section.tenant_id,
       campus_id: section.campus_id,
       section_id: section.id,
       seat_index: free[i],
       student_id: st.id,
     }));
-    if (rows.length === 0) return toast.info("Nothing to seat");
+    if (rows.length === 0) return toast.info(skipped > 0 ? "No eligible students to seat" : "Nothing to seat");
+    if (skipped > 0) toast.warning(`${skipped} student(s) skipped — campus, track, or status mismatch`);
     setBusy(true);
     const { error } = await supabase.from("section_seats").insert(rows);
     if (!error) {
