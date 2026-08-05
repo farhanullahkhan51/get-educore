@@ -303,6 +303,11 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   }
 
   function seatIndexAtPoint(x: number, y: number): number | null {
+    const direct = (document.elementFromPoint(x, y) as HTMLElement | null)?.closest<HTMLElement>("[data-seat-index]");
+    if (direct?.dataset.seatIndex !== undefined) {
+      const index = Number(direct.dataset.seatIndex);
+      if (Number.isFinite(index)) return index;
+    }
 
     const candidates = Array.from(document.querySelectorAll<HTMLElement>("[data-seat-index]"))
       .map((element) => {
@@ -334,10 +339,21 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
     return null;
   }
 
+  function horizontalScrollable(el: Element | null): Element | null {
+    let node: Element | null = el;
+    while (node && node !== document.body) {
+      const style = window.getComputedStyle(node);
+      if (/(auto|scroll|overlay)/.test(style.overflowX) && node.scrollWidth > node.clientWidth + 2) return node;
+      node = node.parentElement;
+    }
+    return null;
+  }
+
   function autoScrollTick() {
     if (!dragRef.current) return;
     const { x, y } = pointerRef.current;
     const h = window.innerHeight;
+    const w = window.innerWidth;
     const edge = 140;
     let dy = 0;
     if (y > h - edge) dy = Math.min(26, ((y - (h - edge)) / edge) * 26);
@@ -347,8 +363,16 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
       if (target) target.scrollTop += dy;
       else window.scrollBy(0, dy);
     }
+    let dx = 0;
+    if (x > w - edge) dx = Math.min(24, ((x - (w - edge)) / edge) * 24);
+    else if (x < edge) dx = -Math.min(24, ((edge - x) / edge) * 24);
+    if (dx !== 0) {
+      const target = horizontalScrollable(document.elementFromPoint(x, y));
+      if (target) target.scrollLeft += dx;
+    }
     rafRef.current = requestAnimationFrame(autoScrollTick);
   }
+
 
   function startDrag(kind: "student" | "teacher", id: string, label: string, e: React.PointerEvent) {
     if (e.button !== undefined && e.button !== 0) return;
