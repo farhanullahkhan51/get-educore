@@ -40,7 +40,9 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   const qc = useQueryClient();
   const capacity = section.capacity ?? 40;
   const [picked, setPicked] = useState<{ type: "student" | "seat"; id: string; seatIndex?: number } | null>(null);
+  const [pickedTeacher, setPickedTeacher] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
 
   const { data: seats } = useQuery({
     queryKey: ["section-seats", section.id],
@@ -229,13 +231,23 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
       .update({ class_teacher_id: id === "none" ? null : id })
       .eq("id", section.id);
     if (error) return toast.error(error.message);
-    toast.success("Class teacher updated");
+    const t = staff?.find((s) => s.id === id);
+    toast.success(id === "none" ? "Teacher's desk cleared" : `${t?.first_name ?? "Teacher"} assigned to the teacher's desk`);
+    setPickedTeacher(null);
     qc.invalidateQueries({ queryKey: ["sections"] });
+    qc.invalidateQueries({ queryKey: ["section-teachers"] });
   }
 
   const teacher = staff?.find((s) => s.id === section.class_teacher_id);
 
+  function onDeskDrop(e: React.DragEvent) {
+    e.preventDefault();
+    const teacherId = e.dataTransfer.getData("text/teacher");
+    if (teacherId) void assignTeacher(teacherId);
+  }
+
   function onSeatDrop(e: React.DragEvent, seatIndex: number) {
+
     e.preventDefault();
     const studentId = e.dataTransfer.getData("text/student");
     if (studentId) void seatStudent(studentId, seatIndex);
@@ -263,7 +275,40 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
               ))}
             </SelectContent>
           </Select>
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Or drag a teacher below onto the teacher's desk.
+          </p>
+          <div className="mt-2 max-h-[160px] space-y-1 overflow-y-auto rounded-md border border-dashed p-1">
+            {(staff ?? []).length === 0 && <p className="text-xs text-muted-foreground">No staff on this campus.</p>}
+            {staff?.map((s) => {
+              const assigned = s.id === section.class_teacher_id;
+              const active = pickedTeacher === s.id;
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  draggable
+                  onDragStart={(e) => e.dataTransfer.setData("text/teacher", s.id)}
+                  onClick={() => setPickedTeacher(active ? null : s.id)}
+                  className={`flex w-full cursor-grab items-center gap-2 rounded-md border px-2 py-1.5 text-left text-xs transition-colors ${
+                    active ? "border-primary bg-primary/10" : assigned ? "border-primary/40 bg-muted" : "hover:bg-muted"
+                  }`}
+                >
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold">
+                    {`${s.first_name[0] ?? ""}${s.last_name[0] ?? ""}`.toUpperCase()}
+                  </span>
+                  <span className="truncate">
+                    <span className="font-medium">{s.first_name} {s.last_name}</span>
+                    <span className="block text-[10px] text-muted-foreground">
+                      {assigned ? "At the desk" : s.designation ?? "Staff"}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
+
 
         <div>
           <div className="flex items-center justify-between">
@@ -335,7 +380,14 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
           >
             {/* back wall: board + teacher desk (top-left) */}
             <div className="mb-6 flex items-end gap-4">
-              <TeacherDesk name={teacher ? `${teacher.first_name} ${teacher.last_name}` : null} />
+              <TeacherDesk
+                name={teacher ? `${teacher.first_name} ${teacher.last_name}` : null}
+                highlight={!!pickedTeacher}
+                onDrop={onDeskDrop}
+                onClick={() => { if (pickedTeacher) void assignTeacher(pickedTeacher); }}
+                onRemove={() => void assignTeacher("none")}
+              />
+
               <div
                 className="mb-2 flex h-16 flex-1 items-center justify-center rounded-md text-xs font-semibold uppercase tracking-[0.25em] text-white/80 shadow-inner"
                 style={{
@@ -401,9 +453,29 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   );
 }
 
-function TeacherDesk({ name }: { name: string | null }) {
+function TeacherDesk({
+  name,
+  highlight,
+  onDrop,
+  onClick,
+  onRemove,
+}: {
+  name: string | null;
+  highlight?: boolean;
+  onDrop?: (e: React.DragEvent) => void;
+  onClick?: () => void;
+  onRemove?: () => void;
+}) {
   return (
-    <div className="flex w-40 shrink-0 flex-col items-center">
+    <div
+      className={`group relative flex w-40 shrink-0 cursor-pointer flex-col items-center rounded-lg p-1 transition-all ${
+        highlight ? "ring-2 ring-primary ring-offset-2" : ""
+      }`}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={onDrop}
+      onClick={onClick}
+      title="Assign the class teacher to this desk"
+    >
       <div
         className="flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-white shadow"
         style={{ background: "var(--classroom-wood-dark)" }}
@@ -422,11 +494,21 @@ function TeacherDesk({ name }: { name: string | null }) {
         }}
       />
       <span className="mt-1 max-w-36 truncate text-[10px] font-medium text-muted-foreground">
-        {name ?? "Teacher's desk"}
+        {name ?? "Drop a teacher here"}
       </span>
+      {name && onRemove && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onRemove(); }}
+          className="absolute right-0 top-0 hidden h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground group-hover:flex"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      )}
     </div>
   );
 }
+
 
 function ChairSeat({
   index,
