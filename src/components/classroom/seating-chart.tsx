@@ -593,13 +593,14 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
 
       <div
         ref={roomBoxRef}
-        className="overflow-x-auto rounded-xl border p-4"
+        className="select-none overflow-x-auto rounded-xl border p-4"
         style={{ background: "linear-gradient(to bottom, var(--classroom-wall), var(--classroom-floor))" }}
       >
         <div style={{ height: roomSize.h ? roomSize.h * fit : undefined }}>
           <div
             ref={roomRef}
             className="w-max origin-top-left"
+
             style={{ transform: `scale(${fit})` }}
           >
 
