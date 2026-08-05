@@ -661,7 +661,9 @@ function TeacherDesk({
       className={`group relative flex w-40 shrink-0 cursor-pointer flex-col items-center rounded-lg p-1 transition-all ${
         highlight ? "ring-2 ring-primary ring-offset-2" : ""
       }`}
+      data-drop="desk"
       onDragOver={(e) => e.preventDefault()}
+
       onDrop={onDrop}
       onClick={onClick}
       title="Assign the class teacher to this desk"
