@@ -371,9 +371,10 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
                 <button
                   key={s.id}
                   type="button"
-                  draggable
-                  onDragStart={(e) => e.dataTransfer.setData("text/teacher", s.id)}
-                  onClick={() => setPickedTeacher(active ? null : s.id)}
+                  style={{ touchAction: "none" }}
+                  onPointerDown={(e) => startDrag("teacher", s.id, `${s.first_name} ${s.last_name}`, e)}
+                  onClick={() => { if (!suppressClick()) setPickedTeacher(active ? null : s.id); }}
+
                   className={`flex w-full cursor-grab items-center gap-2 rounded-md border px-2 py-1.5 text-left text-xs transition-colors ${
                     active ? "border-primary bg-primary/10" : assigned ? "border-primary/40 bg-muted" : "hover:bg-muted"
                   }`}
