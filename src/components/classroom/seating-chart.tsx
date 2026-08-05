@@ -272,64 +272,194 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
         )}
       </div>
 
-      <div className="rounded-xl border bg-muted/30 p-4">
-        <div className="mx-auto mb-4 flex h-10 max-w-md items-center justify-center rounded-md border-2 border-foreground/20 bg-background text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-          Board
-        </div>
-        <div className="mx-auto mb-6 flex max-w-xs items-center gap-2 rounded-md border bg-background px-3 py-2 text-xs">
-          <Presentation className="h-4 w-4 shrink-0 text-muted-foreground" />
-          <span className="truncate">
-            {teacher ? `${teacher.first_name} ${teacher.last_name}` : "Teacher's desk — unassigned"}
-          </span>
-        </div>
-
-        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
-          {Array.from({ length: capacity }).map((_, i) => {
-            const seat = seatByIndex.get(i);
-            const st = seat ? studentById.get(seat.student_id) : undefined;
-            const active = picked?.type === "seat" && picked.seatIndex === i;
-            return (
+      <div
+        className="overflow-x-auto rounded-xl border p-4"
+        style={{ background: "linear-gradient(to bottom, var(--classroom-wall), var(--classroom-floor))" }}
+      >
+        <div style={{ perspective: "1400px" }}>
+          <div
+            className="mx-auto min-w-[560px] origin-top"
+            style={{ transform: "rotateX(16deg)", transformStyle: "preserve-3d" }}
+          >
+            {/* back wall: board + teacher desk (top-left) */}
+            <div className="mb-6 flex items-end gap-4">
+              <TeacherDesk name={teacher ? `${teacher.first_name} ${teacher.last_name}` : null} />
               <div
-                key={i}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => onSeatDrop(e, i)}
-                onClick={() => onSeatClick(i)}
-                draggable={!!seat}
-                onDragStart={(e) => seat && e.dataTransfer.setData("text/student", seat.student_id)}
-                title={st ? `${st.first_name} ${st.last_name} · ${st.student_code}${st.guardian_name ? ` · ${st.guardian_name}` : ""}` : `Seat ${i + 1}`}
-                className={`group relative flex aspect-square cursor-pointer flex-col items-center justify-center rounded-lg border p-1 text-center transition-colors ${
-                  seat ? "border-primary/40 bg-primary/10" : "border-dashed bg-background hover:bg-muted"
-                } ${active ? "ring-2 ring-primary" : ""}`}
+                className="mb-2 flex h-16 flex-1 items-center justify-center rounded-md text-xs font-semibold uppercase tracking-[0.25em] text-white/80 shadow-inner"
+                style={{
+                  background: "var(--classroom-board)",
+                  border: "6px solid var(--classroom-wood-dark)",
+                  boxShadow: "inset 0 4px 14px rgba(0,0,0,0.35)",
+                }}
               >
-                {st ? (
-                  <>
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20 text-[10px] font-semibold">
-                      {initials(st)}
-                    </span>
-                    <span className="mt-1 line-clamp-2 text-[10px] leading-tight">{st.first_name}</span>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); void unseat(seat!); }}
-                      className="absolute right-0.5 top-0.5 hidden rounded p-0.5 text-muted-foreground hover:bg-background group-hover:block"
-                      aria-label="Remove from seat"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <Armchair className="h-4 w-4 text-muted-foreground/60" />
-                    <span className="mt-1 text-[10px] text-muted-foreground/60">{i + 1}</span>
-                  </>
-                )}
+                {className}
               </div>
-            );
-          })}
+            </div>
+
+            {/* seat rows: pairs of 2, 10 per row */}
+            <div className="space-y-5">
+              {Array.from({ length: Math.max(3, Math.ceil(capacity / 10)) }).map((_, row) => {
+                const seatsInRow = Math.max(0, Math.min(10, capacity - row * 10));
+                if (seatsInRow === 0) return null;
+                const depth = 1 + row * 0.06;
+                return (
+                  <div
+                    key={row}
+                    className="flex justify-center gap-6"
+                    style={{ transform: `scale(${depth})`, transformOrigin: "center top" }}
+                  >
+                    {Array.from({ length: Math.ceil(seatsInRow / 2) }).map((_, pair) => (
+                      <div key={pair} className="flex gap-1.5">
+                        {Array.from({ length: Math.min(2, seatsInRow - pair * 2) }).map((__, k) => {
+                          const i = row * 10 + pair * 2 + k;
+                          const seat = seatByIndex.get(i);
+                          const st = seat ? studentById.get(seat.student_id) : undefined;
+                          const active = picked?.type === "seat" && picked.seatIndex === i;
+                          return (
+                            <ChairSeat
+                              key={i}
+                              index={i}
+                              student={st}
+                              active={active}
+                              onClick={() => onSeatClick(i)}
+                              onDrop={(e) => onSeatDrop(e, i)}
+                              draggable={!!seat}
+                              onDragStart={(e) => seat && e.dataTransfer.setData("text/student", seat.student_id)}
+                              onRemove={seat ? () => void unseat(seat) : undefined}
+                            />
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
-        <p className="mt-4 flex items-center gap-1 text-[11px] text-muted-foreground">
-          <UserRound className="h-3 w-3" /> Drag a student onto a chair, or tap a student then tap a chair. {className} · {section.room ?? "no room"}
+        <p className="mt-6 flex items-center gap-1 text-[11px] text-muted-foreground">
+          <UserRound className="h-3 w-3" /> Drag a student onto a chair, or tap a student then tap a chair. {className} ·{" "}
+          {section.room ?? "no room"}
         </p>
       </div>
+    </div>
+  );
+}
+
+function TeacherDesk({ name }: { name: string | null }) {
+  return (
+    <div className="flex w-40 shrink-0 flex-col items-center">
+      <div
+        className="flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-white shadow"
+        style={{ background: "var(--classroom-wood-dark)" }}
+      >
+        <Presentation className="h-4 w-4" />
+      </div>
+      <div
+        className="mt-1 h-3 w-24 rounded-t-sm"
+        style={{ background: "var(--classroom-wood-light)" }}
+      />
+      <div
+        className="h-9 w-36 rounded-md shadow-md"
+        style={{
+          background: "linear-gradient(to bottom, var(--classroom-wood-light), var(--classroom-wood))",
+          borderBottom: "5px solid var(--classroom-wood-dark)",
+        }}
+      />
+      <span className="mt-1 max-w-36 truncate text-[10px] font-medium text-muted-foreground">
+        {name ?? "Teacher's desk"}
+      </span>
+    </div>
+  );
+}
+
+function ChairSeat({
+  index,
+  student,
+  active,
+  onClick,
+  onDrop,
+  draggable,
+  onDragStart,
+  onRemove,
+}: {
+  index: number;
+  student?: Student;
+  active: boolean;
+  onClick: () => void;
+  onDrop: (e: React.DragEvent) => void;
+  draggable: boolean;
+  onDragStart: (e: React.DragEvent) => void;
+  onRemove?: () => void;
+}) {
+  return (
+    <div
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={onDrop}
+      onClick={onClick}
+      draggable={draggable}
+      onDragStart={onDragStart}
+      title={
+        student
+          ? `${student.first_name} ${student.last_name} · ${student.student_code}${student.guardian_name ? ` · ${student.guardian_name}` : ""}`
+          : `Seat ${index + 1}`
+      }
+      className={`group relative flex w-14 cursor-pointer flex-col items-center rounded-md p-1 transition-transform hover:-translate-y-1 ${
+        active ? "ring-2 ring-primary" : ""
+      }`}
+    >
+      {/* desk top */}
+      <div
+        className="h-2.5 w-12 rounded-t-sm shadow-sm"
+        style={{
+          background: "linear-gradient(to bottom, var(--classroom-wood-light), var(--classroom-wood))",
+          borderBottom: "3px solid var(--classroom-wood-dark)",
+        }}
+      />
+      {/* occupant / chair back */}
+      <div className="relative -mt-0.5 flex h-9 w-10 items-end justify-center">
+        <div
+          className="absolute bottom-2 h-6 w-7 rounded-t-md"
+          style={{
+            background: "linear-gradient(to bottom, var(--classroom-wood), var(--classroom-wood-dark))",
+          }}
+        />
+        {student && (
+          <span
+            className="absolute bottom-4 flex h-6 w-6 items-center justify-center rounded-full border-2 border-background text-[9px] font-bold text-primary-foreground shadow"
+            style={{ background: "var(--primary)" }}
+          >
+            {initials(student)}
+          </span>
+        )}
+        {/* seat */}
+        <div
+          className="absolute bottom-1 h-2 w-9 rounded-sm"
+          style={{ background: "var(--classroom-wood-light)" }}
+        />
+        {/* legs */}
+        <div className="absolute bottom-0 flex w-9 justify-between">
+          <span className="h-1.5 w-1" style={{ background: "var(--classroom-wood-dark)" }} />
+          <span className="h-1.5 w-1" style={{ background: "var(--classroom-wood-dark)" }} />
+        </div>
+      </div>
+      <span className="mt-0.5 max-w-14 truncate text-[9px] leading-none text-muted-foreground">
+        {student ? student.first_name : index + 1}
+      </span>
+      {!student && <Armchair className="sr-only h-0 w-0" />}
+      {onRemove && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
+          className="absolute -right-1 -top-1 hidden rounded-full bg-background p-0.5 text-muted-foreground shadow group-hover:block"
+          aria-label="Remove from seat"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      )}
     </div>
   );
 }
