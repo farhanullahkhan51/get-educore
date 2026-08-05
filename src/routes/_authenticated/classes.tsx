@@ -295,15 +295,21 @@ function ClassesPage() {
                 ) : (
                   <Table>
                     <TableHeader><TableRow>
-                      <TableHead>Section</TableHead><TableHead>Room</TableHead>
+                      <TableHead>Section</TableHead><TableHead>Class teacher</TableHead><TableHead>Room</TableHead>
                       <TableHead>Capacity</TableHead><TableHead className="text-right">Actions</TableHead>
                     </TableRow></TableHeader>
                     <TableBody>
-                      {clsSections.map((s) => (
+                      {clsSections.map((s) => {
+                        const t = teachers?.find((x) => x.id === s.class_teacher_id);
+                        return (
                         <TableRow key={s.id}>
                           <TableCell className="font-medium">{s.name}</TableCell>
+                          <TableCell className={t ? "" : "text-muted-foreground"}>
+                            {t ? `${t.first_name} ${t.last_name}` : "Unassigned"}
+                          </TableCell>
                           <TableCell>{s.room ?? "—"}</TableCell>
                           <TableCell>{s.capacity}</TableCell>
+
                           <TableCell className="text-right">
                             <Button size="sm" variant="outline" className="mr-1" onClick={() => setSeatSec({ section: s, className: `${cls.name} · ${s.name}` })}>
                               <LayoutGrid className="mr-1 h-3 w-3" /> Seating
