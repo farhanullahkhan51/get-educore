@@ -29,9 +29,10 @@ type Klass = {
   academic_year: string | null;
 };
 type Section = {
-  id: string; campus_id: string; class_id: string; name: string;
+  id: string; tenant_id: string; campus_id: string; class_id: string; name: string;
   capacity: number | null; room: string | null;
   academic_system: "board" | "cambridge" | "both";
+  class_teacher_id: string | null;
 };
 type StudentRow = {
   id: string; student_code: string; first_name: string; last_name: string;
