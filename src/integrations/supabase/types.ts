@@ -2643,6 +2643,10 @@ export type Database = {
           status: Database["public"]["Enums"]["tenant_status"]
         }[]
       }
+      set_section_seat: {
+        Args: { _seat_index: number; _section_id: string; _student_id: string }
+        Returns: undefined
+      }
       student_has_outstanding_challans: {
         Args: { _student_id: string }
         Returns: boolean
