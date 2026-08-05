@@ -289,7 +289,7 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   const pointerRef = useRef({ x: 0, y: 0 });
   const movedRef = useRef(false);
   const rafRef = useRef<number | null>(null);
-  const [drag, setDrag] = useState<{ label: string; x: number; y: number } | null>(null);
+  const [drag, setDrag] = useState<{ label: string; x: number; y: number; kind: "student" | "teacher" } | null>(null);
   const [hoverSeat, setHoverSeat] = useState<number | null>(null);
   const [hoverDesk, setHoverDesk] = useState(false);
 
@@ -363,14 +363,14 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
         const dist = Math.hypot(ev.clientX - originRef.current.x, ev.clientY - originRef.current.y);
         if (dist < 5) return;
         movedRef.current = true;
-        setDrag({ label, x: ev.clientX, y: ev.clientY });
+        setDrag({ label, x: ev.clientX, y: ev.clientY, kind });
         if (rafRef.current === null) rafRef.current = requestAnimationFrame(autoScrollTick);
       }
       ev.preventDefault();
-      setDrag({ label, x: ev.clientX, y: ev.clientY });
-      setHoverSeat(seatIndexAtPoint(ev.clientX, ev.clientY));
-      setHoverDesk(isOverDesk(ev.clientX, ev.clientY));
-
+      setDrag({ label, x: ev.clientX, y: ev.clientY, kind });
+      // Only the matching drop targets light up: chairs for students, the desk for teachers.
+      setHoverSeat(kind === "student" ? seatIndexAtPoint(ev.clientX, ev.clientY) : null);
+      setHoverDesk(kind === "teacher" ? isOverDesk(ev.clientX, ev.clientY) : false);
     };
 
     const onUp = (ev: PointerEvent) => {
@@ -556,7 +556,7 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
             <div className="mb-6 flex items-end gap-4">
               <TeacherDesk
                 name={teacher ? `${teacher.first_name} ${teacher.last_name}` : null}
-                highlight={!!pickedTeacher || hoverDesk}
+                highlight={drag ? drag.kind === "teacher" && hoverDesk : !!pickedTeacher}
                 onDrop={onDeskDrop}
                 onClick={() => { if (pickedTeacher) void assignTeacher(pickedTeacher); }}
                 onRemove={() => void assignTeacher("none")}
@@ -610,8 +610,8 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
                                 const seat = seatByIndex.get(i);
                                 const st = seat ? studentById.get(seat.student_id) : undefined;
                                 const active = picked?.type === "seat" && picked.seatIndex === i;
-                                const dragStudentId = drag && dragRef.current?.kind === "student" ? dragRef.current.id : null;
-                                const probeId = dragStudentId ?? (picked ? picked.id : null);
+                                const dragStudentId = drag?.kind === "student" ? dragRef.current?.id ?? null : null;
+                                const probeId = drag ? dragStudentId : picked?.type ? picked.id : null;
                                 const unavailable = probeId ? !!seatingError(probeId, i) : false;
                                 return (
                                   <ChairSeat
