@@ -237,17 +237,28 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   }
 
   async function assignTeacher(id: string) {
+    if (id !== "none") {
+      const problem = teacherError(id);
+      if (problem) return toast.error(problem);
+    }
     const { error } = await supabase
       .from("sections")
       .update({ class_teacher_id: id === "none" ? null : id })
       .eq("id", section.id);
-    if (error) return toast.error(error.message);
+    if (error) {
+      return toast.error(
+        error.code === "23505"
+          ? "That teacher is already assigned to another classroom."
+          : error.message,
+      );
+    }
     const t = staff?.find((s) => s.id === id);
     toast.success(id === "none" ? "Teacher's desk cleared" : `${t?.first_name ?? "Teacher"} assigned to the teacher's desk`);
     setPickedTeacher(null);
     qc.invalidateQueries({ queryKey: ["sections"] });
     qc.invalidateQueries({ queryKey: ["section-teachers"] });
   }
+
 
   const teacher = staff?.find((s) => s.id === section.class_teacher_id);
 
