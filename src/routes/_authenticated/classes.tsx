@@ -46,6 +46,7 @@ function ClassesPage() {
   const [editCls, setEditCls] = useState<Klass | null>(null);
   const [editSec, setEditSec] = useState<Section | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [seatSec, setSeatSec] = useState<{ section: Section; className: string } | null>(null);
 
   const { data: campuses } = useQuery({
     queryKey: ["campuses"],
