@@ -229,13 +229,23 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
       .update({ class_teacher_id: id === "none" ? null : id })
       .eq("id", section.id);
     if (error) return toast.error(error.message);
-    toast.success("Class teacher updated");
+    const t = staff?.find((s) => s.id === id);
+    toast.success(id === "none" ? "Teacher's desk cleared" : `${t?.first_name ?? "Teacher"} assigned to the teacher's desk`);
+    setPickedTeacher(null);
     qc.invalidateQueries({ queryKey: ["sections"] });
+    qc.invalidateQueries({ queryKey: ["section-teachers"] });
   }
 
   const teacher = staff?.find((s) => s.id === section.class_teacher_id);
 
+  function onDeskDrop(e: React.DragEvent) {
+    e.preventDefault();
+    const teacherId = e.dataTransfer.getData("text/teacher");
+    if (teacherId) void assignTeacher(teacherId);
+  }
+
   function onSeatDrop(e: React.DragEvent, seatIndex: number) {
+
     e.preventDefault();
     const studentId = e.dataTransfer.getData("text/student");
     if (studentId) void seatStudent(studentId, seatIndex);
