@@ -500,22 +500,27 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
                           const seat = seatByIndex.get(i);
                           const st = seat ? studentById.get(seat.student_id) : undefined;
                           const active = picked?.type === "seat" && picked.seatIndex === i;
-                          const unavailable = picked ? !!seatingError(picked.id, i) : false;
+                          const dragStudentId = drag && dragRef.current?.kind === "student" ? dragRef.current.id : null;
+                          const probeId = dragStudentId ?? (picked ? picked.id : null);
+                          const unavailable = probeId ? !!seatingError(probeId, i) : false;
                           return (
                             <ChairSeat
                               key={i}
                               index={i}
                               student={st}
                               active={active}
+                              hovered={hoverSeat === i}
                               unavailable={unavailable}
-                              onClick={() => onSeatClick(i)}
+                              onClick={() => { if (!suppressClick()) onSeatClick(i); }}
                               onDrop={(e) => onSeatDrop(e, i)}
-                              draggable={!!seat}
-                              onDragStart={(e) => seat && e.dataTransfer.setData("text/student", seat.student_id)}
+                              onPointerDown={(e) => {
+                                if (seat && st) startDrag("student", seat.student_id, `${st.first_name} ${st.last_name}`, e);
+                              }}
                               onRemove={seat ? () => void unseat(seat) : undefined}
                             />
 
                           );
+
                         })}
                       </div>
                     ))}
