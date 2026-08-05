@@ -140,42 +140,13 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
       return;
     }
     setBusy(true);
-    const current = (seats ?? []).find((s) => s.student_id === studentId);
     try {
-      if (existing) {
-        // swap or evict
-        if (current) {
-          await supabase.from("section_seats").delete().eq("id", existing.id);
-          await supabase.from("section_seats").update({ seat_index: seatIndex }).eq("id", current.id);
-          const { error } = await supabase.from("section_seats").insert({
-            tenant_id: section.tenant_id,
-            campus_id: section.campus_id,
-            section_id: section.id,
-            seat_index: current.seat_index,
-            student_id: existing.student_id,
-          });
-          if (error) throw error;
-        } else {
-          const { error } = await supabase
-            .from("section_seats")
-            .update({ student_id: studentId })
-            .eq("id", existing.id);
-          if (error) throw error;
-        }
-      } else if (current) {
-        const { error } = await supabase.from("section_seats").update({ seat_index: seatIndex }).eq("id", current.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("section_seats").insert({
-          tenant_id: section.tenant_id,
-          campus_id: section.campus_id,
-          section_id: section.id,
-          seat_index: seatIndex,
-          student_id: studentId,
-        });
-        if (error) throw error;
-      }
-      await supabase.from("students").update({ section_id: section.id, class_id: section.class_id }).eq("id", studentId);
+      const { error } = await supabase.rpc("set_section_seat", {
+        _section_id: section.id,
+        _seat_index: seatIndex,
+        _student_id: studentId,
+      });
+      if (error) throw error;
       refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not seat student");
@@ -184,6 +155,7 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
       setPicked(null);
     }
   }
+
 
   async function unseat(seat: Seat) {
     setBusy(true);
