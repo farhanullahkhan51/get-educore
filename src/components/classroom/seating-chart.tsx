@@ -610,8 +610,8 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
                                 const seat = seatByIndex.get(i);
                                 const st = seat ? studentById.get(seat.student_id) : undefined;
                                 const active = picked?.type === "seat" && picked.seatIndex === i;
-                                const dragStudentId = drag && dragRef.current?.kind === "student" ? dragRef.current.id : null;
-                                const probeId = dragStudentId ?? (picked ? picked.id : null);
+                                const dragStudentId = drag?.kind === "student" ? dragRef.current?.id ?? null : null;
+                                const probeId = drag ? dragStudentId : picked?.type ? picked.id : null;
                                 const unavailable = probeId ? !!seatingError(probeId, i) : false;
                                 return (
                                   <ChairSeat
