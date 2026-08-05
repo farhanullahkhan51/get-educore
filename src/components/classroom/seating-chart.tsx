@@ -438,6 +438,30 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
     if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
   }, []);
 
+  // ---- keep the whole classroom inside the panel, whatever the sidebar/window width ----
+  const roomBoxRef = useRef<HTMLDivElement | null>(null);
+  const roomRef = useRef<HTMLDivElement | null>(null);
+  const [roomSize, setRoomSize] = useState({ w: 0, h: 0 });
+  const [boxWidth, setBoxWidth] = useState(0);
+
+  useEffect(() => {
+    const box = roomBoxRef.current;
+    const room = roomRef.current;
+    if (!box || !room) return;
+    const measure = () => {
+      setBoxWidth(box.clientWidth - 32);
+      setRoomSize({ w: room.offsetWidth, h: room.offsetHeight });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(box);
+    ro.observe(room);
+    return () => ro.disconnect();
+  }, [capacity, seats?.length, students?.length]);
+
+  const fit = roomSize.w > 0 && boxWidth > 0 ? Math.min(1, boxWidth / roomSize.w) : 1;
+
+
   const suppressClick = () => {
     const shouldSuppress = movedRef.current;
     movedRef.current = false;
