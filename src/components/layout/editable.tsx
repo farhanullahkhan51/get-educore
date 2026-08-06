@@ -1,11 +1,11 @@
 import { useCallback, useRef, useState, type ReactNode } from "react";
-import { GripVertical, Eye, EyeOff, Maximize2, MoveVertical, Pencil, Check, X } from "lucide-react";
+import { GripVertical, Eye, EyeOff, Pencil, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSurfaceLayout } from "@/lib/ui-layouts";
-import { SPAN_LABEL, type ResolvedBlock } from "@/lib/ui-surfaces";
+import { type ResolvedBlock } from "@/lib/ui-surfaces";
 
 const SPAN_CLASS: Record<number, string> = {
   3: "md:col-span-6 lg:col-span-3",
@@ -147,8 +147,6 @@ type BlockChrome = {
   dragging: boolean;
   onDragStart: (e: React.PointerEvent) => void;
   onToggleHidden: () => void;
-  onCycleSpan?: () => void;
-  onToggleHeight?: () => void;
   onRename: (v: string) => void;
 };
 
@@ -156,8 +154,6 @@ function EditChrome({
   block,
   onDragStart,
   onToggleHidden,
-  onCycleSpan,
-  onToggleHeight,
   onRename,
 }: BlockChrome) {
   return (
@@ -204,8 +200,7 @@ export function EditableGrid({
   render: (block: ResolvedBlock) => ReactNode;
   className?: string;
 }) {
-  const { blocks, editing, move, toggleHidden, cycleSpan, toggleHeight, rename } =
-    useSurfaceLayout(scope);
+  const { blocks, editing, move, toggleHidden, rename } = useSurfaceLayout(scope);
   const ref = useRef<HTMLDivElement>(null);
   const shown = editing ? blocks : blocks.filter((b) => !b.hidden);
   const { dragging, start } = useReorder(
@@ -238,8 +233,6 @@ export function EditableGrid({
                 dragging={dragging === block.id}
                 onDragStart={start(block.id)}
                 onToggleHidden={() => toggleHidden(block.id)}
-                onCycleSpan={() => cycleSpan(block.id)}
-                onToggleHeight={() => toggleHeight(block.id)}
                 onRename={(v) => rename(block.id, v)}
               />
             )}
