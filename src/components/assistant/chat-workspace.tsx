@@ -1,10 +1,25 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, type UIMessage } from "ai";
+import {
+  DefaultChatTransport,
+  lastAssistantMessageIsCompleteWithApprovalResponses,
+  type UIMessage,
+} from "ai";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, MessageSquare, Trash2, PanelLeft, Mic, Square, Loader2 } from "lucide-react";
+import {
+  Plus,
+  MessageSquare,
+  Trash2,
+  PanelLeft,
+  Mic,
+  Square,
+  Loader2,
+  ShieldQuestion,
+  Check,
+  X,
+} from "lucide-react";
 import { useVoiceInput, type VoiceLanguage } from "@/hooks/use-voice-input";
 import {
   Select,
@@ -309,10 +324,11 @@ export function ChatWorkspace({ threadId }: { threadId: string }) {
     [threadId],
   );
 
-  const { messages, sendMessage, status, error } = useChat({
+  const { messages, sendMessage, status, error, addToolApprovalResponse } = useChat({
     id: threadId,
     messages: initialMessages ?? [],
     transport,
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
     onError: (e) => toast.error(e.message || "The assistant could not respond."),
   });
 
@@ -389,7 +405,10 @@ export function ChatWorkspace({ threadId }: { threadId: string }) {
                     : undefined
                 }
               >
-                <MessageParts message={m} />
+                <MessageParts
+                  message={m}
+                  onApproval={(id, approved) => addToolApprovalResponse({ id, approved })}
+                />
               </MessageContent>
             </Message>
           ))}
