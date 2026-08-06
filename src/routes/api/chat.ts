@@ -94,6 +94,10 @@ export const Route = createFileRoute("/api/chat")({
             if (error) console.error("[chat] failed to save assistant message", error.message);
             await supabase.from("ai_threads").update({ updated_at: new Date().toISOString() }).eq("id", threadId);
           },
+          onError: (error) => {
+            console.error("[chat] stream error", error);
+            return error instanceof Error ? error.message : "An error occurred.";
+          },
           headers: getLovableAiGatewayResponseHeaders(undefined),
         });
       },
