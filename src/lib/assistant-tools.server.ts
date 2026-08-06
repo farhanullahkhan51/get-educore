@@ -126,11 +126,10 @@ export function buildAssistantTools(ctx: AssistantContext) {
     return findOne(data, "course", term, (c) => `${c.title} (${c.code})`);
   }
 
-  const write = <I extends z.ZodTypeAny, O>(config: {
-    description: string;
-    inputSchema: I;
-    execute: (input: z.infer<I>) => Promise<O>;
-  }) => tool({ ...config, needsApproval: true });
+  function write<T extends Parameters<typeof tool>[0]>(config: T) {
+    return tool({ ...config, needsApproval: true } as T);
+  }
+
 
   return {
     /* ------------------------------------------------------------------ read */
