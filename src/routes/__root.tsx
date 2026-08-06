@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { TenantProvider } from "@/lib/tenant-context";
 import { UiPrefsProvider } from "@/lib/ui-prefs";
+import { UiLayoutsProvider } from "@/lib/ui-layouts";
 
 
 function NotFoundComponent() {
@@ -141,8 +142,10 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <TenantProvider>
         <UiPrefsProvider>
-          <Outlet />
-          <Toaster richColors position="top-right" />
+          <UiLayoutsProvider>
+            <Outlet />
+            <Toaster richColors position="top-right" />
+          </UiLayoutsProvider>
         </UiPrefsProvider>
       </TenantProvider>
     </QueryClientProvider>

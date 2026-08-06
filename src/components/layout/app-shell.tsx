@@ -26,6 +26,8 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { AssistantMenu } from "@/components/assistant/assistant-menu";
+import { EditableList } from "@/components/layout/editable";
+import { EditModeButton, EditModeBanner } from "@/components/layout/edit-mode-bar";
 
 interface NavItem {
   to: string;
@@ -99,14 +101,21 @@ export function AppShell({ children }: { children: ReactNode }) {
     </div>
   );
 
+  const navByPath = new Map(NAV.map((item) => [item.to, item]));
+
   const navList = (onNavigate?: () => void) => (
-    <nav className="flex-1 space-y-0.5 p-3 overflow-y-auto">
-      {visibleNav.map(({ to, label, icon: Icon }) => {
-        const active = location.pathname === to || location.pathname.startsWith(to + "/");
+    <EditableList
+      scope="sidebar"
+      className="flex-1 space-y-0.5 overflow-y-auto p-3"
+      render={(block) => {
+        const item = navByPath.get(block.id);
+        if (!item) return null;
+        if (!(user?.roles.some((r) => item.roles.includes(r)) ?? false)) return null;
+        const Icon = item.icon;
+        const active = location.pathname === item.to || location.pathname.startsWith(item.to + "/");
         return (
           <Link
-            key={to}
-            to={to}
+            to={item.to}
             onClick={onNavigate}
             className={cn(
               "flex items-center gap-3 rounded-sm px-3 py-2 text-sm transition-colors",
@@ -116,11 +125,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             )}
           >
             <Icon className="h-4 w-4" />
-            {label}
+            {block.label}
           </Link>
         );
-      })}
-    </nav>
+      }}
+    />
   );
 
   const userBlock = (
@@ -184,6 +193,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <EditModeButton />
             <AssistantMenu />
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
@@ -203,8 +213,13 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         {/* Desktop top bar */}
         <div className="sticky top-0 z-30 hidden items-center justify-end border-b bg-background px-6 py-2 md:flex">
-          <AssistantMenu />
+          <div className="flex items-center gap-2">
+            <EditModeButton />
+            <AssistantMenu />
+          </div>
         </div>
+
+        <EditModeBanner />
 
         <div className="mx-auto max-w-7xl px-6 py-8">{children}</div>
 
