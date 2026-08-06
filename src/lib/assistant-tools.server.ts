@@ -2,6 +2,17 @@ import { tool } from "ai";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import {
+  MODULE_LAYOUTS,
+  MODULE_KEYS,
+  defaultsFor,
+  describeLayout,
+  sanitizeLayout,
+  type ModuleLayout,
+} from "@/lib/ui-layout";
+
+const MODULE_ENUM = MODULE_KEYS as [string, ...string[]];
+
 
 type Db = SupabaseClient<Database>;
 
