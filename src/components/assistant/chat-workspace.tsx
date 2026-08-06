@@ -349,7 +349,7 @@ function ChatThread({
 
   const { messages, sendMessage, status, error, addToolApprovalResponse } = useChat({
     id: threadId,
-    messages: initialMessages ?? [],
+    messages: initialMessages,
     transport,
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
     onError: (e) => toast.error(e.message || "The assistant could not respond."),
