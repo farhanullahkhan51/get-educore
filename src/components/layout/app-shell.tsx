@@ -75,10 +75,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     navigate({ to: "/auth", replace: true });
   }
 
-  const visibleNav = NAV.filter((item) =>
-    user?.roles.some((r) => item.roles.includes(r)) ?? false,
-  );
-
   const brandBlock = (
     <div className="flex items-center gap-2 px-5 py-5 border-b border-sidebar-border">
       {tenant?.logo_url ? (
