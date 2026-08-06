@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -93,18 +94,18 @@ export function UiLayoutsProvider({ children }: { children: ReactNode }) {
         if (existing) {
           const { error } = await supabase
             .from("ui_layouts")
-            .update({ layout: layout as never, updated_by: user?.id ?? null })
+            .update({ layout: layout as never, updated_by: user?.userId ?? null })
             .eq("id", existing.id);
           if (error) throw error;
         } else {
           const { error } = await supabase
             .from("ui_layouts")
-            .insert({ tenant_id: tenantId, scope, layout: layout as never, updated_by: user?.id ?? null });
+            .insert({ tenant_id: tenantId, scope, layout: layout as never, updated_by: user?.userId ?? null });
           if (error) throw error;
         }
         await supabase.from("audit_logs").insert({
           tenant_id: tenantId,
-          actor_id: user?.id ?? null,
+          actor_id: user?.userId ?? null,
           action: "update",
           entity_type: "ui_layout",
           details: { scope, layout } as never,
@@ -163,8 +164,6 @@ export function UiLayoutsProvider({ children }: { children: ReactNode }) {
 
   return <LayoutsContext.Provider value={value}>{children}</LayoutsContext.Provider>;
 }
-
-import { useRef } from "react";
 
 export function useUiLayouts(): Ctx {
   const ctx = useContext(LayoutsContext);
