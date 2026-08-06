@@ -93,6 +93,31 @@ function StudentsPage() {
     });
   }, [students, search]);
 
+  const { layout } = useModuleLayout("students");
+  const groups = useArranged<Student>(filtered, layout, {
+    group: {
+      track: (s) => (s.academic_system === "cambridge" ? "Cambridge" : s.academic_system === "both" ? "Board & Cambridge" : "Board"),
+      campus: (s) => campusMap.get(s.campus_id) ?? "—",
+      class: (s) => classMap.get(s.class_id ?? "") ?? "No class",
+      status: (s) => s.status.charAt(0).toUpperCase() + s.status.slice(1),
+    },
+    filter: {
+      board: (s) => s.academic_system !== "cambridge",
+      cambridge: (s) => s.academic_system !== "board",
+      active: (s) => s.status === "active",
+      inactive: (s) => s.status !== "active",
+    },
+    sort: {
+      name: byText((s) => `${s.first_name} ${s.last_name}`),
+      code: byText((s) => s.student_code),
+      class: byText((s) => classMap.get(s.class_id ?? "") ?? ""),
+    },
+  });
+  const showCol = (c: string) => !layout.hidden.includes(c);
+  const cellCls = densityCell(layout.density);
+  const colSpan = 3 + ["guardian", "campus", "class", "system", "docs"].filter(showCol).length;
+
+
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
