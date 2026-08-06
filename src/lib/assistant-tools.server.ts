@@ -127,6 +127,47 @@ export function buildAssistantTools(ctx: AssistantContext) {
   }
 
   const write = tool;
+  const read = tool;
+
+  /** Current merged layout (module defaults <- institution default <- personal) for a module. */
+  async function currentLayout(module: string): Promise<ModuleLayout> {
+    const { data } = await supabase.from("ui_preferences").select("user_id, prefs").eq("module", module);
+    const tenantRow = data?.find((r) => r.user_id === null);
+    const personalRow = data?.find((r) => r.user_id === userId);
+    return sanitizeLayout(module, {
+      ...defaultsFor(module),
+      ...((tenantRow?.prefs as Partial<ModuleLayout> | undefined) ?? {}),
+      ...((personalRow?.prefs as Partial<ModuleLayout> | undefined) ?? {}),
+    });
+  }
+
+  async function saveLayout(
+    module: string,
+    layout: ModuleLayout,
+    institutionWide: boolean,
+  ): Promise<{ ok: true } | { error: string }> {
+    if (!ctx.tenantId) return { error: "No institution is linked to your account." };
+    const target = institutionWide ? null : userId;
+    const { data: existing } = await supabase
+      .from("ui_preferences")
+      .select("id, user_id")
+      .eq("module", module);
+    const row = existing?.find((r) => r.user_id === target);
+    const { error } = row
+      ? await supabase.from("ui_preferences").update({ prefs: layout } as never).eq("id", row.id)
+      : await supabase
+          .from("ui_preferences")
+          .insert({ tenant_id: ctx.tenantId, user_id: target, module, prefs: layout } as never);
+    if (error)
+      return {
+        error: institutionWide
+          ? `Could not save the institution default (${error.message}). Only admins may change it.`
+          : error.message,
+      };
+    return { ok: true };
+  }
+
+
 
 
   const tools = {
