@@ -14,6 +14,7 @@ import {
   Trash2,
   PanelLeft,
   Mic,
+  MicOff,
   Square,
   Loader2,
   ShieldQuestion,
