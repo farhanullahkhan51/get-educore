@@ -336,20 +336,26 @@ function ClassesPage() {
                 ) : (
                   <Table>
                     <TableHeader><TableRow>
-                      <TableHead>Section</TableHead><TableHead>Class teacher</TableHead><TableHead>Room</TableHead>
-                      <TableHead>Capacity</TableHead><TableHead className="text-right">Actions</TableHead>
+                      <TableHead>Section</TableHead>
+                      {showCol("teacher") && <TableHead>Class teacher</TableHead>}
+                      {showCol("room") && <TableHead>Room</TableHead>}
+                      {showCol("capacity") && <TableHead>Capacity</TableHead>}
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow></TableHeader>
                     <TableBody>
                       {clsSections.map((s) => {
                         const t = teachers?.find((x) => x.id === s.class_teacher_id);
                         return (
                         <TableRow key={s.id}>
-                          <TableCell className="font-medium">{s.name}</TableCell>
-                          <TableCell className={t ? "" : "text-muted-foreground"}>
-                            {t ? `${t.first_name} ${t.last_name}` : "Unassigned"}
-                          </TableCell>
-                          <TableCell>{s.room ?? "—"}</TableCell>
-                          <TableCell>{s.capacity}</TableCell>
+                          <TableCell className={`font-medium ${cellCls}`}>{s.name}</TableCell>
+                          {showCol("teacher") && (
+                            <TableCell className={`${t ? "" : "text-muted-foreground"} ${cellCls}`}>
+                              {t ? `${t.first_name} ${t.last_name}` : "Unassigned"}
+                            </TableCell>
+                          )}
+                          {showCol("room") && <TableCell className={cellCls}>{s.room ?? "—"}</TableCell>}
+                          {showCol("capacity") && <TableCell className={cellCls}>{s.capacity}</TableCell>}
+
 
                           <TableCell className="text-right">
                             <Button size="sm" variant="outline" className="mr-1" onClick={() => setSeatSec({ section: s, className: `${cls.name} · ${s.name}` })}>
