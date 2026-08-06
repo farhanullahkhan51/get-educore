@@ -273,7 +273,9 @@ function StudentsPage() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         }
+
       />
 
       <div className="mb-4 relative max-w-md">
