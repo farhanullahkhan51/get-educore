@@ -203,8 +203,11 @@ function ClassesPage() {
         title="Classes & Sections"
         description="Classes are grade groups (e.g. Grade 9, O-Level Year 1). Each class can have multiple sections."
         actions={
+          <div className="flex items-center gap-2">
+          <LayoutMenu module="classes" />
           <Dialog open={openCls} onOpenChange={setOpenCls}>
             <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" /> New class</Button></DialogTrigger>
+
             <DialogContent>
               <DialogHeader><DialogTitle className="font-serif">New class</DialogTitle></DialogHeader>
               <form onSubmit={createClass} className="space-y-4">
