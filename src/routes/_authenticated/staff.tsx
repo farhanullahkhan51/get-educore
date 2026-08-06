@@ -126,12 +126,13 @@ function StaffPage() {
       track: (s) => (s.academic_system === "cambridge" ? "Cambridge" : s.academic_system === "board" ? "Board" : "Board & Cambridge"),
       campus: (s) => campusMap.get(s.campus_id) ?? "—",
       department: (s) => s.department ?? "No department",
-      status: (s) => (s.status ?? "active").replace(/^./, (c) => c.toUpperCase()),
+      status: (s) => ((s as { status?: string }).status ?? "active").replace(/^./, (c: string) => c.toUpperCase()),
     },
     filter: {
       board: (s) => s.academic_system !== "cambridge",
       cambridge: (s) => s.academic_system !== "board",
-      active: (s) => (s.status ?? "active") === "active",
+      active: (s) => ((s as { status?: string }).status ?? "active") === "active",
+
     },
     sort: {
       name: byText((s) => `${s.first_name} ${s.last_name}`),
