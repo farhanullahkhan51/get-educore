@@ -173,30 +173,8 @@ function EditChrome({
       </button>
       <span className="min-w-0 flex-1 truncate font-medium">{block.label}</span>
       {block.canRename !== false && <RenameField block={block} onRename={onRename} />}
-      {block.canResize !== false && onCycleSpan && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6"
-          title={SPAN_LABEL[block.span] ?? "Resize"}
-          onClick={onCycleSpan}
-        >
-          <Maximize2 className="h-3 w-3" />
-        </Button>
-      )}
-      {block.canResize !== false && onToggleHeight && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6"
-          title={block.height === "tall" ? "Make short" : "Make tall"}
-          onClick={onToggleHeight}
-        >
-          <MoveVertical className="h-3 w-3" />
-        </Button>
-      )}
+      {/* resizing intentionally not offered — blocks keep their shipped size */}
+
       {block.canHide !== false && (
         <Button
           type="button"
