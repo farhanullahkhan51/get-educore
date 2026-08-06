@@ -59,10 +59,11 @@ import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from "@/componen
 
 const SUGGESTIONS = [
   "How many active students and staff do we have per campus?",
+  "Add a new Cambridge course called Physics for O-Level Year 1.",
   "Summarise fee collection and outstanding dues.",
-  "What does the admissions funnel look like right now?",
-  "Give me attendance for the last 30 days.",
+  "Log an admission inquiry for Ayesha Khan, guardian Bilal, 0300-1234567.",
 ];
+
 
 function ThreadList({
   activeId,
