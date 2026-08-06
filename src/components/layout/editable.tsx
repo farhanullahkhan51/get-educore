@@ -3,7 +3,7 @@ import { GripVertical, Eye, EyeOff, Maximize2, MoveVertical, Pencil, Check, X } 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSurfaceLayout } from "@/lib/ui-layouts";
 import { SPAN_LABEL, type ResolvedBlock } from "@/lib/ui-surfaces";
 
@@ -387,4 +387,33 @@ export function useFirstVisibleTab(scope: string, preferred?: string) {
   const { visible } = useSurfaceLayout(scope);
   if (preferred && visible.some((b) => b.id === preferred)) return preferred;
   return visible[0]?.id ?? preferred ?? "";
+}
+
+/**
+ * Drop-in replacement for `<Tabs defaultValue>` that renders an editable tab strip.
+ * Children stay as ordinary `<TabsContent>` elements.
+ */
+export function EditableTabs({
+  scope,
+  fallback,
+  className,
+  listClassName,
+  children,
+}: {
+  scope: string;
+  fallback: string;
+  className?: string;
+  listClassName?: string;
+  children: ReactNode;
+}) {
+  const { visible } = useSurfaceLayout(scope);
+  const [value, setValue] = useState(fallback);
+  const active = visible.some((b) => b.id === value) ? value : visible[0]?.id ?? fallback;
+
+  return (
+    <Tabs value={active} onValueChange={setValue} className={className}>
+      <EditableTabsList scope={scope} className={listClassName} />
+      {children}
+    </Tabs>
+  );
 }
