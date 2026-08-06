@@ -192,8 +192,11 @@ function StudentsPage() {
         title="Students"
         description="Register students, assign them to classes and sections, and manage their documents."
         actions={
+          <div className="flex items-center gap-2">
+          <LayoutMenu module="students" />
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" /> New student</Button></DialogTrigger>
+
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle className="font-serif">Register student</DialogTitle></DialogHeader>
               <form onSubmit={handleCreate} className="space-y-4">
