@@ -231,7 +231,16 @@ function ClassesPage() {
         {classes?.length === 0 && (
           <Card className="shadow-none"><CardContent className="py-8 text-center text-sm text-muted-foreground">No classes yet.</CardContent></Card>
         )}
-        {classes?.map((cls) => {
+        {groups.map((group) => (
+        <div key={group.key} className="space-y-4">
+        {group.label && (
+          <div className="flex items-center gap-3 pt-2">
+            <h2 className="font-serif text-sm font-semibold uppercase tracking-wide text-muted-foreground">{group.label}</h2>
+            <span className="text-xs text-muted-foreground">{group.rows.length}</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+        )}
+        {group.rows.map((cls) => {
           const clsSections = sections?.filter((s) => s.class_id === cls.id) ?? [];
           const sectionNames = new Map(clsSections.map((s) => [s.id, s.name]));
           const clsStudents =
@@ -241,6 +250,7 @@ function ClassesPage() {
           const isOpen = expanded === cls.id;
           return (
             <Card key={cls.id} className="shadow-none">
+
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <button
                   type="button"
