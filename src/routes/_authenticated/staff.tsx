@@ -115,6 +115,29 @@ function StaffPage() {
     qc.invalidateQueries({ queryKey: ["staff"] });
   }
 
+  const { layout } = useModuleLayout("staff");
+  const groups = useArranged<Staff>(staff ?? [], layout, {
+    group: {
+      track: (s) => (s.academic_system === "cambridge" ? "Cambridge" : s.academic_system === "board" ? "Board" : "Board & Cambridge"),
+      campus: (s) => campusMap.get(s.campus_id) ?? "—",
+      department: (s) => s.department ?? "No department",
+      status: (s) => (s.status ?? "active").replace(/^./, (c) => c.toUpperCase()),
+    },
+    filter: {
+      board: (s) => s.academic_system !== "cambridge",
+      cambridge: (s) => s.academic_system !== "board",
+      active: (s) => (s.status ?? "active") === "active",
+    },
+    sort: {
+      name: byText((s) => `${s.first_name} ${s.last_name}`),
+      code: byText((s) => s.staff_code),
+      designation: byText((s) => s.designation ?? ""),
+    },
+  });
+  const showCol = (c: string) => !layout.hidden.includes(c);
+  const cellCls = densityCell(layout.density);
+  const colSpan = 3 + ["department", "campus", "contact", "track"].filter(showCol).length;
+
   return (
     <>
       <PageHeader
@@ -122,8 +145,11 @@ function StaffPage() {
         title="Staff"
         description="Manage teaching and administrative staff. Portal logins are granted via Users & Roles."
         actions={
+          <div className="flex items-center gap-2">
+          <LayoutMenu module="staff" />
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" /> New staff</Button></DialogTrigger>
+
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle className="font-serif">Add staff member</DialogTitle></DialogHeader>
               <form onSubmit={handleCreate} className="space-y-4">
