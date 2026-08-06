@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { EditableTabs } from "@/components/layout/editable";
 import { toast } from "sonner";
 import { Phone, Mail, MapPin, Clock, ArrowRight, UserPlus, Search, ExternalLink } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -177,11 +178,7 @@ function AdmissionsPage() {
         </Select>
       </div>
 
-      <Tabs defaultValue="board">
-        <TabsList>
-          <TabsTrigger value="board">Kanban</TabsTrigger>
-          <TabsTrigger value="table">Table</TabsTrigger>
-        </TabsList>
+      <EditableTabs scope="module:admissions" fallback="board">
 
         <TabsContent value="board" className="mt-4">
           <div className="grid gap-4 xl:grid-cols-5 md:grid-cols-2">
@@ -247,7 +244,7 @@ function AdmissionsPage() {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+      </EditableTabs>
 
       <InquiryDetailDialog
         inquiry={selected}

@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { EditableTabs } from "@/components/layout/editable";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
@@ -32,14 +33,10 @@ function AcademicsPage() {
         title="Academics"
         description="Attendance and gradebook for your assigned sections."
       />
-      <Tabs defaultValue="attendance">
-        <TabsList>
-          <TabsTrigger value="attendance">Attendance</TabsTrigger>
-          <TabsTrigger value="gradebook">Gradebook</TabsTrigger>
-        </TabsList>
+      <EditableTabs scope="module:academics" fallback="attendance">
         <TabsContent value="attendance"><AttendanceTab /></TabsContent>
         <TabsContent value="gradebook"><GradebookTab /></TabsContent>
-      </Tabs>
+      </EditableTabs>
     </>
   );
 }

@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser, roleLabel } from "@/hooks/use-current-user";
 import { PageHeader } from "@/components/layout/page-header";
+import { EditableGrid } from "@/components/layout/editable";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -260,210 +261,247 @@ function Dashboard() {
         </div>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Kpi
-          label="Active Students"
-          value={isLoading ? "—" : metrics.activeStudents}
-          sub={`${metrics.studentTotal} on record`}
-          icon={GraduationCap}
-          to="/students"
-        />
-        <Kpi
-          label="Active Staff"
-          value={isLoading ? "—" : metrics.activeStaff}
-          sub={
-            metrics.activeStaff > 0
-              ? `1 : ${Math.round(metrics.activeStudents / Math.max(metrics.activeStaff, 1))} student ratio`
-              : undefined
-          }
-          icon={Users}
-          to="/staff"
-        />
-        <Kpi
-          label="Fee Collection"
-          value={isLoading ? "—" : `${metrics.collectionRate.toFixed(1)}%`}
-          sub={`${CURRENCY(metrics.collected)} of ${CURRENCY(metrics.billed)}`}
-          icon={Wallet}
-          to="/fees"
-        />
-        <Kpi
-          label="Attendance (6 mo)"
-          value={isLoading ? "—" : `${metrics.attendanceRate.toFixed(1)}%`}
-          sub="Present or late over marked days"
-          icon={ClipboardCheck}
-          to="/academics"
-        />
-      </div>
-
-      <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Kpi
-          label="Outstanding Dues"
-          value={isLoading ? "—" : CURRENCY(metrics.outstanding)}
-          sub={`${metrics.overdue} challans overdue`}
-          icon={AlertTriangle}
-          to="/fees"
-          tone={metrics.outstanding > 0 ? "warn" : "default"}
-        />
-        <Kpi
-          label="Inquiries (6 mo)"
-          value={isLoading ? "—" : metrics.inquiryTotal}
-          sub={`${metrics.conversionRate.toFixed(1)}% converted`}
-          icon={Inbox}
-          to="/admissions"
-        />
-        <Kpi
-          label="Collected"
-          value={isLoading ? "—" : CURRENCY(metrics.collected)}
-          sub="Received against issued challans"
-          icon={TrendingUp}
-          to="/fees"
-        />
-        <Kpi
-          label="Campuses in view"
-          value={isLoading ? "—" : metrics.perCampus.length}
-          sub={scopedCampus ? "Scoped to your campus" : "All campuses"}
-          icon={Building2}
-          to="/campuses"
-        />
-      </div>
-
-      <div className="mt-8 grid gap-4 lg:grid-cols-2">
-        <Card className="shadow-none">
-          <CardHeader>
-            <CardTitle className="font-serif text-lg">Billed vs Collected</CardTitle>
-            <CardDescription>Last six months, by challan issue month</CardDescription>
-          </CardHeader>
-          <CardContent className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={metrics.revenueSeries}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis fontSize={12} tickLine={false} axisLine={false} width={70} />
-                <Tooltip formatter={(v: number) => CURRENCY(Number(v))} />
-                <Legend />
-                <Bar dataKey="Billed" fill="#8ba3c7" radius={[2, 2, 0, 0]} />
-                <Bar dataKey="Collected" fill="#1f3352" radius={[2, 2, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-none">
-          <CardHeader>
-            <CardTitle className="font-serif text-lg">Attendance Trend</CardTitle>
-            <CardDescription>Monthly present rate (%)</CardDescription>
-          </CardHeader>
-          <CardContent className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={metrics.attendanceSeries}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis domain={[0, 100]} fontSize={12} tickLine={false} axisLine={false} width={40} />
-                <Tooltip formatter={(v: number) => `${v}%`} />
-                <Line type="monotone" dataKey="Attendance" stroke="#1f3352" strokeWidth={2} dot={{ r: 3 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-none">
-          <CardHeader>
-            <CardTitle className="font-serif text-lg">Admissions Funnel</CardTitle>
-            <CardDescription>Inquiries received in the last six months</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {metrics.funnel.map((f) => {
-              const max = Math.max(...metrics.funnel.map((x) => x.count), 1);
+      <EditableGrid
+        scope="dashboard"
+        render={(block) => {
+          const chartH = block.height === "tall" ? "h-[26rem]" : "h-72";
+          switch (block.id) {
+            case "kpi-students":
               return (
-                <div key={f.stage}>
-                  <div className="mb-1 flex items-center justify-between text-sm">
-                    <span>{f.stage}</span>
-                    <span className="tabular-nums text-muted-foreground">{f.count}</span>
-                  </div>
-                  <Progress value={(f.count / max) * 100} className="h-2" />
-                </div>
+                <Kpi
+                  label={block.label}
+                  value={isLoading ? "—" : metrics.activeStudents}
+                  sub={`${metrics.studentTotal} on record`}
+                  icon={GraduationCap}
+                  to="/students"
+                />
               );
-            })}
-            {metrics.inquiryTotal === 0 ? (
-              <p className="text-sm text-muted-foreground">No inquiries recorded in this period.</p>
-            ) : null}
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-none">
-          <CardHeader>
-            <CardTitle className="font-serif text-lg">Enrollment by Program</CardTitle>
-            <CardDescription>Top programs by student count</CardDescription>
-          </CardHeader>
-          <CardContent className="h-72">
-            {metrics.byProgram.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No enrollment data yet.</p>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={metrics.byProgram} dataKey="value" nameKey="name" innerRadius={50} outerRadius={90} paddingAngle={2}>
-                    {metrics.byProgram.map((_, i) => (
-                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card className="mt-8 shadow-none">
-        <CardHeader>
-          <CardTitle className="font-serif text-lg">Campus Comparison</CardTitle>
-          <CardDescription>Enrollment, staffing, collection and attendance side by side</CardDescription>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Campus</TableHead>
-                <TableHead className="text-right">Students</TableHead>
-                <TableHead className="text-right">Staff</TableHead>
-                <TableHead className="text-right">Collection</TableHead>
-                <TableHead className="text-right">Outstanding</TableHead>
-                <TableHead className="text-right">Attendance</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {metrics.perCampus.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
-                    No campus data available.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                metrics.perCampus.map((c) => (
-                  <TableRow key={c.id}>
-                    <TableCell>
-                      <div className="font-medium">{c.name}</div>
-                      <div className="text-xs text-muted-foreground">{c.code}</div>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">{c.students}</TableCell>
-                    <TableCell className="text-right tabular-nums">{c.staff}</TableCell>
-                    <TableCell className="text-right tabular-nums">{c.collection.toFixed(1)}%</TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {c.outstanding > 0 ? (
-                        <Badge variant="outline" className="tabular-nums">{CURRENCY(c.outstanding)}</Badge>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">{c.attendance.toFixed(1)}%</TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            case "kpi-staff":
+              return (
+                <Kpi
+                  label={block.label}
+                  value={isLoading ? "—" : metrics.activeStaff}
+                  sub={
+                    metrics.activeStaff > 0
+                      ? `1 : ${Math.round(metrics.activeStudents / Math.max(metrics.activeStaff, 1))} student ratio`
+                      : undefined
+                  }
+                  icon={Users}
+                  to="/staff"
+                />
+              );
+            case "kpi-collection":
+              return (
+                <Kpi
+                  label={block.label}
+                  value={isLoading ? "—" : `${metrics.collectionRate.toFixed(1)}%`}
+                  sub={`${CURRENCY(metrics.collected)} of ${CURRENCY(metrics.billed)}`}
+                  icon={Wallet}
+                  to="/fees"
+                />
+              );
+            case "kpi-attendance":
+              return (
+                <Kpi
+                  label={block.label}
+                  value={isLoading ? "—" : `${metrics.attendanceRate.toFixed(1)}%`}
+                  sub="Present or late over marked days"
+                  icon={ClipboardCheck}
+                  to="/academics"
+                />
+              );
+            case "kpi-outstanding":
+              return (
+                <Kpi
+                  label={block.label}
+                  value={isLoading ? "—" : CURRENCY(metrics.outstanding)}
+                  sub={`${metrics.overdue} challans overdue`}
+                  icon={AlertTriangle}
+                  to="/fees"
+                  tone={metrics.outstanding > 0 ? "warn" : "default"}
+                />
+              );
+            case "kpi-inquiries":
+              return (
+                <Kpi
+                  label={block.label}
+                  value={isLoading ? "—" : metrics.inquiryTotal}
+                  sub={`${metrics.conversionRate.toFixed(1)}% converted`}
+                  icon={Inbox}
+                  to="/admissions"
+                />
+              );
+            case "kpi-collected":
+              return (
+                <Kpi
+                  label={block.label}
+                  value={isLoading ? "—" : CURRENCY(metrics.collected)}
+                  sub="Received against issued challans"
+                  icon={TrendingUp}
+                  to="/fees"
+                />
+              );
+            case "kpi-campuses":
+              return (
+                <Kpi
+                  label={block.label}
+                  value={isLoading ? "—" : metrics.perCampus.length}
+                  sub={scopedCampus ? "Scoped to your campus" : "All campuses"}
+                  icon={Building2}
+                  to="/campuses"
+                />
+              );
+            case "chart-revenue":
+              return (
+                <Card className="h-full shadow-none">
+                  <CardHeader>
+                    <CardTitle className="font-serif text-lg">{block.label}</CardTitle>
+                    <CardDescription>Last six months, by challan issue month</CardDescription>
+                  </CardHeader>
+                  <CardContent className={chartH}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={metrics.revenueSeries}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                        <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
+                        <YAxis fontSize={12} tickLine={false} axisLine={false} width={70} />
+                        <Tooltip formatter={(v: number) => CURRENCY(Number(v))} />
+                        <Legend />
+                        <Bar dataKey="Billed" fill="#8ba3c7" radius={[2, 2, 0, 0]} />
+                        <Bar dataKey="Collected" fill="#1f3352" radius={[2, 2, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              );
+            case "chart-attendance":
+              return (
+                <Card className="h-full shadow-none">
+                  <CardHeader>
+                    <CardTitle className="font-serif text-lg">{block.label}</CardTitle>
+                    <CardDescription>Monthly present rate (%)</CardDescription>
+                  </CardHeader>
+                  <CardContent className={chartH}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={metrics.attendanceSeries}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                        <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
+                        <YAxis domain={[0, 100]} fontSize={12} tickLine={false} axisLine={false} width={40} />
+                        <Tooltip formatter={(v: number) => `${v}%`} />
+                        <Line type="monotone" dataKey="Attendance" stroke="#1f3352" strokeWidth={2} dot={{ r: 3 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              );
+            case "chart-funnel":
+              return (
+                <Card className="h-full shadow-none">
+                  <CardHeader>
+                    <CardTitle className="font-serif text-lg">{block.label}</CardTitle>
+                    <CardDescription>Inquiries received in the last six months</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {metrics.funnel.map((f) => {
+                      const max = Math.max(...metrics.funnel.map((x) => x.count), 1);
+                      return (
+                        <div key={f.stage}>
+                          <div className="mb-1 flex items-center justify-between text-sm">
+                            <span>{f.stage}</span>
+                            <span className="tabular-nums text-muted-foreground">{f.count}</span>
+                          </div>
+                          <Progress value={(f.count / max) * 100} className="h-2" />
+                        </div>
+                      );
+                    })}
+                    {metrics.inquiryTotal === 0 ? (
+                      <p className="text-sm text-muted-foreground">No inquiries recorded in this period.</p>
+                    ) : null}
+                  </CardContent>
+                </Card>
+              );
+            case "chart-programs":
+              return (
+                <Card className="h-full shadow-none">
+                  <CardHeader>
+                    <CardTitle className="font-serif text-lg">{block.label}</CardTitle>
+                    <CardDescription>Top programs by student count</CardDescription>
+                  </CardHeader>
+                  <CardContent className={chartH}>
+                    {metrics.byProgram.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No enrollment data yet.</p>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie data={metrics.byProgram} dataKey="value" nameKey="name" innerRadius={50} outerRadius={90} paddingAngle={2}>
+                            {metrics.byProgram.map((_, i) => (
+                              <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            case "table-campuses":
+              return (
+                <Card className="h-full shadow-none">
+                  <CardHeader>
+                    <CardTitle className="font-serif text-lg">{block.label}</CardTitle>
+                    <CardDescription>Enrollment, staffing, collection and attendance side by side</CardDescription>
+                  </CardHeader>
+                  <CardContent className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Campus</TableHead>
+                          <TableHead className="text-right">Students</TableHead>
+                          <TableHead className="text-right">Staff</TableHead>
+                          <TableHead className="text-right">Collection</TableHead>
+                          <TableHead className="text-right">Outstanding</TableHead>
+                          <TableHead className="text-right">Attendance</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {metrics.perCampus.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
+                              No campus data available.
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          metrics.perCampus.map((c) => (
+                            <TableRow key={c.id}>
+                              <TableCell>
+                                <div className="font-medium">{c.name}</div>
+                                <div className="text-xs text-muted-foreground">{c.code}</div>
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums">{c.students}</TableCell>
+                              <TableCell className="text-right tabular-nums">{c.staff}</TableCell>
+                              <TableCell className="text-right tabular-nums">{c.collection.toFixed(1)}%</TableCell>
+                              <TableCell className="text-right tabular-nums">
+                                {c.outstanding > 0 ? (
+                                  <Badge variant="outline" className="tabular-nums">{CURRENCY(c.outstanding)}</Badge>
+                                ) : (
+                                  <span className="text-muted-foreground">—</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums">{c.attendance.toFixed(1)}%</TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              );
+            default:
+              return null;
+          }
+        }}
+      />
     </>
   );
 }

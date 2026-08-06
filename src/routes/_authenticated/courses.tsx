@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { EditableTabs } from "@/components/layout/editable";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
@@ -57,14 +58,10 @@ function CoursesPage() {
         title="Courses & Teaching Assignments"
         description="Define subjects/courses and assign teachers to sections."
       />
-      <Tabs defaultValue="courses">
-        <TabsList>
-          <TabsTrigger value="courses">Courses</TabsTrigger>
-          <TabsTrigger value="assignments">Teaching Assignments</TabsTrigger>
-        </TabsList>
+      <EditableTabs scope="module:courses" fallback="courses">
         <TabsContent value="courses"><CoursesTab /></TabsContent>
         <TabsContent value="assignments"><AssignmentsTab /></TabsContent>
-      </Tabs>
+      </EditableTabs>
     </>
   );
 }

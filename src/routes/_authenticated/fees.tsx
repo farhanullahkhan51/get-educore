@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { EditableTabs } from "@/components/layout/editable";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Wallet, AlertTriangle, CheckCircle2, Upload, Link2, Eye, Printer } from "lucide-react";
@@ -137,13 +138,7 @@ function FeesPage() {
         </Card>
       )}
 
-      <Tabs defaultValue="challans" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="challans">Challans</TabsTrigger>
-          <TabsTrigger value="structures">Fee Structures</TabsTrigger>
-          <TabsTrigger value="scholarships">Scholarships</TabsTrigger>
-          <TabsTrigger value="bank">Bank Reconciliation</TabsTrigger>
-        </TabsList>
+      <EditableTabs scope="module:fees" fallback="challans" className="space-y-4">
 
         <TabsContent value="challans">
           <ChallansTab canManage={canManage} campuses={campuses ?? []} classes={classes ?? []} />
@@ -157,7 +152,7 @@ function FeesPage() {
         <TabsContent value="bank">
           <BankTab canManage={canManage} campuses={campuses ?? []} />
         </TabsContent>
-      </Tabs>
+      </EditableTabs>
     </div>
   );
 }

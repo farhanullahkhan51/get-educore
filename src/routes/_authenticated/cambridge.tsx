@@ -10,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EditableTabs } from "@/components/layout/editable";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Pencil, ListChecks, Printer, Trash2, Loader2, Save } from "lucide-react";
@@ -61,16 +62,11 @@ function CambridgePage() {
         title="Cambridge Assessment"
         description="Register candidates for Cambridge (IGCSE, O/A Level, Checkpoint), manage syllabus entries and record statement of results."
       />
-      <Tabs defaultValue="registrations">
-        <TabsList>
-          <TabsTrigger value="registrations">Registrations</TabsTrigger>
-          <TabsTrigger value="statements">Statements of Entry</TabsTrigger>
-          <TabsTrigger value="results">Results</TabsTrigger>
-        </TabsList>
+      <EditableTabs scope="module:cambridge" fallback="registrations">
         <TabsContent value="registrations" className="mt-4"><RegistrationsTab /></TabsContent>
         <TabsContent value="statements" className="mt-4"><StatementTab /></TabsContent>
         <TabsContent value="results" className="mt-4"><ResultsTab /></TabsContent>
-      </Tabs>
+      </EditableTabs>
     </>
   );
 }

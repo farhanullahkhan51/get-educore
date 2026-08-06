@@ -6,7 +6,8 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EditableTabs } from "@/components/layout/editable";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -175,15 +176,7 @@ function StudentPortalPage() {
         <Kpi label="Certificates" value={certs?.length ?? 0} sub="Issued to you" icon={Award} />
       </div>
 
-      <Tabs defaultValue="attendance">
-        <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="attendance">Attendance</TabsTrigger>
-          <TabsTrigger value="fees">Fees</TabsTrigger>
-          <TabsTrigger value="results">Results</TabsTrigger>
-          <TabsTrigger value="deadlines">Deadlines</TabsTrigger>
-          <TabsTrigger value="certificates">Certificates</TabsTrigger>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-        </TabsList>
+      <EditableTabs scope="module:portal" fallback="attendance" listClassName="flex-wrap h-auto">
 
         <TabsContent value="deadlines">
           <Card className="shadow-none">
@@ -418,7 +411,7 @@ function StudentPortalPage() {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+      </EditableTabs>
     </>
   );
 }
