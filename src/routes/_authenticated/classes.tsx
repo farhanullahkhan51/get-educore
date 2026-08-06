@@ -426,7 +426,9 @@ function ClassesPage() {
           );
         })}
         </div>
-        ))}
+        );
+        })}
+
       </div>
 
 
