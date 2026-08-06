@@ -133,11 +133,6 @@ export const SURFACES: Record<string, Surface> = {
     { id: "statements", label: "Statements of Entry" },
     { id: "results", label: "Results" },
   ]),
-  "module:programs": tabs("module:programs", "Programs tabs", [
-    { id: "all", label: "All Programs" },
-    { id: "board", label: "Board" },
-    { id: "cambridge", label: "Cambridge" },
-  ]),
   "module:portal": tabs("module:portal", "Student portal tabs", [
     { id: "attendance", label: "Attendance" },
     { id: "fees", label: "Fees" },

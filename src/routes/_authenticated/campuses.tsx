@@ -186,8 +186,8 @@ function CampusesPage() {
 
 export function SystemBadge({ system }: { system: "board" | "cambridge" | "both" | null | undefined }) {
   const map = {
-    board: { label: "Board", cls: "bg-primary/10 text-primary" },
-    cambridge: { label: "Cambridge", cls: "bg-warning/15 text-warning" },
+    board: { label: "Board", cls: "bg-muted text-foreground" },
+    cambridge: { label: "Cambridge", cls: "bg-muted text-foreground" },
     both: { label: "Board + Cambridge", cls: "bg-muted text-foreground" },
   } as const;
   const m = (system && map[system]) || { label: "—", cls: "bg-muted text-muted-foreground" };
