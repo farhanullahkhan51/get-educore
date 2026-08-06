@@ -403,8 +403,8 @@ function ChatThread({
               <h2 className="font-serif text-2xl font-semibold">Ask or instruct</h2>
               <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
                 The assistant works across enrollment, staff, academics, fees, admissions, results and
-                certificates — it can look records up and also create, edit or delete them. Every change is shown
-                for your confirmation first.
+                certificates — it can look records up and also create, edit or delete them. Changes are saved
+                straight away; turn the mic off to stop a spoken command.
               </p>
 
               <div className="mx-auto mt-6 grid max-w-xl gap-2 sm:grid-cols-2">
@@ -468,7 +468,7 @@ function ChatThread({
             onChange={(e) => setInput(e.target.value)}
             placeholder={
               voice.state === "recording"
-                ? "Listening… speak your question, then tap the mic to send."
+                ? "Listening… press Send when done, or turn the mic off to discard."
                 : "Ask about students, fees, attendance, admissions… or use the mic"
             }
           />
