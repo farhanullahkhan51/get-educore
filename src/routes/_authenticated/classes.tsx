@@ -367,7 +367,10 @@ function ClassesPage() {
             </Card>
           );
         })}
+        </div>
+        ))}
       </div>
+
 
       <Dialog open={!!editCls} onOpenChange={(o) => !o && setEditCls(null)}>
         <DialogContent>
