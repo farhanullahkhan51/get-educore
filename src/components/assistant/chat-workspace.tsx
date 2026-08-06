@@ -14,6 +14,7 @@ import {
   Trash2,
   PanelLeft,
   Mic,
+  MicOff,
   Square,
   Loader2,
   ShieldQuestion,
@@ -402,8 +403,8 @@ function ChatThread({
               <h2 className="font-serif text-2xl font-semibold">Ask or instruct</h2>
               <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
                 The assistant works across enrollment, staff, academics, fees, admissions, results and
-                certificates — it can look records up and also create, edit or delete them. Every change is shown
-                for your confirmation first.
+                certificates — it can look records up and also create, edit or delete them. Changes are saved
+                straight away; turn the mic off to stop a spoken command.
               </p>
 
               <div className="mx-auto mt-6 grid max-w-xl gap-2 sm:grid-cols-2">
@@ -467,7 +468,7 @@ function ChatThread({
             onChange={(e) => setInput(e.target.value)}
             placeholder={
               voice.state === "recording"
-                ? "Listening… speak your question, then tap the mic to send."
+                ? "Listening… press Send when done, or turn the mic off to discard."
                 : "Ask about students, fees, attendance, admissions… or use the mic"
             }
           />
@@ -475,21 +476,45 @@ function ChatThread({
             <div className="flex items-center gap-2">
               <Button
                 type="button"
-                variant={voice.state === "recording" ? "default" : "ghost"}
+                variant={voice.state === "recording" ? "destructive" : "ghost"}
                 size="icon"
-                aria-label={voice.state === "recording" ? "Stop recording and send" : "Ask by voice"}
-                title={voice.state === "recording" ? "Stop recording and send" : "Ask by voice"}
+                aria-label={
+                  voice.state === "recording" ? "Turn the mic off and discard" : "Ask by voice"
+                }
+                title={
+                  voice.state === "recording"
+                    ? "Turn the mic off — nothing is sent"
+                    : "Ask by voice"
+                }
                 disabled={busy || voice.state === "transcribing"}
-                onClick={() => void voice.toggle()}
+                onClick={() => {
+                  if (voice.state === "recording") {
+                    voice.cancel();
+                    toast.info("Mic off — that command was discarded.");
+                  } else {
+                    void voice.start();
+                  }
+                }}
               >
                 {voice.state === "transcribing" ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : voice.state === "recording" ? (
-                  <Square className="h-4 w-4" />
+                  <MicOff className="h-4 w-4" />
                 ) : (
                   <Mic className="h-4 w-4" />
                 )}
               </Button>
+              {voice.state === "recording" && (
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => void voice.stop()}
+                  title="Stop recording and send"
+                >
+                  <Square className="mr-1.5 h-3.5 w-3.5" /> Send
+                </Button>
+              )}
+
               <Select
                 value={voiceLanguage}
                 onValueChange={(v) => setVoiceLanguage(v as VoiceLanguage)}

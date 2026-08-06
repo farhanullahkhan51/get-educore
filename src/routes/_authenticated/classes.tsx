@@ -50,6 +50,8 @@ function ClassesPage() {
   const [editCls, setEditCls] = useState<Klass | null>(null);
   const [editSec, setEditSec] = useState<Section | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
+
   const [seatSec, setSeatSec] = useState<{ section: Section; className: string } | null>(null);
 
   const { data: campuses } = useQuery({
@@ -267,16 +269,32 @@ function ClassesPage() {
         {classes?.length === 0 && (
           <Card className="shadow-none"><CardContent className="py-8 text-center text-sm text-muted-foreground">No classes yet.</CardContent></Card>
         )}
-        {groups.map((group) => (
+        {groups.map((group) => {
+        const collapsed = collapsedGroups.includes(group.key);
+        return (
         <div key={group.key} className="space-y-4">
         {group.label && (
           <div className="flex items-center gap-3 pt-2">
-            <h2 className="font-serif text-sm font-semibold uppercase tracking-wide text-muted-foreground">{group.label}</h2>
-            <span className="text-xs text-muted-foreground">{group.rows.length}</span>
+            <button
+              type="button"
+              onClick={() =>
+                setCollapsedGroups((prev) =>
+                  prev.includes(group.key) ? prev.filter((k) => k !== group.key) : [...prev, group.key],
+                )
+              }
+              className="flex items-center gap-2 text-left"
+              aria-expanded={!collapsed}
+              title={collapsed ? `Expand ${group.label}` : `Collapse ${group.label}`}
+            >
+              <ChevronRight className={`h-4 w-4 transition-transform ${collapsed ? "" : "rotate-90"}`} />
+              <h2 className="font-serif text-sm font-semibold uppercase tracking-wide text-muted-foreground">{group.label}</h2>
+              <span className="text-xs text-muted-foreground">{group.rows.length}</span>
+            </button>
             <div className="h-px flex-1 bg-border" />
           </div>
         )}
-        {group.rows.map((cls) => {
+        {!collapsed && group.rows.map((cls) => {
+
           const clsSections = sections?.filter((s) => s.class_id === cls.id) ?? [];
           const sectionNames = new Map(clsSections.map((s) => [s.id, s.name]));
           const clsStudents =
@@ -410,7 +428,9 @@ function ClassesPage() {
           );
         })}
         </div>
-        ))}
+        );
+        })}
+
       </div>
 
 

@@ -39,7 +39,7 @@ export function useArranged<T>(rows: T[], layout: ModuleLayout, acc: Accessors<T
 export const byText =
   <T,>(get: (r: T) => string | null | undefined) =>
   (a: T, b: T) =>
-    (get(a) ?? "").localeCompare(get(b) ?? "");
+    (get(a) ?? "").localeCompare(get(b) ?? "", undefined, { numeric: true, sensitivity: "base" });
 
 export const byNumberDesc =
   <T,>(get: (r: T) => number) =>

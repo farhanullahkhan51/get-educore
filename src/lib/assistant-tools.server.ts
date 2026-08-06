@@ -1599,12 +1599,11 @@ export function buildAssistantTools(ctx: AssistantContext) {
     }),
   };
 
-  // every mutating tool must be approved by the user in the chat before it runs
+  // Changes requested through the assistant are applied and saved immediately —
+  // the user stops the assistant by turning the mic off / not sending the command.
   const WRITE_TOOLS = ["create_student", "update_student", "delete_student", "create_staff", "update_staff", "delete_staff", "add_payroll_entry", "create_program", "create_class", "create_section", "create_course", "update_course", "delete_course", "assign_course_teacher", "create_inquiry", "update_inquiry_status", "create_fee_structure", "issue_challan", "record_payment", "create_scholarship", "mark_attendance", "create_assessment", "record_marks", "publish_report_card", "issue_certificate", "revoke_certificate", "set_module_layout", "reset_module_layout"] as const;
 
-  for (const name of WRITE_TOOLS) {
-    (tools as Record<string, { needsApproval?: boolean }>)[name].needsApproval = true;
-  }
+  void WRITE_TOOLS;
 
   return tools;
 }
