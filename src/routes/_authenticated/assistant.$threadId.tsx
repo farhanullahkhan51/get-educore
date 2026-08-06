@@ -30,7 +30,7 @@ function AssistantThreadPage() {
       <PageHeader
         eyebrow="ASSISTANT"
         title="AI Assistant"
-        description="Ask questions in plain language. The assistant reads only the records your role and campus allow."
+        description="Ask questions or give instructions in plain language. The assistant works only within the records your role and campus allow, and asks you to confirm every change."
       />
       <AssistantLayout threadId={threadId}>
         <ChatWorkspace key={threadId} threadId={threadId} />

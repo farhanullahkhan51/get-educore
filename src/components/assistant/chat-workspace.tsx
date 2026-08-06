@@ -1,10 +1,25 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, type UIMessage } from "ai";
+import {
+  DefaultChatTransport,
+  lastAssistantMessageIsCompleteWithApprovalResponses,
+  type UIMessage,
+} from "ai";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, MessageSquare, Trash2, PanelLeft, Mic, Square, Loader2 } from "lucide-react";
+import {
+  Plus,
+  MessageSquare,
+  Trash2,
+  PanelLeft,
+  Mic,
+  Square,
+  Loader2,
+  ShieldQuestion,
+  Check,
+  X,
+} from "lucide-react";
 import { useVoiceInput, type VoiceLanguage } from "@/hooks/use-voice-input";
 import {
   Select,
@@ -44,10 +59,11 @@ import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from "@/componen
 
 const SUGGESTIONS = [
   "How many active students and staff do we have per campus?",
+  "Add a new Cambridge course called Physics for O-Level Year 1.",
   "Summarise fee collection and outstanding dues.",
-  "What does the admissions funnel look like right now?",
-  "Give me attendance for the last 30 days.",
+  "Log an admission inquiry for Ayesha Khan, guardian Bilal, 0300-1234567.",
 ];
+
 
 function ThreadList({
   activeId,
@@ -133,7 +149,90 @@ function ThreadList({
   );
 }
 
-function MessageParts({ message }: { message: UIMessage }) {
+const TOOL_LABELS: Record<string, string> = {
+  create_student: "Enroll a new student",
+  update_student: "Update a student record",
+  delete_student: "Delete a student record",
+  create_staff: "Add a new staff member",
+  update_staff: "Update a staff record",
+  delete_staff: "Delete a staff record",
+  add_payroll_entry: "Add a payroll entry",
+  create_program: "Create a program",
+  create_class: "Create a class",
+  create_section: "Create a section",
+  create_course: "Create a course",
+  update_course: "Update a course",
+  delete_course: "Delete a course",
+  assign_course_teacher: "Assign a teacher to a course",
+  create_inquiry: "Log an admission inquiry",
+  update_inquiry_status: "Move an inquiry to a new stage",
+  create_fee_structure: "Create a fee structure",
+  issue_challan: "Issue a fee challan",
+  record_payment: "Record a fee payment",
+  create_scholarship: "Grant a scholarship",
+  mark_attendance: "Mark attendance",
+  create_assessment: "Create an assessment",
+  record_marks: "Record marks",
+  publish_report_card: "Publish a report card",
+  issue_certificate: "Issue a certificate",
+  revoke_certificate: "Revoke a certificate",
+};
+
+function humanise(key: string) {
+  return key.replaceAll("_", " ").replace(/^./, (c) => c.toUpperCase());
+}
+
+function ApprovalCard({
+  toolName,
+  input,
+  onRespond,
+}: {
+  toolName: string;
+  input: unknown;
+  onRespond: (approved: boolean) => void;
+}) {
+  const fields = Object.entries((input ?? {}) as Record<string, unknown>).filter(
+    ([, v]) => v !== "" && v !== null && v !== undefined && v !== 0,
+  );
+  const destructive = toolName.startsWith("delete_") || toolName.startsWith("revoke_");
+
+  return (
+    <div className="my-2 rounded-sm border bg-muted/40 p-3">
+      <div className="flex items-start gap-2">
+        <ShieldQuestion className={cn("mt-0.5 h-4 w-4 shrink-0", destructive ? "text-destructive" : "opacity-70")} />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium">{TOOL_LABELS[toolName] ?? humanise(toolName)}</p>
+          {fields.length > 0 && (
+            <dl className="mt-2 grid gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
+              {fields.map(([k, v]) => (
+                <div key={k} className="flex min-w-0 gap-1">
+                  <dt className="shrink-0 text-muted-foreground">{humanise(k)}:</dt>
+                  <dd className="truncate font-medium">{String(v)}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+          <div className="mt-3 flex gap-2">
+            <Button size="sm" variant={destructive ? "destructive" : "default"} onClick={() => onRespond(true)}>
+              <Check className="mr-1.5 h-3.5 w-3.5" /> Confirm
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => onRespond(false)}>
+              <X className="mr-1.5 h-3.5 w-3.5" /> Cancel
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MessageParts({
+  message,
+  onApproval,
+}: {
+  message: UIMessage;
+  onApproval: (id: string, approved: boolean) => void;
+}) {
   return (
     <>
       {message.parts.map((part, i) => {
@@ -153,12 +252,36 @@ function MessageParts({ message }: { message: UIMessage }) {
             input?: unknown;
             output?: unknown;
             errorText?: string;
+            approval?: { id: string; approved?: boolean };
           };
+          const toolName = toolPart.type.replace("tool-", "");
+
+          if (toolPart.state === "approval-requested" && toolPart.approval) {
+            const approvalId = toolPart.approval.id;
+            return (
+              <ApprovalCard
+                key={i}
+                toolName={toolName}
+                input={toolPart.input}
+                onRespond={(approved) => onApproval(approvalId, approved)}
+              />
+            );
+          }
+
+          if (toolPart.state === "output-denied") {
+            return (
+              <p key={i} className="my-2 text-xs text-muted-foreground">
+                Cancelled — {TOOL_LABELS[toolName]?.toLowerCase() ?? humanise(toolName).toLowerCase()} was not carried
+                out.
+              </p>
+            );
+          }
+
           return (
             <Tool key={i} defaultOpen={false} className="my-2">
               <ToolHeader
                 type={toolPart.type as never}
-                title={toolPart.type.replace("tool-", "").replaceAll("_", " ")}
+                title={TOOL_LABELS[toolName] ?? toolName.replaceAll("_", " ")}
                 state={toolPart.state as never}
               />
               <ToolContent>
@@ -173,6 +296,7 @@ function MessageParts({ message }: { message: UIMessage }) {
     </>
   );
 }
+
 
 export function ChatWorkspace({ threadId }: { threadId: string }) {
   const queryClient = useQueryClient();
@@ -201,10 +325,11 @@ export function ChatWorkspace({ threadId }: { threadId: string }) {
     [threadId],
   );
 
-  const { messages, sendMessage, status, error } = useChat({
+  const { messages, sendMessage, status, error, addToolApprovalResponse } = useChat({
     id: threadId,
     messages: initialMessages ?? [],
     transport,
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
     onError: (e) => toast.error(e.message || "The assistant could not respond."),
   });
 
@@ -252,11 +377,13 @@ export function ChatWorkspace({ threadId }: { threadId: string }) {
 
           {!isLoading && messages.length === 0 && (
             <div className="py-12 text-center">
-              <h2 className="font-serif text-2xl font-semibold">Ask about your institution</h2>
+              <h2 className="font-serif text-2xl font-semibold">Ask or instruct</h2>
               <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-                The assistant reads live records you already have access to — enrollment, fees, attendance,
-                admissions and results.
+                The assistant works across enrollment, staff, academics, fees, admissions, results and
+                certificates — it can look records up and also create, edit or delete them. Every change is shown
+                for your confirmation first.
               </p>
+
               <div className="mx-auto mt-6 grid max-w-xl gap-2 sm:grid-cols-2">
                 {SUGGESTIONS.map((s) => (
                   <button
@@ -281,7 +408,10 @@ export function ChatWorkspace({ threadId }: { threadId: string }) {
                     : undefined
                 }
               >
-                <MessageParts message={m} />
+                <MessageParts
+                  message={m}
+                  onApproval={(id, approved) => addToolApprovalResponse({ id, approved })}
+                />
               </MessageContent>
             </Message>
           ))}
