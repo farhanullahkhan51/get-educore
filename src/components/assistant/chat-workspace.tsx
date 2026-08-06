@@ -299,17 +299,39 @@ function MessageParts({
 
 
 export function ChatWorkspace({ threadId }: { threadId: string }) {
-  const queryClient = useQueryClient();
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [input, setInput] = useState("");
-  const titledRef = useRef(false);
-
-  const { data: initialMessages, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["ai-thread-messages", threadId],
     queryFn: () => loadThreadMessages(threadId),
     staleTime: Infinity,
     gcTime: 0,
   });
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <p className="text-sm text-muted-foreground">Loading conversation…</p>
+      </div>
+    );
+  }
+
+  // Mount the chat only once history is known — useChat seeds its state on first render.
+  return <ChatThread key={threadId} threadId={threadId} initialMessages={isError ? [] : data ?? []} />;
+}
+
+function ChatThread({
+  threadId,
+  initialMessages,
+}: {
+  threadId: string;
+  initialMessages: UIMessage[];
+}) {
+  const queryClient = useQueryClient();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [input, setInput] = useState("");
+  const titledRef = useRef(false);
+  const isLoading = false;
+
+
 
   const transport = useMemo(
     () =>
