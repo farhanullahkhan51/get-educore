@@ -14,6 +14,10 @@ import { toast } from "sonner";
 import { Plus, Trash2, Pencil, ChevronRight, LayoutGrid } from "lucide-react";
 import { SystemBadge } from "./campuses";
 import { SeatingChart } from "@/components/classroom/seating-chart";
+import { LayoutMenu } from "@/components/layout/layout-menu";
+import { useModuleLayout } from "@/lib/ui-prefs";
+import { useArranged, byText, byNumberDesc, densityCell } from "@/lib/ui-arrange";
+
 
 export const Route = createFileRoute("/_authenticated/classes")({
   component: ClassesPage,
@@ -82,6 +86,33 @@ function ClassesPage() {
   });
 
   const campusMap = new Map(campuses?.map((c) => [c.id, c.name]));
+
+  const { layout } = useModuleLayout("classes");
+  const countFor = (classId: string) => {
+    const ids = new Set((sections ?? []).filter((s) => s.class_id === classId).map((s) => s.id));
+    return (students ?? []).filter((st) => st.class_id === classId || (st.section_id && ids.has(st.section_id))).length;
+  };
+  const trackLabel = (s: Klass["academic_system"]) =>
+    s === "cambridge" ? "Cambridge" : s === "both" ? "Board & Cambridge" : "Board";
+  const groups = useArranged<Klass>(classes ?? [], layout, {
+    group: {
+      track: (c) => trackLabel(c.academic_system),
+      campus: (c) => campusMap.get(c.campus_id) ?? "—",
+      year: (c) => c.academic_year ?? "No academic year",
+    },
+    filter: {
+      board: (c) => c.academic_system !== "cambridge",
+      cambridge: (c) => c.academic_system !== "board",
+    },
+    sort: {
+      name: byText((c) => c.name),
+      campus: byText((c) => campusMap.get(c.campus_id)),
+      students: byNumberDesc((c) => countFor(c.id)),
+    },
+  });
+  const showCol = (c: string) => !layout.hidden.includes(c);
+  const cellCls = densityCell(layout.density);
+
 
   async function createClass(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -172,8 +203,11 @@ function ClassesPage() {
         title="Classes & Sections"
         description="Classes are grade groups (e.g. Grade 9, O-Level Year 1). Each class can have multiple sections."
         actions={
+          <div className="flex items-center gap-2">
+          <LayoutMenu module="classes" />
           <Dialog open={openCls} onOpenChange={setOpenCls}>
             <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" /> New class</Button></DialogTrigger>
+
             <DialogContent>
               <DialogHeader><DialogTitle className="font-serif">New class</DialogTitle></DialogHeader>
               <form onSubmit={createClass} className="space-y-4">
@@ -224,14 +258,25 @@ function ClassesPage() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         }
+
       />
 
       <div className="space-y-4">
         {classes?.length === 0 && (
           <Card className="shadow-none"><CardContent className="py-8 text-center text-sm text-muted-foreground">No classes yet.</CardContent></Card>
         )}
-        {classes?.map((cls) => {
+        {groups.map((group) => (
+        <div key={group.key} className="space-y-4">
+        {group.label && (
+          <div className="flex items-center gap-3 pt-2">
+            <h2 className="font-serif text-sm font-semibold uppercase tracking-wide text-muted-foreground">{group.label}</h2>
+            <span className="text-xs text-muted-foreground">{group.rows.length}</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+        )}
+        {group.rows.map((cls) => {
           const clsSections = sections?.filter((s) => s.class_id === cls.id) ?? [];
           const sectionNames = new Map(clsSections.map((s) => [s.id, s.name]));
           const clsStudents =
@@ -241,6 +286,7 @@ function ClassesPage() {
           const isOpen = expanded === cls.id;
           return (
             <Card key={cls.id} className="shadow-none">
+
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <button
                   type="button"
@@ -295,20 +341,26 @@ function ClassesPage() {
                 ) : (
                   <Table>
                     <TableHeader><TableRow>
-                      <TableHead>Section</TableHead><TableHead>Class teacher</TableHead><TableHead>Room</TableHead>
-                      <TableHead>Capacity</TableHead><TableHead className="text-right">Actions</TableHead>
+                      <TableHead>Section</TableHead>
+                      {showCol("teacher") && <TableHead>Class teacher</TableHead>}
+                      {showCol("room") && <TableHead>Room</TableHead>}
+                      {showCol("capacity") && <TableHead>Capacity</TableHead>}
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow></TableHeader>
                     <TableBody>
                       {clsSections.map((s) => {
                         const t = teachers?.find((x) => x.id === s.class_teacher_id);
                         return (
                         <TableRow key={s.id}>
-                          <TableCell className="font-medium">{s.name}</TableCell>
-                          <TableCell className={t ? "" : "text-muted-foreground"}>
-                            {t ? `${t.first_name} ${t.last_name}` : "Unassigned"}
-                          </TableCell>
-                          <TableCell>{s.room ?? "—"}</TableCell>
-                          <TableCell>{s.capacity}</TableCell>
+                          <TableCell className={`font-medium ${cellCls}`}>{s.name}</TableCell>
+                          {showCol("teacher") && (
+                            <TableCell className={`${t ? "" : "text-muted-foreground"} ${cellCls}`}>
+                              {t ? `${t.first_name} ${t.last_name}` : "Unassigned"}
+                            </TableCell>
+                          )}
+                          {showCol("room") && <TableCell className={cellCls}>{s.room ?? "—"}</TableCell>}
+                          {showCol("capacity") && <TableCell className={cellCls}>{s.capacity}</TableCell>}
+
 
                           <TableCell className="text-right">
                             <Button size="sm" variant="outline" className="mr-1" onClick={() => setSeatSec({ section: s, className: `${cls.name} · ${s.name}` })}>
@@ -357,7 +409,10 @@ function ClassesPage() {
             </Card>
           );
         })}
+        </div>
+        ))}
       </div>
+
 
       <Dialog open={!!editCls} onOpenChange={(o) => !o && setEditCls(null)}>
         <DialogContent>

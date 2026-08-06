@@ -2,6 +2,17 @@ import { tool } from "ai";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import {
+  MODULE_LAYOUTS,
+  MODULE_KEYS,
+  defaultsFor,
+  describeLayout,
+  sanitizeLayout,
+  type ModuleLayout,
+} from "@/lib/ui-layout";
+
+const MODULE_ENUM = MODULE_KEYS as [string, ...string[]];
+
 
 type Db = SupabaseClient<Database>;
 
@@ -127,6 +138,47 @@ export function buildAssistantTools(ctx: AssistantContext) {
   }
 
   const write = tool;
+  const read = tool;
+
+  /** Current merged layout (module defaults <- institution default <- personal) for a module. */
+  async function currentLayout(module: string): Promise<ModuleLayout> {
+    const { data } = await supabase.from("ui_preferences").select("user_id, prefs").eq("module", module);
+    const tenantRow = data?.find((r) => r.user_id === null);
+    const personalRow = data?.find((r) => r.user_id === userId);
+    return sanitizeLayout(module, {
+      ...defaultsFor(module),
+      ...((tenantRow?.prefs as Partial<ModuleLayout> | undefined) ?? {}),
+      ...((personalRow?.prefs as Partial<ModuleLayout> | undefined) ?? {}),
+    });
+  }
+
+  async function saveLayout(
+    module: string,
+    layout: ModuleLayout,
+    institutionWide: boolean,
+  ): Promise<{ ok: true } | { error: string }> {
+    if (!ctx.tenantId) return { error: "No institution is linked to your account." };
+    const target = institutionWide ? null : userId;
+    const { data: existing } = await supabase
+      .from("ui_preferences")
+      .select("id, user_id")
+      .eq("module", module);
+    const row = existing?.find((r) => r.user_id === target);
+    const { error } = row
+      ? await supabase.from("ui_preferences").update({ prefs: layout } as never).eq("id", row.id)
+      : await supabase
+          .from("ui_preferences")
+          .insert({ tenant_id: ctx.tenantId, user_id: target, module, prefs: layout } as never);
+    if (error)
+      return {
+        error: institutionWide
+          ? `Could not save the institution default (${error.message}). Only admins may change it.`
+          : error.message,
+      };
+    return { ok: true };
+  }
+
+
 
 
   const tools = {
@@ -1453,10 +1505,103 @@ export function buildAssistantTools(ctx: AssistantContext) {
         return { revoked: data };
       },
     }),
+
+    // ---------------------------------------------------------------- interface
+    list_module_layout_options: read({
+      description:
+        "List the interface layout options a module supports (grouping, filtering, sorting, hideable columns, density). Call this before proposing any interface change so you only use supported values.",
+      inputSchema: z.object({ module: z.enum(MODULE_ENUM) }),
+      execute: async (i) => {
+        const spec = MODULE_LAYOUTS[i.module];
+        return {
+          module: i.module,
+          label: spec.label,
+          group_by: spec.groupBy,
+          filter: spec.filter,
+          sort_by: spec.sortBy,
+          hideable_columns: spec.columns,
+          density: ["comfortable", "compact"],
+        };
+      },
+    }),
+
+    get_module_layout: read({
+      description: "Read the interface layout currently applied to a module for the signed-in user.",
+      inputSchema: z.object({ module: z.enum(MODULE_ENUM) }),
+      execute: async (i) => {
+        const layout = await currentLayout(i.module);
+        return { module: i.module, layout, summary: describeLayout(i.module, layout) };
+      },
+    }),
+
+    set_module_layout: write({
+      description:
+        "Change how a module's interface is arranged (for example, split Classes into Board and Cambridge groups). Only pass the fields that should change. Scope 'personal' changes the current user's own view; 'institution' sets the shared default and requires an admin role.",
+      inputSchema: z.object({
+        module: z.enum(MODULE_ENUM),
+        scope: z.enum(["personal", "institution"]),
+        group_by: z.string().describe("Grouping option value, or empty to leave unchanged."),
+        filter: z.string().describe("Filter option value, or empty to leave unchanged."),
+        sort_by: z.string().describe("Sort option value, or empty to leave unchanged."),
+        density: z.string().describe("'comfortable', 'compact', or empty to leave unchanged."),
+        hidden_columns: z.array(z.string()).describe("Full list of column values to hide; empty array shows all."),
+      }),
+      execute: async (i) => {
+        const spec = MODULE_LAYOUTS[i.module];
+        const base = await currentLayout(i.module);
+        const next = sanitizeLayout(i.module, {
+          ...base,
+          ...(empty(i.group_by) ? {} : { groupBy: i.group_by.trim() }),
+          ...(empty(i.filter) ? {} : { filter: i.filter.trim() }),
+          ...(empty(i.sort_by) ? {} : { sortBy: i.sort_by.trim() }),
+          ...(empty(i.density) ? {} : { density: i.density.trim() as "compact" | "comfortable" }),
+          hidden: i.hidden_columns ?? base.hidden,
+        });
+
+        const unsupported = [
+          !empty(i.group_by) && next.groupBy !== i.group_by.trim() ? `group_by "${i.group_by}"` : null,
+          !empty(i.filter) && next.filter !== i.filter.trim() ? `filter "${i.filter}"` : null,
+          !empty(i.sort_by) && next.sortBy !== i.sort_by.trim() ? `sort_by "${i.sort_by}"` : null,
+        ].filter(Boolean);
+        if (unsupported.length)
+          return {
+            error: `${spec.label} does not support ${unsupported.join(", ")}. Supported values: group_by ${spec.groupBy
+              .map((o) => o.value)
+              .join("/")}, filter ${spec.filter.map((o) => o.value).join("/")}, sort_by ${spec.sortBy
+              .map((o) => o.value)
+              .join("/")}.`,
+          };
+
+        const saved = await saveLayout(i.module, next, i.scope === "institution");
+        if ("error" in saved) return saved;
+        await audit("update", "ui_layout", null, { module: i.module, scope: i.scope, layout: next });
+        return {
+          module: i.module,
+          scope: i.scope,
+          layout: next,
+          summary: `${spec.label} is now ${describeLayout(i.module, next)}.`,
+        };
+      },
+    }),
+
+    reset_module_layout: write({
+      description: "Reset a module's interface layout back to the default.",
+      inputSchema: z.object({ module: z.enum(MODULE_ENUM), scope: z.enum(["personal", "institution"]) }),
+      execute: async (i) => {
+        const target = i.scope === "institution" ? null : userId;
+        let q = supabase.from("ui_preferences").delete().eq("module", i.module);
+        q = target === null ? q.is("user_id", null) : q.eq("user_id", target);
+        const { error } = await q;
+        if (error) return { error: error.message };
+        await audit("delete", "ui_layout", null, { module: i.module, scope: i.scope });
+        return { module: i.module, scope: i.scope, reset: true };
+      },
+    }),
   };
 
   // every mutating tool must be approved by the user in the chat before it runs
-  const WRITE_TOOLS = ["create_student", "update_student", "delete_student", "create_staff", "update_staff", "delete_staff", "add_payroll_entry", "create_program", "create_class", "create_section", "create_course", "update_course", "delete_course", "assign_course_teacher", "create_inquiry", "update_inquiry_status", "create_fee_structure", "issue_challan", "record_payment", "create_scholarship", "mark_attendance", "create_assessment", "record_marks", "publish_report_card", "issue_certificate", "revoke_certificate"] as const;
+  const WRITE_TOOLS = ["create_student", "update_student", "delete_student", "create_staff", "update_staff", "delete_staff", "add_payroll_entry", "create_program", "create_class", "create_section", "create_course", "update_course", "delete_course", "assign_course_teacher", "create_inquiry", "update_inquiry_status", "create_fee_structure", "issue_challan", "record_payment", "create_scholarship", "mark_attendance", "create_assessment", "record_marks", "publish_report_card", "issue_certificate", "revoke_certificate", "set_module_layout", "reset_module_layout"] as const;
+
   for (const name of WRITE_TOOLS) {
     (tools as Record<string, { needsApproval?: boolean }>)[name].needsApproval = true;
   }

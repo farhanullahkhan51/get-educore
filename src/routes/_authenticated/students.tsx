@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
@@ -13,6 +13,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Plus, Upload, FileText, Pencil, Search } from "lucide-react";
 import { SystemBadge } from "./campuses";
+import { LayoutMenu } from "@/components/layout/layout-menu";
+import { useModuleLayout } from "@/lib/ui-prefs";
+import { useArranged, byText, densityCell } from "@/lib/ui-arrange";
+
 
 export const Route = createFileRoute("/_authenticated/students")({
   component: StudentsPage,
@@ -89,6 +93,31 @@ function StudentsPage() {
     });
   }, [students, search]);
 
+  const { layout } = useModuleLayout("students");
+  const groups = useArranged<Student>(filtered, layout, {
+    group: {
+      track: (s) => (s.academic_system === "cambridge" ? "Cambridge" : s.academic_system === "both" ? "Board & Cambridge" : "Board"),
+      campus: (s) => campusMap.get(s.campus_id) ?? "—",
+      class: (s) => classMap.get(s.class_id ?? "") ?? "No class",
+      status: (s) => s.status.charAt(0).toUpperCase() + s.status.slice(1),
+    },
+    filter: {
+      board: (s) => s.academic_system !== "cambridge",
+      cambridge: (s) => s.academic_system !== "board",
+      active: (s) => s.status === "active",
+      inactive: (s) => s.status !== "active",
+    },
+    sort: {
+      name: byText((s) => `${s.first_name} ${s.last_name}`),
+      code: byText((s) => s.student_code),
+      class: byText((s) => classMap.get(s.class_id ?? "") ?? ""),
+    },
+  });
+  const showCol = (c: string) => !layout.hidden.includes(c);
+  const cellCls = densityCell(layout.density);
+  const colSpan = 3 + ["guardian", "campus", "class", "system", "docs"].filter(showCol).length;
+
+
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -163,8 +192,11 @@ function StudentsPage() {
         title="Students"
         description="Register students, assign them to classes and sections, and manage their documents."
         actions={
+          <div className="flex items-center gap-2">
+          <LayoutMenu module="students" />
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" /> New student</Button></DialogTrigger>
+
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle className="font-serif">Register student</DialogTitle></DialogHeader>
               <form onSubmit={handleCreate} className="space-y-4">
@@ -241,7 +273,9 @@ function StudentsPage() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         }
+
       />
 
       <div className="mb-4 relative max-w-md">
@@ -259,18 +293,29 @@ function StudentsPage() {
           <Table>
             <TableHeader><TableRow>
               <TableHead>Student ID</TableHead><TableHead>Name</TableHead>
-              <TableHead>Guardian</TableHead>
-              <TableHead>Campus</TableHead><TableHead>Class/Section</TableHead>
-              <TableHead>System</TableHead><TableHead>Docs</TableHead>
+              {showCol("guardian") && <TableHead>Guardian</TableHead>}
+              {showCol("campus") && <TableHead>Campus</TableHead>}
+              {showCol("class") && <TableHead>Class/Section</TableHead>}
+              {showCol("system") && <TableHead>System</TableHead>}
+              {showCol("docs") && <TableHead>Docs</TableHead>}
               <TableHead className="text-right">Actions</TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {isLoading && <TableRow><TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
-              {!isLoading && filtered.length === 0 && <TableRow><TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">{search ? "No matching students." : "No students yet."}</TableCell></TableRow>}
-              {filtered.map((s) => (
+              {isLoading && <TableRow><TableCell colSpan={colSpan} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
+              {!isLoading && filtered.length === 0 && <TableRow><TableCell colSpan={colSpan} className="py-8 text-center text-sm text-muted-foreground">{search ? "No matching students." : "No students yet."}</TableCell></TableRow>}
+              {groups.map((group) => (
+                <Fragment key={group.key}>
+                  {group.label && (
+                    <TableRow className="bg-muted/50 hover:bg-muted/50">
+                      <TableCell colSpan={colSpan} className="py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {group.label} · {group.rows.length}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {group.rows.map((s) => (
                 <TableRow key={s.id}>
-                  <TableCell><code className="rounded bg-muted px-1.5 py-0.5 text-xs">{s.student_code}</code></TableCell>
-                  <TableCell>
+                  <TableCell className={cellCls}><code className="rounded bg-muted px-1.5 py-0.5 text-xs">{s.student_code}</code></TableCell>
+                  <TableCell className={cellCls}>
                     <button
                       onClick={() => setViewing(s)}
                       className="font-medium text-primary hover:underline text-left"
@@ -278,20 +323,25 @@ function StudentsPage() {
                       {s.first_name} {s.last_name}
                     </button>
                   </TableCell>
-                  <TableCell className="text-sm">
-                    <div>{s.guardian_name ?? "—"}</div>
-                    <div className="text-xs text-muted-foreground">{s.guardian_occupation ?? ""}</div>
-                  </TableCell>
-                  <TableCell className="text-sm">{campusMap.get(s.campus_id) ?? "—"}</TableCell>
-                  <TableCell className="text-sm">{classMap.get(s.class_id ?? "") ?? "—"} · {sectionMap.get(s.section_id ?? "") ?? "—"}</TableCell>
-                  <TableCell><SystemBadge system={s.academic_system} /></TableCell>
-                  <TableCell className="text-sm text-muted-foreground"><FileText className="mr-1 inline h-3 w-3" />{s.documents?.length ?? 0}</TableCell>
-                  <TableCell className="text-right">
+                  {showCol("guardian") && (
+                    <TableCell className={`text-sm ${cellCls}`}>
+                      <div>{s.guardian_name ?? "—"}</div>
+                      <div className="text-xs text-muted-foreground">{s.guardian_occupation ?? ""}</div>
+                    </TableCell>
+                  )}
+                  {showCol("campus") && <TableCell className={`text-sm ${cellCls}`}>{campusMap.get(s.campus_id) ?? "—"}</TableCell>}
+                  {showCol("class") && <TableCell className={`text-sm ${cellCls}`}>{classMap.get(s.class_id ?? "") ?? "—"} · {sectionMap.get(s.section_id ?? "") ?? "—"}</TableCell>}
+                  {showCol("system") && <TableCell className={cellCls}><SystemBadge system={s.academic_system} /></TableCell>}
+                  {showCol("docs") && <TableCell className={`text-sm text-muted-foreground ${cellCls}`}><FileText className="mr-1 inline h-3 w-3" />{s.documents?.length ?? 0}</TableCell>}
+                  <TableCell className={`text-right ${cellCls}`}>
                     <Button size="sm" variant="ghost" onClick={() => setEditing(s)}><Pencil className="mr-1 h-3 w-3" /> Edit</Button>
                     <Button size="sm" variant="ghost" onClick={() => setUploadFor(s)}><Upload className="mr-1 h-3 w-3" /> Upload</Button>
                   </TableCell>
                 </TableRow>
+                  ))}
+                </Fragment>
               ))}
+
             </TableBody>
           </Table>
         </CardContent>

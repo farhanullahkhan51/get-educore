@@ -9,6 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { LayoutMenu } from "@/components/layout/layout-menu";
+import { useModuleLayout } from "@/lib/ui-prefs";
+import { useArranged, byText, densityCell } from "@/lib/ui-arrange";
+import { Fragment } from "react";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Upload, FileText, Pencil, Wallet, Trash2 } from "lucide-react";
@@ -115,6 +120,30 @@ function StaffPage() {
     qc.invalidateQueries({ queryKey: ["staff"] });
   }
 
+  const { layout } = useModuleLayout("staff");
+  const groups = useArranged<Staff>(staff ?? [], layout, {
+    group: {
+      track: (s) => (s.academic_system === "cambridge" ? "Cambridge" : s.academic_system === "board" ? "Board" : "Board & Cambridge"),
+      campus: (s) => campusMap.get(s.campus_id) ?? "—",
+      department: (s) => s.department ?? "No department",
+      status: (s) => ((s as { status?: string }).status ?? "active").replace(/^./, (c: string) => c.toUpperCase()),
+    },
+    filter: {
+      board: (s) => s.academic_system !== "cambridge",
+      cambridge: (s) => s.academic_system !== "board",
+      active: (s) => ((s as { status?: string }).status ?? "active") === "active",
+
+    },
+    sort: {
+      name: byText((s) => `${s.first_name} ${s.last_name}`),
+      code: byText((s) => s.staff_code),
+      designation: byText((s) => s.designation ?? ""),
+    },
+  });
+  const showCol = (c: string) => !layout.hidden.includes(c);
+  const cellCls = densityCell(layout.density);
+  const colSpan = 5 + ["track", "campus", "contact"].filter(showCol).length;
+
   return (
     <>
       <PageHeader
@@ -122,8 +151,11 @@ function StaffPage() {
         title="Staff"
         description="Manage teaching and administrative staff. Portal logins are granted via Users & Roles."
         actions={
+          <div className="flex items-center gap-2">
+          <LayoutMenu module="staff" />
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" /> New staff</Button></DialogTrigger>
+
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle className="font-serif">Add staff member</DialogTitle></DialogHeader>
               <form onSubmit={handleCreate} className="space-y-4">
@@ -165,7 +197,9 @@ function StaffPage() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         }
+
       />
 
       <Card className="shadow-none">
@@ -173,17 +207,29 @@ function StaffPage() {
           <Table>
             <TableHeader><TableRow>
               <TableHead>Staff ID</TableHead><TableHead>Name</TableHead>
-              <TableHead>Designation</TableHead><TableHead>Track</TableHead><TableHead>Campus</TableHead>
-              <TableHead>Contact</TableHead><TableHead>Docs</TableHead>
+              <TableHead>Designation</TableHead>
+              {showCol("track") && <TableHead>Track</TableHead>}
+              {showCol("campus") && <TableHead>Campus</TableHead>}
+              {showCol("contact") && <TableHead>Contact</TableHead>}
+              <TableHead>Docs</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {isLoading && <TableRow><TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
-              {staff?.length === 0 && <TableRow><TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">No staff yet.</TableCell></TableRow>}
-              {staff?.map((s) => (
+              {isLoading && <TableRow><TableCell colSpan={colSpan} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
+              {staff?.length === 0 && <TableRow><TableCell colSpan={colSpan} className="py-8 text-center text-sm text-muted-foreground">No staff yet.</TableCell></TableRow>}
+              {groups.map((group) => (
+                <Fragment key={group.key}>
+                  {group.label && (
+                    <TableRow className="bg-muted/50 hover:bg-muted/50">
+                      <TableCell colSpan={colSpan} className="py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {group.label} · {group.rows.length}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {group.rows.map((s) => (
                 <TableRow key={s.id}>
-                  <TableCell><code className="rounded bg-muted px-1.5 py-0.5 text-xs">{s.staff_code}</code></TableCell>
-                  <TableCell>
+                  <TableCell className={cellCls}><code className="rounded bg-muted px-1.5 py-0.5 text-xs">{s.staff_code}</code></TableCell>
+                  <TableCell className={cellCls}>
                     <button
                       onClick={() => setPayrollFor(s)}
                       className="font-medium text-primary hover:underline text-left"
@@ -191,18 +237,21 @@ function StaffPage() {
                       {s.first_name} {s.last_name}
                     </button>
                   </TableCell>
-                  <TableCell className="text-sm">{s.designation ?? "—"} <span className="text-muted-foreground">· {s.department ?? ""}</span></TableCell>
-                  <TableCell className="text-sm capitalize">{s.academic_system ?? "both"}</TableCell>
-                  <TableCell className="text-sm">{campusMap.get(s.campus_id) ?? "—"}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground"><div>{s.email ?? "—"}</div><div className="text-xs">{s.phone ?? ""}</div></TableCell>
-                  <TableCell className="text-sm text-muted-foreground"><FileText className="mr-1 inline h-3 w-3" />{s.documents?.length ?? 0}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className={`text-sm ${cellCls}`}>{s.designation ?? "—"} {showCol("department") && <span className="text-muted-foreground">· {s.department ?? ""}</span>}</TableCell>
+                  {showCol("track") && <TableCell className={`text-sm capitalize ${cellCls}`}>{s.academic_system ?? "both"}</TableCell>}
+                  {showCol("campus") && <TableCell className={`text-sm ${cellCls}`}>{campusMap.get(s.campus_id) ?? "—"}</TableCell>}
+                  {showCol("contact") && <TableCell className={`text-sm text-muted-foreground ${cellCls}`}><div>{s.email ?? "—"}</div><div className="text-xs">{s.phone ?? ""}</div></TableCell>}
+                  <TableCell className={`text-sm text-muted-foreground ${cellCls}`}><FileText className="mr-1 inline h-3 w-3" />{s.documents?.length ?? 0}</TableCell>
+                  <TableCell className={`text-right ${cellCls}`}>
                     <Button size="sm" variant="ghost" onClick={() => setPayrollFor(s)}><Wallet className="mr-1 h-3 w-3" /> Payroll</Button>
                     <Button size="sm" variant="ghost" onClick={() => setEditing(s)}><Pencil className="mr-1 h-3 w-3" /> Edit</Button>
                     <Button size="sm" variant="ghost" onClick={() => setUploadFor(s)}><Upload className="mr-1 h-3 w-3" /> Upload</Button>
                   </TableCell>
                 </TableRow>
+                  ))}
+                </Fragment>
               ))}
+
             </TableBody>
           </Table>
         </CardContent>

@@ -12,6 +12,11 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { LayoutMenu } from "@/components/layout/layout-menu";
+import { useModuleLayout } from "@/lib/ui-prefs";
+import { useArranged, byText, densityCell } from "@/lib/ui-arrange";
+import { Fragment } from "react";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
@@ -130,9 +135,32 @@ function CoursesTab() {
   const programMap = new Map(programs?.map((p) => [p.id, p.name]));
   const classMap = new Map(classes?.map((c) => [c.id, c.name]));
 
+  const { layout } = useModuleLayout("courses");
+  const groups = useArranged<Course>(courses ?? [], layout, {
+    group: {
+      track: (c) => (c.academic_system === "cambridge" ? "Cambridge" : c.academic_system === "board" ? "Board" : "Board & Cambridge"),
+      campus: (c) => campusMap.get(c.campus_id) ?? "—",
+      class: (c) => (c.class_id && classMap.get(c.class_id)) || "No class",
+    },
+    filter: {
+      board: (c) => c.academic_system !== "cambridge",
+      cambridge: (c) => c.academic_system !== "board",
+      active: (c) => (c as { is_active?: boolean }).is_active !== false,
+    },
+    sort: {
+      title: byText((c) => c.title),
+      code: byText((c) => c.code),
+    },
+  });
+  const showCol = (k: string) => !layout.hidden.includes(k);
+  const cellCls = densityCell(layout.density);
+  const colSpan = 4 + ["campus", "class", "credits"].filter(showCol).length;
+
   return (
     <>
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex justify-end gap-2">
+        <LayoutMenu module="courses" />
+
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
           <DialogTrigger asChild>
             <Button><Plus className="mr-1 h-4 w-4" /> New course</Button>
@@ -216,32 +244,46 @@ function CoursesTab() {
               <TableRow>
                 <TableHead>Code</TableHead>
                 <TableHead>Title</TableHead>
-                <TableHead>Campus</TableHead>
-                <TableHead>Program / Class</TableHead>
-                <TableHead>Credits</TableHead>
+                {showCol("campus") && <TableHead>Campus</TableHead>}
+                {showCol("class") && <TableHead>Program / Class</TableHead>}
+                {showCol("credits") && <TableHead>Credits</TableHead>}
                 <TableHead>System</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading && <TableRow><TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
-              {courses?.length === 0 && <TableRow><TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">No courses yet.</TableCell></TableRow>}
-              {courses?.map((c) => (
+              {isLoading && <TableRow><TableCell colSpan={colSpan} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
+              {courses?.length === 0 && <TableRow><TableCell colSpan={colSpan} className="py-8 text-center text-sm text-muted-foreground">No courses yet.</TableCell></TableRow>}
+              {groups.map((group) => (
+                <Fragment key={group.key}>
+                  {group.label && (
+                    <TableRow className="bg-muted/50 hover:bg-muted/50">
+                      <TableCell colSpan={colSpan} className="py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {group.label} · {group.rows.length}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {group.rows.map((c) => (
                 <TableRow key={c.id}>
-                  <TableCell><code className="rounded bg-muted px-1.5 py-0.5 text-xs">{c.code}</code></TableCell>
-                  <TableCell className="font-medium">{c.title}</TableCell>
-                  <TableCell className="text-sm">{campusMap.get(c.campus_id) ?? "—"}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {[c.program_id && programMap.get(c.program_id), c.class_id && classMap.get(c.class_id)].filter(Boolean).join(" · ") || "—"}
-                  </TableCell>
-                  <TableCell className="text-sm">{c.credit_hours}</TableCell>
-                  <TableCell className="text-sm capitalize">{c.academic_system}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className={cellCls}><code className="rounded bg-muted px-1.5 py-0.5 text-xs">{c.code}</code></TableCell>
+                  <TableCell className={`font-medium ${cellCls}`}>{c.title}</TableCell>
+                  {showCol("campus") && <TableCell className={`text-sm ${cellCls}`}>{campusMap.get(c.campus_id) ?? "—"}</TableCell>}
+                  {showCol("class") && (
+                    <TableCell className={`text-sm text-muted-foreground ${cellCls}`}>
+                      {[c.program_id && programMap.get(c.program_id), c.class_id && classMap.get(c.class_id)].filter(Boolean).join(" · ") || "—"}
+                    </TableCell>
+                  )}
+                  {showCol("credits") && <TableCell className={`text-sm ${cellCls}`}>{c.credit_hours}</TableCell>}
+                  <TableCell className={`text-sm capitalize ${cellCls}`}>{c.academic_system}</TableCell>
+                  <TableCell className={`text-right ${cellCls}`}>
                     <Button size="icon" variant="ghost" onClick={() => { setEditing(c); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
                     <Button size="icon" variant="ghost" onClick={() => handleDelete(c.id)}><Trash2 className="h-4 w-4" /></Button>
                   </TableCell>
                 </TableRow>
+                  ))}
+                </Fragment>
               ))}
+
             </TableBody>
           </Table>
         </CardContent>
