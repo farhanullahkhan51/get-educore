@@ -138,9 +138,12 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <TenantProvider>
-        <Outlet />
-        <Toaster richColors position="top-right" />
+        <UiPrefsProvider>
+          <Outlet />
+          <Toaster richColors position="top-right" />
+        </UiPrefsProvider>
       </TenantProvider>
     </QueryClientProvider>
   );
 }
+
