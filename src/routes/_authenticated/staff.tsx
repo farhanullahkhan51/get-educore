@@ -191,7 +191,9 @@ function StaffPage() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         }
+
       />
 
       <Card className="shadow-none">
