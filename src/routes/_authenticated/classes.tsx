@@ -14,6 +14,10 @@ import { toast } from "sonner";
 import { Plus, Trash2, Pencil, ChevronRight, LayoutGrid } from "lucide-react";
 import { SystemBadge } from "./campuses";
 import { SeatingChart } from "@/components/classroom/seating-chart";
+import { LayoutMenu } from "@/components/layout/layout-menu";
+import { useModuleLayout } from "@/lib/ui-prefs";
+import { useArranged, byText, byNumberDesc, densityCell } from "@/lib/ui-arrange";
+
 
 export const Route = createFileRoute("/_authenticated/classes")({
   component: ClassesPage,
