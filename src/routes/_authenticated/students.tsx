@@ -288,18 +288,29 @@ function StudentsPage() {
           <Table>
             <TableHeader><TableRow>
               <TableHead>Student ID</TableHead><TableHead>Name</TableHead>
-              <TableHead>Guardian</TableHead>
-              <TableHead>Campus</TableHead><TableHead>Class/Section</TableHead>
-              <TableHead>System</TableHead><TableHead>Docs</TableHead>
+              {showCol("guardian") && <TableHead>Guardian</TableHead>}
+              {showCol("campus") && <TableHead>Campus</TableHead>}
+              {showCol("class") && <TableHead>Class/Section</TableHead>}
+              {showCol("system") && <TableHead>System</TableHead>}
+              {showCol("docs") && <TableHead>Docs</TableHead>}
               <TableHead className="text-right">Actions</TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {isLoading && <TableRow><TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
-              {!isLoading && filtered.length === 0 && <TableRow><TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">{search ? "No matching students." : "No students yet."}</TableCell></TableRow>}
-              {filtered.map((s) => (
+              {isLoading && <TableRow><TableCell colSpan={colSpan} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
+              {!isLoading && filtered.length === 0 && <TableRow><TableCell colSpan={colSpan} className="py-8 text-center text-sm text-muted-foreground">{search ? "No matching students." : "No students yet."}</TableCell></TableRow>}
+              {groups.map((group) => (
+                <Fragment key={group.key}>
+                  {group.label && (
+                    <TableRow className="bg-muted/50 hover:bg-muted/50">
+                      <TableCell colSpan={colSpan} className="py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {group.label} · {group.rows.length}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {group.rows.map((s) => (
                 <TableRow key={s.id}>
-                  <TableCell><code className="rounded bg-muted px-1.5 py-0.5 text-xs">{s.student_code}</code></TableCell>
-                  <TableCell>
+                  <TableCell className={cellCls}><code className="rounded bg-muted px-1.5 py-0.5 text-xs">{s.student_code}</code></TableCell>
+                  <TableCell className={cellCls}>
                     <button
                       onClick={() => setViewing(s)}
                       className="font-medium text-primary hover:underline text-left"
@@ -307,17 +318,20 @@ function StudentsPage() {
                       {s.first_name} {s.last_name}
                     </button>
                   </TableCell>
-                  <TableCell className="text-sm">
-                    <div>{s.guardian_name ?? "—"}</div>
-                    <div className="text-xs text-muted-foreground">{s.guardian_occupation ?? ""}</div>
-                  </TableCell>
-                  <TableCell className="text-sm">{campusMap.get(s.campus_id) ?? "—"}</TableCell>
-                  <TableCell className="text-sm">{classMap.get(s.class_id ?? "") ?? "—"} · {sectionMap.get(s.section_id ?? "") ?? "—"}</TableCell>
-                  <TableCell><SystemBadge system={s.academic_system} /></TableCell>
-                  <TableCell className="text-sm text-muted-foreground"><FileText className="mr-1 inline h-3 w-3" />{s.documents?.length ?? 0}</TableCell>
-                  <TableCell className="text-right">
+                  {showCol("guardian") && (
+                    <TableCell className={`text-sm ${cellCls}`}>
+                      <div>{s.guardian_name ?? "—"}</div>
+                      <div className="text-xs text-muted-foreground">{s.guardian_occupation ?? ""}</div>
+                    </TableCell>
+                  )}
+                  {showCol("campus") && <TableCell className={`text-sm ${cellCls}`}>{campusMap.get(s.campus_id) ?? "—"}</TableCell>}
+                  {showCol("class") && <TableCell className={`text-sm ${cellCls}`}>{classMap.get(s.class_id ?? "") ?? "—"} · {sectionMap.get(s.section_id ?? "") ?? "—"}</TableCell>}
+                  {showCol("system") && <TableCell className={cellCls}><SystemBadge system={s.academic_system} /></TableCell>}
+                  {showCol("docs") && <TableCell className={`text-sm text-muted-foreground ${cellCls}`}><FileText className="mr-1 inline h-3 w-3" />{s.documents?.length ?? 0}</TableCell>}
+                  <TableCell className={`text-right ${cellCls}`}>
                     <Button size="sm" variant="ghost" onClick={() => setEditing(s)}><Pencil className="mr-1 h-3 w-3" /> Edit</Button>
                     <Button size="sm" variant="ghost" onClick={() => setUploadFor(s)}><Upload className="mr-1 h-3 w-3" /> Upload</Button>
+
                   </TableCell>
                 </TableRow>
               ))}
