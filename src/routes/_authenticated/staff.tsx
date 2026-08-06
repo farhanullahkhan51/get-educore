@@ -142,7 +142,7 @@ function StaffPage() {
   });
   const showCol = (c: string) => !layout.hidden.includes(c);
   const cellCls = densityCell(layout.density);
-  const colSpan = 3 + ["department", "campus", "contact", "track"].filter(showCol).length;
+  const colSpan = 5 + ["track", "campus", "contact"].filter(showCol).length;
 
   return (
     <>
