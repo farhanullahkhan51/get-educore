@@ -331,10 +331,12 @@ function StudentsPage() {
                   <TableCell className={`text-right ${cellCls}`}>
                     <Button size="sm" variant="ghost" onClick={() => setEditing(s)}><Pencil className="mr-1 h-3 w-3" /> Edit</Button>
                     <Button size="sm" variant="ghost" onClick={() => setUploadFor(s)}><Upload className="mr-1 h-3 w-3" /> Upload</Button>
-
                   </TableCell>
                 </TableRow>
+                  ))}
+                </Fragment>
               ))}
+
             </TableBody>
           </Table>
         </CardContent>
