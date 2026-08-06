@@ -9,6 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { LayoutMenu } from "@/components/layout/layout-menu";
+import { useModuleLayout } from "@/lib/ui-prefs";
+import { useArranged, byText, densityCell } from "@/lib/ui-arrange";
+import { Fragment } from "react";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Upload, FileText, Pencil, Wallet, Trash2 } from "lucide-react";
