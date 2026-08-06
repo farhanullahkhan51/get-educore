@@ -377,11 +377,13 @@ export function ChatWorkspace({ threadId }: { threadId: string }) {
 
           {!isLoading && messages.length === 0 && (
             <div className="py-12 text-center">
-              <h2 className="font-serif text-2xl font-semibold">Ask about your institution</h2>
+              <h2 className="font-serif text-2xl font-semibold">Ask or instruct</h2>
               <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-                The assistant reads live records you already have access to — enrollment, fees, attendance,
-                admissions and results.
+                The assistant works across enrollment, staff, academics, fees, admissions, results and
+                certificates — it can look records up and also create, edit or delete them. Every change is shown
+                for your confirmation first.
               </p>
+
               <div className="mx-auto mt-6 grid max-w-xl gap-2 sm:grid-cols-2">
                 {SUGGESTIONS.map((s) => (
                   <button
