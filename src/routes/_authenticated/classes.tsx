@@ -83,6 +83,33 @@ function ClassesPage() {
 
   const campusMap = new Map(campuses?.map((c) => [c.id, c.name]));
 
+  const { layout } = useModuleLayout("classes");
+  const countFor = (classId: string) => {
+    const ids = new Set((sections ?? []).filter((s) => s.class_id === classId).map((s) => s.id));
+    return (students ?? []).filter((st) => st.class_id === classId || (st.section_id && ids.has(st.section_id))).length;
+  };
+  const trackLabel = (s: Klass["academic_system"]) =>
+    s === "cambridge" ? "Cambridge" : s === "both" ? "Board & Cambridge" : "Board";
+  const groups = useArranged<Klass>(classes ?? [], layout, {
+    group: {
+      track: (c) => trackLabel(c.academic_system),
+      campus: (c) => campusMap.get(c.campus_id) ?? "—",
+      year: (c) => c.academic_year ?? "No academic year",
+    },
+    filter: {
+      board: (c) => c.academic_system !== "cambridge",
+      cambridge: (c) => c.academic_system !== "board",
+    },
+    sort: {
+      name: byText((c) => c.name),
+      campus: byText((c) => campusMap.get(c.campus_id)),
+      students: byNumberDesc((c) => countFor(c.id)),
+    },
+  });
+  const showCol = (c: string) => !layout.hidden.includes(c);
+  const cellCls = densityCell(layout.density);
+
+
   async function createClass(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
