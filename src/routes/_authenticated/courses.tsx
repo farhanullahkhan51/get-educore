@@ -244,32 +244,46 @@ function CoursesTab() {
               <TableRow>
                 <TableHead>Code</TableHead>
                 <TableHead>Title</TableHead>
-                <TableHead>Campus</TableHead>
-                <TableHead>Program / Class</TableHead>
-                <TableHead>Credits</TableHead>
+                {showCol("campus") && <TableHead>Campus</TableHead>}
+                {showCol("class") && <TableHead>Program / Class</TableHead>}
+                {showCol("credits") && <TableHead>Credits</TableHead>}
                 <TableHead>System</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading && <TableRow><TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
-              {courses?.length === 0 && <TableRow><TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">No courses yet.</TableCell></TableRow>}
-              {courses?.map((c) => (
+              {isLoading && <TableRow><TableCell colSpan={colSpan} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
+              {courses?.length === 0 && <TableRow><TableCell colSpan={colSpan} className="py-8 text-center text-sm text-muted-foreground">No courses yet.</TableCell></TableRow>}
+              {groups.map((group) => (
+                <Fragment key={group.key}>
+                  {group.label && (
+                    <TableRow className="bg-muted/50 hover:bg-muted/50">
+                      <TableCell colSpan={colSpan} className="py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {group.label} · {group.rows.length}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {group.rows.map((c) => (
                 <TableRow key={c.id}>
-                  <TableCell><code className="rounded bg-muted px-1.5 py-0.5 text-xs">{c.code}</code></TableCell>
-                  <TableCell className="font-medium">{c.title}</TableCell>
-                  <TableCell className="text-sm">{campusMap.get(c.campus_id) ?? "—"}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {[c.program_id && programMap.get(c.program_id), c.class_id && classMap.get(c.class_id)].filter(Boolean).join(" · ") || "—"}
-                  </TableCell>
-                  <TableCell className="text-sm">{c.credit_hours}</TableCell>
-                  <TableCell className="text-sm capitalize">{c.academic_system}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className={cellCls}><code className="rounded bg-muted px-1.5 py-0.5 text-xs">{c.code}</code></TableCell>
+                  <TableCell className={`font-medium ${cellCls}`}>{c.title}</TableCell>
+                  {showCol("campus") && <TableCell className={`text-sm ${cellCls}`}>{campusMap.get(c.campus_id) ?? "—"}</TableCell>}
+                  {showCol("class") && (
+                    <TableCell className={`text-sm text-muted-foreground ${cellCls}`}>
+                      {[c.program_id && programMap.get(c.program_id), c.class_id && classMap.get(c.class_id)].filter(Boolean).join(" · ") || "—"}
+                    </TableCell>
+                  )}
+                  {showCol("credits") && <TableCell className={`text-sm ${cellCls}`}>{c.credit_hours}</TableCell>}
+                  <TableCell className={`text-sm capitalize ${cellCls}`}>{c.academic_system}</TableCell>
+                  <TableCell className={`text-right ${cellCls}`}>
                     <Button size="icon" variant="ghost" onClick={() => { setEditing(c); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
                     <Button size="icon" variant="ghost" onClick={() => handleDelete(c.id)}><Trash2 className="h-4 w-4" /></Button>
                   </TableCell>
                 </TableRow>
+                  ))}
+                </Fragment>
               ))}
+
             </TableBody>
           </Table>
         </CardContent>
