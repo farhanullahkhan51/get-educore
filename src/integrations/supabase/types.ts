@@ -2556,6 +2556,44 @@ export type Database = {
           },
         ]
       }
+      ui_layouts: {
+        Row: {
+          created_at: string
+          id: string
+          layout: Json
+          scope: string
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          layout?: Json
+          scope: string
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          layout?: Json
+          scope?: string
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ui_layouts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ui_preferences: {
         Row: {
           created_at: string
