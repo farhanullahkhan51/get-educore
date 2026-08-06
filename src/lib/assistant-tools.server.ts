@@ -126,12 +126,10 @@ export function buildAssistantTools(ctx: AssistantContext) {
     return findOne(data, "course", term, (c) => `${c.title} (${c.code})`);
   }
 
-  function write<T extends Parameters<typeof tool>[0]>(config: T) {
-    return tool({ ...config, needsApproval: true } as T);
-  }
+  const write = tool;
 
 
-  return {
+  const tools = {
     /* ------------------------------------------------------------------ read */
 
     institution_overview: tool({
@@ -1456,4 +1454,12 @@ export function buildAssistantTools(ctx: AssistantContext) {
       },
     }),
   };
+
+  // every mutating tool must be approved by the user in the chat before it runs
+  const WRITE_TOOLS = ["create_student", "update_student", "delete_student", "create_staff", "update_staff", "delete_staff", "add_payroll_entry", "create_program", "create_class", "create_section", "create_course", "update_course", "delete_course", "assign_course_teacher", "create_inquiry", "update_inquiry_status", "create_fee_structure", "issue_challan", "record_payment", "create_scholarship", "mark_attendance", "create_assessment", "record_marks", "publish_report_card", "issue_certificate", "revoke_certificate"] as const;
+  for (const name of WRITE_TOOLS) {
+    (tools as Record<string, { needsApproval?: boolean }>)[name].needsApproval = true;
+  }
+
+  return tools;
 }
