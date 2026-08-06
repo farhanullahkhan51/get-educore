@@ -100,7 +100,12 @@ export function UiLayoutsProvider({ children }: { children: ReactNode }) {
         } else {
           const { error } = await supabase
             .from("ui_layouts")
-            .insert({ tenant_id: tenantId, scope, layout: layout as never, updated_by: user?.userId ?? null });
+            .insert({
+              tenant_id: tenantId,
+              scope,
+              layout: layout as never,
+              updated_by: user?.userId ?? null,
+            });
           if (error) throw error;
         }
         await supabase.from("audit_logs").insert({

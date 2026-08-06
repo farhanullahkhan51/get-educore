@@ -45,8 +45,8 @@ export function EditModeBanner() {
   return (
     <div className="sticky top-0 z-40 flex flex-wrap items-center justify-between gap-2 border-b border-primary/40 bg-primary/10 px-4 py-2 text-sm">
       <span>
-        <strong>Editing layout.</strong> Drag the handles to rearrange, use the icons to resize, rename or hide blocks.
-        Changes apply to everyone once saved.
+        <strong>Editing layout.</strong> Drag the handles to rearrange, use the icons to resize,
+        rename or hide blocks. Changes apply to everyone once saved.
       </span>
       <Button
         variant="outline"

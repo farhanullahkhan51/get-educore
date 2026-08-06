@@ -15,7 +15,11 @@ const SPAN_CLASS: Record<number, string> = {
 };
 
 /** Pointer-driven reordering shared by every editable surface. */
-function useReorder(container: React.RefObject<HTMLElement | null>, ids: string[], move: (id: string, to: number) => void) {
+function useReorder(
+  container: React.RefObject<HTMLElement | null>,
+  ids: string[],
+  move: (id: string, to: number) => void,
+) {
   const [dragging, setDragging] = useState<string | null>(null);
   const overRef = useRef<string | null>(null);
   const raf = useRef<number | null>(null);
@@ -125,7 +129,13 @@ function RenameField({ block, onRename }: { block: ResolvedBlock; onRename: (v: 
       >
         <Check className="h-3 w-3" />
       </Button>
-      <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => setOpen(false)}>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="h-6 w-6"
+        onClick={() => setOpen(false)}
+      >
         <X className="h-3 w-3" />
       </Button>
     </span>
@@ -142,7 +152,14 @@ type BlockChrome = {
   onRename: (v: string) => void;
 };
 
-function EditChrome({ block, onDragStart, onToggleHidden, onCycleSpan, onToggleHeight, onRename }: BlockChrome) {
+function EditChrome({
+  block,
+  onDragStart,
+  onToggleHidden,
+  onCycleSpan,
+  onToggleHeight,
+  onRename,
+}: BlockChrome) {
   return (
     <div className="mb-1 flex items-center gap-1 rounded-sm bg-muted/70 px-1.5 py-1 text-xs">
       <button
@@ -209,10 +226,15 @@ export function EditableGrid({
   render: (block: ResolvedBlock) => ReactNode;
   className?: string;
 }) {
-  const { blocks, editing, move, toggleHidden, cycleSpan, toggleHeight, rename } = useSurfaceLayout(scope);
+  const { blocks, editing, move, toggleHidden, cycleSpan, toggleHeight, rename } =
+    useSurfaceLayout(scope);
   const ref = useRef<HTMLDivElement>(null);
   const shown = editing ? blocks : blocks.filter((b) => !b.hidden);
-  const { dragging, start } = useReorder(ref, blocks.map((b) => b.id), move);
+  const { dragging, start } = useReorder(
+    ref,
+    blocks.map((b) => b.id),
+    move,
+  );
 
   return (
     <div ref={ref} className={cn("grid grid-cols-12 gap-4", className)}>
@@ -267,7 +289,11 @@ export function EditableList({
   const { blocks, editing, move, toggleHidden, rename } = useSurfaceLayout(scope);
   const ref = useRef<HTMLDivElement>(null);
   const shown = editing ? blocks : blocks.filter((b) => !b.hidden);
-  const { dragging, start } = useReorder(ref, blocks.map((b) => b.id), move);
+  const { dragging, start } = useReorder(
+    ref,
+    blocks.map((b) => b.id),
+    move,
+  );
 
   return (
     <div ref={ref} className={className}>
@@ -329,7 +355,11 @@ export function EditableTabsList({ scope, className }: { scope: string; classNam
   const { blocks, editing, move, toggleHidden, rename } = useSurfaceLayout(scope);
   const ref = useRef<HTMLDivElement>(null);
   const shown = editing ? blocks : blocks.filter((b) => !b.hidden);
-  const { dragging, start } = useReorder(ref, blocks.map((b) => b.id), move);
+  const { dragging, start } = useReorder(
+    ref,
+    blocks.map((b) => b.id),
+    move,
+  );
 
   return (
     <div ref={ref} className={cn("mb-4 flex flex-wrap items-center gap-2", className)}>
@@ -361,7 +391,10 @@ export function EditableTabsList({ scope, className }: { scope: string; classNam
       {editing && (
         <div className="flex flex-wrap items-center gap-1 rounded-sm bg-muted/70 px-2 py-1 text-xs">
           {blocks.map((block) => (
-            <span key={block.id} className="flex items-center gap-0.5 rounded-sm bg-background px-1">
+            <span
+              key={block.id}
+              className="flex items-center gap-0.5 rounded-sm bg-background px-1"
+            >
               <span className="max-w-24 truncate">{block.label}</span>
               <RenameField block={block} onRename={(v) => rename(block.id, v)} />
               <Button
@@ -408,7 +441,7 @@ export function EditableTabs({
 }) {
   const { visible } = useSurfaceLayout(scope);
   const [value, setValue] = useState(fallback);
-  const active = visible.some((b) => b.id === value) ? value : visible[0]?.id ?? fallback;
+  const active = visible.some((b) => b.id === value) ? value : (visible[0]?.id ?? fallback);
 
   return (
     <Tabs value={active} onValueChange={setValue} className={className}>

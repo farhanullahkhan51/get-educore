@@ -37,25 +37,78 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["super_admin", "campus_admin", "admissions_officer", "finance_officer", "teacher"] },
+  {
+    to: "/dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    roles: ["super_admin", "campus_admin", "admissions_officer", "finance_officer", "teacher"],
+  },
 
-
-  
   { to: "/portal", label: "My Portal", icon: GraduationCap, roles: ["student"] },
   { to: "/campuses", label: "Campuses", icon: Building2, roles: ["super_admin"] },
   { to: "/programs", label: "Programs", icon: BookOpen, roles: ["super_admin", "campus_admin"] },
-  { to: "/classes", label: "Classes & Sections", icon: Layers, roles: ["super_admin", "campus_admin"] },
-  { to: "/admissions", label: "Admissions", icon: Inbox, roles: ["super_admin", "campus_admin", "admissions_officer"] },
-  { to: "/students", label: "Students", icon: GraduationCap, roles: ["super_admin", "campus_admin", "admissions_officer", "finance_officer", "teacher"] },
+  {
+    to: "/classes",
+    label: "Classes & Sections",
+    icon: Layers,
+    roles: ["super_admin", "campus_admin"],
+  },
+  {
+    to: "/admissions",
+    label: "Admissions",
+    icon: Inbox,
+    roles: ["super_admin", "campus_admin", "admissions_officer"],
+  },
+  {
+    to: "/students",
+    label: "Students",
+    icon: GraduationCap,
+    roles: ["super_admin", "campus_admin", "admissions_officer", "finance_officer", "teacher"],
+  },
   { to: "/staff", label: "Staff", icon: Users, roles: ["super_admin", "campus_admin"] },
   { to: "/courses", label: "Courses", icon: BookMarked, roles: ["super_admin", "campus_admin"] },
-  { to: "/academics", label: "Academics", icon: ClipboardCheck, roles: ["super_admin", "campus_admin", "teacher"] },
-  { to: "/results", label: "Results", icon: Award, roles: ["super_admin", "campus_admin", "teacher"] },
-  { to: "/board", label: "BISE Board", icon: Landmark, roles: ["super_admin", "campus_admin", "admissions_officer"] },
-  { to: "/cambridge", label: "Cambridge", icon: BookMarked, roles: ["super_admin", "campus_admin", "admissions_officer"] },
-  { to: "/track-switch", label: "Track Switch", icon: Layers, roles: ["super_admin", "campus_admin"] },
-  { to: "/fees", label: "Fees & Finance", icon: Wallet, roles: ["super_admin", "campus_admin", "finance_officer"] },
-  { to: "/certificates", label: "Certificates", icon: Award, roles: ["super_admin", "campus_admin", "admissions_officer"] },
+  {
+    to: "/academics",
+    label: "Academics",
+    icon: ClipboardCheck,
+    roles: ["super_admin", "campus_admin", "teacher"],
+  },
+  {
+    to: "/results",
+    label: "Results",
+    icon: Award,
+    roles: ["super_admin", "campus_admin", "teacher"],
+  },
+  {
+    to: "/board",
+    label: "BISE Board",
+    icon: Landmark,
+    roles: ["super_admin", "campus_admin", "admissions_officer"],
+  },
+  {
+    to: "/cambridge",
+    label: "Cambridge",
+    icon: BookMarked,
+    roles: ["super_admin", "campus_admin", "admissions_officer"],
+  },
+  {
+    to: "/track-switch",
+    label: "Track Switch",
+    icon: Layers,
+    roles: ["super_admin", "campus_admin"],
+  },
+  {
+    to: "/fees",
+    label: "Fees & Finance",
+    icon: Wallet,
+    roles: ["super_admin", "campus_admin", "finance_officer"],
+  },
+  {
+    to: "/certificates",
+    label: "Certificates",
+    icon: Award,
+    roles: ["super_admin", "campus_admin", "admissions_officer"],
+  },
   { to: "/users", label: "Users & Roles", icon: UserCog, roles: ["super_admin"] },
   { to: "/platform", label: "Platform Admin", icon: ShieldCheck, roles: ["super_admin"] },
 ];
@@ -132,7 +185,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="border-t border-sidebar-border p-3">
       <div className="mb-2 px-2 text-xs">
         <div className="truncate font-medium text-sidebar-primary">
-          {isLoading ? "…" : user?.fullName ?? user?.email ?? "Signed in"}
+          {isLoading ? "…" : (user?.fullName ?? user?.email ?? "Signed in")}
         </div>
         <div className="flex items-center gap-1 opacity-70">
           <ShieldCheck className="h-3 w-3" />
@@ -155,7 +208,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       {preview && (
         <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-3 bg-foreground px-4 py-1.5 text-xs text-background">
           <span className="truncate">
-            Previewing <strong className="font-semibold">{preview.name}</strong> — branding only, data is unchanged
+            Previewing <strong className="font-semibold">{preview.name}</strong> — branding only,
+            data is unchanged
           </span>
           <button
             type="button"
@@ -166,7 +220,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
         </div>
       )}
-      <aside className={`hidden w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground md:flex ${preview ? "pt-7" : ""}`}>
+      <aside
+        className={`hidden w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground md:flex ${preview ? "pt-7" : ""}`}
+      >
         {brandBlock}
         {navList()}
         {userBlock}
@@ -175,7 +231,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main className={`flex-1 overflow-x-hidden ${preview ? "pt-7" : ""}`}>
         {/* Mobile top bar */}
         <div className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b bg-background px-4 py-3 md:hidden">
-
           <div className="flex items-center gap-2 min-w-0">
             {tenant?.logo_url ? (
               <img src={tenant.logo_url} alt="" className="h-7 w-7 rounded-sm object-contain" />
@@ -197,7 +252,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-72 bg-sidebar text-sidebar-foreground p-0 flex flex-col">
+              <SheetContent
+                side="left"
+                className="w-72 bg-sidebar text-sidebar-foreground p-0 flex flex-col"
+              >
                 <SheetTitle className="sr-only">Navigation</SheetTitle>
                 {brandBlock}
                 {navList(() => setMobileOpen(false))}
@@ -218,7 +276,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         <EditModeBanner />
 
         <div className="mx-auto max-w-7xl px-6 py-8">{children}</div>
-
       </main>
     </div>
   );
