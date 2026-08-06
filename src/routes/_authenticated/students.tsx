@@ -13,6 +13,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Plus, Upload, FileText, Pencil, Search } from "lucide-react";
 import { SystemBadge } from "./campuses";
+import { LayoutMenu } from "@/components/layout/layout-menu";
+import { useModuleLayout } from "@/lib/ui-prefs";
+import { useArranged, byText, densityCell } from "@/lib/ui-arrange";
+
 
 export const Route = createFileRoute("/_authenticated/students")({
   component: StudentsPage,
