@@ -3,6 +3,7 @@ import { GripVertical, Eye, EyeOff, Maximize2, MoveVertical, Pencil, Check, X } 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSurfaceLayout } from "@/lib/ui-layouts";
 import { SPAN_LABEL, type ResolvedBlock } from "@/lib/ui-surfaces";
 
@@ -318,4 +319,72 @@ export function EditableList({
       })}
     </div>
   );
+}
+
+/**
+ * A tab strip whose tabs admins can reorder, hide and rename.
+ * Tab content stays where it is — hidden tabs simply have no trigger.
+ */
+export function EditableTabsList({ scope, className }: { scope: string; className?: string }) {
+  const { blocks, editing, move, toggleHidden, rename } = useSurfaceLayout(scope);
+  const ref = useRef<HTMLDivElement>(null);
+  const shown = editing ? blocks : blocks.filter((b) => !b.hidden);
+  const { dragging, start } = useReorder(ref, blocks.map((b) => b.id), move);
+
+  return (
+    <div ref={ref} className={cn("mb-4 flex flex-wrap items-center gap-2", className)}>
+      <TabsList>
+        {shown.map((block) => (
+          <TabsTrigger
+            key={block.id}
+            value={block.id}
+            data-block-id={block.id}
+            className={cn(
+              editing && "border border-dashed border-primary/50",
+              editing && block.hidden && "opacity-45",
+              dragging === block.id && "ring-2 ring-primary",
+            )}
+          >
+            {editing && (
+              <span
+                onPointerDown={start(block.id)}
+                className="mr-1 inline-flex cursor-grab touch-none active:cursor-grabbing"
+                aria-label={`Drag ${block.label}`}
+              >
+                <GripVertical className="h-3 w-3" />
+              </span>
+            )}
+            {block.label}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+      {editing && (
+        <div className="flex flex-wrap items-center gap-1 rounded-sm bg-muted/70 px-2 py-1 text-xs">
+          {blocks.map((block) => (
+            <span key={block.id} className="flex items-center gap-0.5 rounded-sm bg-background px-1">
+              <span className="max-w-24 truncate">{block.label}</span>
+              <RenameField block={block} onRename={(v) => rename(block.id, v)} />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                title={block.hidden ? "Show tab" : "Hide tab"}
+                onClick={() => toggleHidden(block.id)}
+              >
+                {block.hidden ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+              </Button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** The tab a page should open on, respecting hidden tabs. */
+export function useFirstVisibleTab(scope: string, preferred?: string) {
+  const { visible } = useSurfaceLayout(scope);
+  if (preferred && visible.some((b) => b.id === preferred)) return preferred;
+  return visible[0]?.id ?? preferred ?? "";
 }
