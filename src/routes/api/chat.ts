@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, streamText, stepCountIs, type UIMessage } from "ai";
+import { createOpenAI } from "@ai-sdk/openai";
 import {
-  createLovableAiGatewayProvider,
+  createLovableAiGatewayRunIdFetch,
   getLovableAiGatewayResponseHeaders,
   getLovableAiGatewayRunId,
 } from "@/lib/ai-gateway.server";
@@ -68,20 +69,38 @@ export const Route = createFileRoute("/api/chat")({
         }
 
         const initialRunId = getLovableAiGatewayRunId(request);
-        const gateway = createLovableAiGatewayProvider(apiKey, initialRunId);
+        const runIdFetch = createLovableAiGatewayRunIdFetch(initialRunId);
+        const gateway = createOpenAI({
+          baseURL: "https://ai.gateway.lovable.dev/v1",
+          apiKey,
+          headers: {
+            "Lovable-API-Key": apiKey,
+            "X-Lovable-AIG-SDK": "vercel-ai-sdk",
+          },
+          fetch: runIdFetch.fetch as typeof fetch,
+        });
         const assistantContext = await loadAssistantContext(supabase, userId);
 
         const result = streamText({
-          model: gateway("openai/gpt-5.6-sol"),
+          model: gateway.responses("openai/gpt-5.6-sol"),
           system: SYSTEM_PROMPT,
           messages: await convertToModelMessages(uiMessages),
           tools: buildAssistantTools(assistantContext),
           stopWhen: stepCountIs(50),
-          providerOptions: { lovable: { reasoningEffort: "none" } },
+          providerOptions: {
+            openai: {
+              forceReasoning: true,
+              reasoningEffort: "low",
+              reasoningSummary: "auto",
+              store: false,
+              include: ["reasoning.encrypted_content"],
+            },
+          },
         });
 
         return result.toUIMessageStreamResponse({
           originalMessages: uiMessages,
+          sendReasoning: true,
           onFinish: async ({ responseMessage }) => {
             if (!threadId || !responseMessage) return;
             const { error } = await supabase.from("ai_messages").insert({
