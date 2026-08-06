@@ -130,9 +130,32 @@ function CoursesTab() {
   const programMap = new Map(programs?.map((p) => [p.id, p.name]));
   const classMap = new Map(classes?.map((c) => [c.id, c.name]));
 
+  const { layout } = useModuleLayout("courses");
+  const groups = useArranged<Course>(courses ?? [], layout, {
+    group: {
+      track: (c) => (c.academic_system === "cambridge" ? "Cambridge" : c.academic_system === "board" ? "Board" : "Board & Cambridge"),
+      campus: (c) => campusMap.get(c.campus_id) ?? "—",
+      class: (c) => (c.class_id && classMap.get(c.class_id)) || "No class",
+    },
+    filter: {
+      board: (c) => c.academic_system !== "cambridge",
+      cambridge: (c) => c.academic_system !== "board",
+      active: (c) => (c as { is_active?: boolean }).is_active !== false,
+    },
+    sort: {
+      title: byText((c) => c.title),
+      code: byText((c) => c.code),
+    },
+  });
+  const showCol = (k: string) => !layout.hidden.includes(k);
+  const cellCls = densityCell(layout.density);
+  const colSpan = 4 + ["campus", "class", "credits"].filter(showCol).length;
+
   return (
     <>
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex justify-end gap-2">
+        <LayoutMenu module="courses" />
+
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
           <DialogTrigger asChild>
             <Button><Plus className="mr-1 h-4 w-4" /> New course</Button>
