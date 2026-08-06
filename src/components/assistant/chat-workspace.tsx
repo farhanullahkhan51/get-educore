@@ -475,21 +475,45 @@ function ChatThread({
             <div className="flex items-center gap-2">
               <Button
                 type="button"
-                variant={voice.state === "recording" ? "default" : "ghost"}
+                variant={voice.state === "recording" ? "destructive" : "ghost"}
                 size="icon"
-                aria-label={voice.state === "recording" ? "Stop recording and send" : "Ask by voice"}
-                title={voice.state === "recording" ? "Stop recording and send" : "Ask by voice"}
+                aria-label={
+                  voice.state === "recording" ? "Turn the mic off and discard" : "Ask by voice"
+                }
+                title={
+                  voice.state === "recording"
+                    ? "Turn the mic off — nothing is sent"
+                    : "Ask by voice"
+                }
                 disabled={busy || voice.state === "transcribing"}
-                onClick={() => void voice.toggle()}
+                onClick={() => {
+                  if (voice.state === "recording") {
+                    voice.cancel();
+                    toast.info("Mic off — that command was discarded.");
+                  } else {
+                    void voice.start();
+                  }
+                }}
               >
                 {voice.state === "transcribing" ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : voice.state === "recording" ? (
-                  <Square className="h-4 w-4" />
+                  <MicOff className="h-4 w-4" />
                 ) : (
                   <Mic className="h-4 w-4" />
                 )}
               </Button>
+              {voice.state === "recording" && (
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => void voice.stop()}
+                  title="Stop recording and send"
+                >
+                  <Square className="mr-1.5 h-3.5 w-3.5" /> Send
+                </Button>
+              )}
+
               <Select
                 value={voiceLanguage}
                 onValueChange={(v) => setVoiceLanguage(v as VoiceLanguage)}
