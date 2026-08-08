@@ -211,7 +211,7 @@ export function EditableGrid({
 
   return (
     <div ref={ref} className={cn("grid grid-cols-12 gap-4", className)}>
-      {shown.map((block) => {
+      {shown.map((block, i) => {
         const content = render(block);
         if (content === null || content === undefined) return null;
         return (
@@ -224,7 +224,8 @@ export function EditableGrid({
               block.height === "tall" && "row-span-2",
               editing && "rounded-md border border-dashed border-primary/50 p-2",
               editing && block.hidden && "opacity-45",
-              dragging === block.id && "ring-2 ring-primary",
+              editing && (i % 2 === 0 ? "animate-wiggle" : "animate-wiggle-alt"),
+              dragging === block.id && "ring-2 ring-primary wiggle-paused",
             )}
           >
             {editing && (
@@ -268,7 +269,7 @@ export function EditableList({
 
   return (
     <div ref={ref} className={className}>
-      {shown.map((block) => {
+      {shown.map((block, i) => {
         const content = render(block);
         if (content === null || content === undefined) return null;
         return (
@@ -279,7 +280,8 @@ export function EditableList({
               "relative",
               editing && "rounded-sm border border-dashed border-primary/40 pl-6 my-0.5",
               editing && block.hidden && "opacity-45",
-              dragging === block.id && "ring-2 ring-primary",
+              editing && (i % 2 === 0 ? "animate-wiggle" : "animate-wiggle-alt"),
+              dragging === block.id && "ring-2 ring-primary wiggle-paused",
             )}
           >
             {editing && (
@@ -335,7 +337,7 @@ export function EditableTabsList({ scope, className }: { scope: string; classNam
   return (
     <div ref={ref} className={cn("mb-4 flex flex-wrap items-center gap-2", className)}>
       <TabsList>
-        {shown.map((block) => (
+        {shown.map((block, i) => (
           <TabsTrigger
             key={block.id}
             value={block.id}
@@ -343,7 +345,8 @@ export function EditableTabsList({ scope, className }: { scope: string; classNam
             className={cn(
               editing && "border border-dashed border-primary/50",
               editing && block.hidden && "opacity-45",
-              dragging === block.id && "ring-2 ring-primary",
+              editing && (i % 2 === 0 ? "animate-wiggle" : "animate-wiggle-alt"),
+              dragging === block.id && "ring-2 ring-primary wiggle-paused",
             )}
           >
             {editing && (
