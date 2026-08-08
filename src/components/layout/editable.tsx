@@ -145,26 +145,23 @@ function RenameField({ block, onRename }: { block: ResolvedBlock; onRename: (v: 
 type BlockChrome = {
   block: ResolvedBlock;
   dragging: boolean;
-  onDragStart: (e: React.PointerEvent) => void;
   onToggleHidden: () => void;
   onRename: (v: string) => void;
 };
 
 function EditChrome({
   block,
-
   onToggleHidden,
   onRename,
 }: BlockChrome) {
   return (
     <div
       data-block-chrome
-      className="mb-1 flex items-center gap-1 rounded-full bg-muted/70 px-2 py-1 text-xs"
+      className="pointer-events-auto absolute -top-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full border border-border/60 bg-card px-2.5 py-1 text-xs shadow-md"
     >
-      <span className="min-w-0 flex-1 truncate font-medium">{block.label}</span>
+      <span className="min-w-0 max-w-28 truncate font-medium">{block.label}</span>
 
       {block.canRename !== false && <RenameField block={block} onRename={onRename} />}
-      {/* resizing intentionally not offered — blocks keep their shipped size */}
 
       {block.canHide !== false && (
         <Button
@@ -236,17 +233,16 @@ export function EditableGrid({
               SPAN_CLASS[block.span] ?? SPAN_CLASS[3],
               "col-span-12",
               block.height === "tall" && "row-span-2",
-              editing && "cursor-grab touch-none rounded-3xl border border-dashed border-primary/50 bg-muted/30 p-2 shadow-sm [&>div>*]:overflow-hidden [&>div>*]:rounded-2xl active:cursor-grabbing",
+              editing && "relative cursor-grab touch-none rounded-2xl active:cursor-grabbing",
               editing && block.hidden && "opacity-45",
               editing && (i % 2 === 0 ? "animate-wiggle" : "animate-wiggle-alt"),
-              dragging === block.id && "ring-2 ring-primary wiggle-paused",
+              dragging === block.id && "z-50 ring-2 ring-primary ring-offset-2 ring-offset-background wiggle-paused",
             )}
           >
             {editing && (
               <EditChrome
                 block={block}
                 dragging={dragging === block.id}
-                onDragStart={start(block.id)}
                 onToggleHidden={() => toggleHidden(block.id)}
                 onRename={(v) => rename(block.id, v)}
               />
