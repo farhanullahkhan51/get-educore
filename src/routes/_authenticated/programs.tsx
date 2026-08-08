@@ -141,39 +141,58 @@ function ProgramsPage() {
         }
       />
 
-      <Card className="shadow-none">
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Program</TableHead>
-                <TableHead>Code</TableHead>
-                <TableHead>Campus</TableHead>
-                <TableHead>System</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading && <TableRow><TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
-              {programs?.length === 0 && <TableRow><TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">No programs yet.</TableCell></TableRow>}
-              {programs?.map((p) => (
-                <TableRow key={p.id}>
-                  <TableCell className="font-medium">{p.name}</TableCell>
-                  <TableCell><code className="rounded bg-muted px-1.5 py-0.5 text-xs">{p.code}</code></TableCell>
-                  <TableCell className="text-sm">{campusMap.get(p.campus_id) ?? "—"}</TableCell>
-                  <TableCell><SystemBadge system={p.academic_system} /></TableCell>
-                  <TableCell className="text-sm">{p.duration_years} yr</TableCell>
-                  <TableCell className="text-right">
-                    <Button size="icon" variant="ghost" onClick={() => { setEditing(p); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" onClick={() => handleDelete(p.id)}><Trash2 className="h-4 w-4" /></Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        {(["board", "cambridge", "both"] as const).map((system) => {
+          const rows = (programs ?? []).filter((p) => p.academic_system === system);
+          if (!isLoading && rows.length === 0) return null;
+          return (
+            <section key={system} className="space-y-2">
+              <div className="flex items-center gap-2">
+                <h2 className="font-serif text-lg">
+                  {system === "board" ? "Board programs" : system === "cambridge" ? "Cambridge programs" : "Board & Cambridge"}
+                </h2>
+                <span className="text-xs text-muted-foreground">{rows.length}</span>
+              </div>
+              <Card className="shadow-none">
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Program</TableHead>
+                        <TableHead>Code</TableHead>
+                        <TableHead>Campus</TableHead>
+                        <TableHead>System</TableHead>
+                        <TableHead>Duration</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {isLoading && <TableRow><TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
+                      {rows.map((p) => (
+                        <TableRow key={p.id}>
+                          <TableCell className="font-medium">{p.name}</TableCell>
+                          <TableCell><code className="rounded bg-muted px-1.5 py-0.5 text-xs">{p.code}</code></TableCell>
+                          <TableCell className="text-sm">{campusMap.get(p.campus_id) ?? "—"}</TableCell>
+                          <TableCell><SystemBadge system={p.academic_system} /></TableCell>
+                          <TableCell className="text-sm">{p.duration_years} yr</TableCell>
+                          <TableCell className="text-right">
+                            <Button size="icon" variant="ghost" onClick={() => { setEditing(p); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+                            <Button size="icon" variant="ghost" onClick={() => handleDelete(p.id)}><Trash2 className="h-4 w-4" /></Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </section>
+          );
+        })}
+        {!isLoading && (programs?.length ?? 0) === 0 && (
+          <Card className="shadow-none"><CardContent className="py-8 text-center text-sm text-muted-foreground">No programs yet.</CardContent></Card>
+        )}
+      </div>
+
     </>
   );
 }
