@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronRight, ChevronDown } from "lucide-react";
+import { Fragment } from "react";
 import { SystemBadge } from "./campuses";
 import { generateCode } from "@/lib/generate-code";
 
@@ -33,6 +34,15 @@ function ProgramsPage() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Program | null>(null);
   const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  const { data: courses } = useQuery({
+    queryKey: ["courses"],
+    queryFn: async () =>
+      (await supabase.from("courses").select("id, code, title, credit_hours, program_id, is_active").order("code")).data ?? [],
+  });
+
+
 
   const { data: campuses } = useQuery({
     queryKey: ["campuses"],
@@ -168,19 +178,57 @@ function ProgramsPage() {
                     </TableHeader>
                     <TableBody>
                       {isLoading && <TableRow><TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
-                      {rows.map((p) => (
-                        <TableRow key={p.id}>
-                          <TableCell className="font-medium">{p.name}</TableCell>
+                      {rows.map((p) => {
+                        const isOpen = !!expanded[p.id];
+                        const programCourses = (courses ?? []).filter((c) => c.program_id === p.id);
+                        return (
+                        <Fragment key={p.id}>
+                        <TableRow className="cursor-pointer" onClick={() => setExpanded((s) => ({ ...s, [p.id]: !s[p.id] }))}>
+                          <TableCell className="font-medium">
+                            <span className="inline-flex items-center gap-2">
+                              {isOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                              {p.name}
+                              <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                                {programCourses.length} {programCourses.length === 1 ? "course" : "courses"}
+                              </span>
+                            </span>
+                          </TableCell>
                           <TableCell><code className="rounded bg-muted px-1.5 py-0.5 text-xs">{p.code}</code></TableCell>
                           <TableCell className="text-sm">{campusMap.get(p.campus_id) ?? "—"}</TableCell>
                           <TableCell><SystemBadge system={p.academic_system} /></TableCell>
                           <TableCell className="text-sm">{p.duration_years} yr</TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                             <Button size="icon" variant="ghost" onClick={() => { setEditing(p); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
                             <Button size="icon" variant="ghost" onClick={() => handleDelete(p.id)}><Trash2 className="h-4 w-4" /></Button>
                           </TableCell>
                         </TableRow>
-                      ))}
+                        {isOpen && (
+                          <TableRow className="hover:bg-transparent">
+                            <TableCell colSpan={6} className="bg-muted/40 p-0">
+                              {programCourses.length === 0 ? (
+                                <div className="px-6 py-4 text-sm text-muted-foreground">No courses linked to this program yet.</div>
+                              ) : (
+                                <ul className="divide-y">
+                                  {programCourses.map((c) => (
+                                    <li key={c.id} className="flex items-center justify-between px-6 py-2 text-sm">
+                                      <span className="flex items-center gap-2">
+                                        <code className="rounded bg-background px-1.5 py-0.5 text-xs">{c.code}</code>
+                                        <span className="font-medium">{c.title}</span>
+                                      </span>
+                                      <span className="text-xs text-muted-foreground">
+                                        {c.credit_hours ? `${c.credit_hours} cr` : ""}{c.is_active === false ? " · inactive" : ""}
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        )}
+                        </Fragment>
+                        );
+                      })}
+
                     </TableBody>
                   </Table>
                 </CardContent>
