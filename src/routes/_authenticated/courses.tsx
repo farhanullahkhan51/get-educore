@@ -101,9 +101,11 @@ function CoursesTab() {
     if (!code) code = generateCode(title, (courses ?? []).map((c) => c.code));
     const campusId = String(fd.get("campus_id") || me?.campusId || "");
     if (!campusId) return toast.error("Select a campus");
+    const programId = (fd.get("program_id") as string) || null;
+    if (!programId) return toast.error("Select a program for this course");
     const payload = {
       campus_id: campusId,
-      program_id: (fd.get("program_id") as string) || null,
+      program_id: programId,
       class_id: (fd.get("class_id") as string) || null,
       code,
       title,
