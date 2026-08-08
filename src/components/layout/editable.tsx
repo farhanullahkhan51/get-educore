@@ -290,25 +290,33 @@ export function EditableList({
           <div
             key={block.id}
             data-block-id={block.id}
+            onPointerDown={
+              editing
+                ? (e) => {
+                    if ((e.target as HTMLElement).closest("[data-block-chrome]")) return;
+                    start(block.id)(e);
+                  }
+                : undefined
+            }
+            onClickCapture={
+              editing
+                ? (e) => {
+                    if ((e.target as HTMLElement).closest("[data-block-chrome]")) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }
+                : undefined
+            }
             className={cn(
               "relative",
-              editing && "rounded-sm border border-dashed border-primary/40 pl-6 my-0.5",
+              editing &&
+                "my-1 cursor-grab touch-none rounded-2xl border border-dashed border-primary/40 bg-muted/40 px-1 py-0.5 shadow-sm [&>a]:rounded-xl [&>button]:rounded-xl active:cursor-grabbing",
               editing && block.hidden && "opacity-45",
               editing && (i % 2 === 0 ? "animate-wiggle" : "animate-wiggle-alt"),
               dragging === block.id && "ring-2 ring-primary wiggle-paused",
             )}
           >
-            {editing && (
-              <div className="absolute left-0 top-1/2 flex -translate-y-1/2 items-center">
-                <button
-                  type="button"
-                  onPointerDown={start(block.id)}
-                  className="cursor-grab touch-none p-1 active:cursor-grabbing"
-                  title="Drag to reorder"
-                  aria-label={`Drag ${block.label}`}
-                >
-                  <GripVertical className="h-3.5 w-3.5" />
-                </button>
+
               </div>
             )}
             {content}
