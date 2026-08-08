@@ -145,26 +145,23 @@ function RenameField({ block, onRename }: { block: ResolvedBlock; onRename: (v: 
 type BlockChrome = {
   block: ResolvedBlock;
   dragging: boolean;
-  onDragStart: (e: React.PointerEvent) => void;
   onToggleHidden: () => void;
   onRename: (v: string) => void;
 };
 
 function EditChrome({
   block,
-
   onToggleHidden,
   onRename,
 }: BlockChrome) {
   return (
     <div
       data-block-chrome
-      className="mb-1 flex items-center gap-1 rounded-full bg-muted/70 px-2 py-1 text-xs"
+      className="pointer-events-auto absolute -top-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full border border-border/60 bg-card px-2.5 py-1 text-xs shadow-md"
     >
-      <span className="min-w-0 flex-1 truncate font-medium">{block.label}</span>
+      <span className="min-w-0 max-w-28 truncate font-medium">{block.label}</span>
 
       {block.canRename !== false && <RenameField block={block} onRename={onRename} />}
-      {/* resizing intentionally not offered — blocks keep their shipped size */}
 
       {block.canHide !== false && (
         <Button
