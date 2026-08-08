@@ -243,7 +243,6 @@ export function EditableGrid({
               <EditChrome
                 block={block}
                 dragging={dragging === block.id}
-                onDragStart={start(block.id)}
                 onToggleHidden={() => toggleHidden(block.id)}
                 onRename={(v) => rename(block.id, v)}
               />
