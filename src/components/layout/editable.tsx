@@ -157,7 +157,10 @@ function EditChrome({
   onRename,
 }: BlockChrome) {
   return (
-    <div className="mb-1 flex items-center gap-1 rounded-sm bg-muted/70 px-1.5 py-1 text-xs">
+    <div
+      data-block-chrome
+      className="mb-1 flex items-center gap-1 rounded-sm bg-muted/70 px-1.5 py-1 text-xs"
+    >
       <button
         type="button"
         onPointerDown={onDragStart}
@@ -218,11 +221,30 @@ export function EditableGrid({
           <div
             key={block.id}
             data-block-id={block.id}
+            onPointerDown={
+              editing
+                ? (e) => {
+                    // Drag from anywhere on the card, except its edit controls.
+                    if ((e.target as HTMLElement).closest("[data-block-chrome]")) return;
+                    start(block.id)(e);
+                  }
+                : undefined
+            }
+            onClickCapture={
+              editing
+                ? (e) => {
+                    // While editing, cards are handles — never follow their links.
+                    if ((e.target as HTMLElement).closest("[data-block-chrome]")) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }
+                : undefined
+            }
             className={cn(
               SPAN_CLASS[block.span] ?? SPAN_CLASS[3],
               "col-span-12",
               block.height === "tall" && "row-span-2",
-              editing && "rounded-md border border-dashed border-primary/50 p-2",
+              editing && "cursor-grab touch-none rounded-md border border-dashed border-primary/50 p-2 active:cursor-grabbing",
               editing && block.hidden && "opacity-45",
               editing && (i % 2 === 0 ? "animate-wiggle" : "animate-wiggle-alt"),
               dragging === block.id && "ring-2 ring-primary wiggle-paused",
