@@ -176,3 +176,27 @@
 @utility hairline {
   border-bottom: 1px solid var(--color-border);
 }
+
+/* ---- Mobile ergonomics ---------------------------------------------- */
+@media (max-width: 640px) {
+  /* Dialog form rows stack instead of squeezing into two columns */
+  [role="dialog"] .grid.grid-cols-2,
+  [role="dialog"] .grid.grid-cols-3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* Tables stay usable: allow horizontal scroll without shrinking text */
+  table {
+    min-width: max-content;
+  }
+  /* Avoid iOS zoom-on-focus for inputs */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Smooth momentum scrolling for horizontally scrollable tables */
+.relative.w-full.overflow-auto {
+  -webkit-overflow-scrolling: touch;
+}
