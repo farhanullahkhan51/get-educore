@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState, type ReactNode } from "react";
-import { GripVertical, Eye, EyeOff, Pencil, Check, X } from "lucide-react";
+import { Eye, EyeOff, Pencil, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -152,25 +152,17 @@ type BlockChrome = {
 
 function EditChrome({
   block,
-  onDragStart,
+
   onToggleHidden,
   onRename,
 }: BlockChrome) {
   return (
     <div
       data-block-chrome
-      className="mb-1 flex items-center gap-1 rounded-sm bg-muted/70 px-1.5 py-1 text-xs"
+      className="mb-1 flex items-center gap-1 rounded-full bg-muted/70 px-2 py-1 text-xs"
     >
-      <button
-        type="button"
-        onPointerDown={onDragStart}
-        className="cursor-grab touch-none rounded-sm p-1 hover:bg-background active:cursor-grabbing"
-        title="Drag to reorder"
-        aria-label={`Drag ${block.label}`}
-      >
-        <GripVertical className="h-3.5 w-3.5" />
-      </button>
       <span className="min-w-0 flex-1 truncate font-medium">{block.label}</span>
+
       {block.canRename !== false && <RenameField block={block} onRename={onRename} />}
       {/* resizing intentionally not offered — blocks keep their shipped size */}
 
@@ -244,7 +236,7 @@ export function EditableGrid({
               SPAN_CLASS[block.span] ?? SPAN_CLASS[3],
               "col-span-12",
               block.height === "tall" && "row-span-2",
-              editing && "cursor-grab touch-none rounded-md border border-dashed border-primary/50 p-2 active:cursor-grabbing",
+              editing && "cursor-grab touch-none rounded-3xl border border-dashed border-primary/50 bg-muted/30 p-2 shadow-sm [&>div>*]:overflow-hidden [&>div>*]:rounded-2xl active:cursor-grabbing",
               editing && block.hidden && "opacity-45",
               editing && (i % 2 === 0 ? "animate-wiggle" : "animate-wiggle-alt"),
               dragging === block.id && "ring-2 ring-primary wiggle-paused",
@@ -298,30 +290,39 @@ export function EditableList({
           <div
             key={block.id}
             data-block-id={block.id}
+            onPointerDown={
+              editing
+                ? (e) => {
+                    if ((e.target as HTMLElement).closest("[data-block-chrome]")) return;
+                    start(block.id)(e);
+                  }
+                : undefined
+            }
+            onClickCapture={
+              editing
+                ? (e) => {
+                    if ((e.target as HTMLElement).closest("[data-block-chrome]")) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }
+                : undefined
+            }
             className={cn(
               "relative",
-              editing && "rounded-sm border border-dashed border-primary/40 pl-6 my-0.5",
+              editing &&
+                "my-1 cursor-grab touch-none rounded-2xl border border-dashed border-primary/40 bg-muted/40 px-1 py-0.5 shadow-sm [&>a]:rounded-xl [&>button]:rounded-xl active:cursor-grabbing",
               editing && block.hidden && "opacity-45",
               editing && (i % 2 === 0 ? "animate-wiggle" : "animate-wiggle-alt"),
               dragging === block.id && "ring-2 ring-primary wiggle-paused",
             )}
           >
-            {editing && (
-              <div className="absolute left-0 top-1/2 flex -translate-y-1/2 items-center">
-                <button
-                  type="button"
-                  onPointerDown={start(block.id)}
-                  className="cursor-grab touch-none p-1 active:cursor-grabbing"
-                  title="Drag to reorder"
-                  aria-label={`Drag ${block.label}`}
-                >
-                  <GripVertical className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            )}
             {content}
             {editing && (
-              <div className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-0.5">
+              <div
+                data-block-chrome
+                className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-0.5"
+              >
+
                 <RenameField block={block} onRename={(v) => rename(block.id, v)} />
                 <Button
                   type="button"
@@ -364,24 +365,18 @@ export function EditableTabsList({ scope, className }: { scope: string; classNam
             key={block.id}
             value={block.id}
             data-block-id={block.id}
+            onPointerDown={editing ? start(block.id) : undefined}
             className={cn(
-              editing && "border border-dashed border-primary/50",
+              editing &&
+                "cursor-grab touch-none rounded-full border border-dashed border-primary/50 active:cursor-grabbing",
               editing && block.hidden && "opacity-45",
               editing && (i % 2 === 0 ? "animate-wiggle" : "animate-wiggle-alt"),
               dragging === block.id && "ring-2 ring-primary wiggle-paused",
             )}
           >
-            {editing && (
-              <span
-                onPointerDown={start(block.id)}
-                className="mr-1 inline-flex cursor-grab touch-none active:cursor-grabbing"
-                aria-label={`Drag ${block.label}`}
-              >
-                <GripVertical className="h-3 w-3" />
-              </span>
-            )}
             {block.label}
           </TabsTrigger>
+
         ))}
       </TabsList>
       {editing && (
