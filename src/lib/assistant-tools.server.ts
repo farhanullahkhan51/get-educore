@@ -111,6 +111,63 @@ export function buildAssistantTools(ctx: AssistantContext) {
     } as never);
   }
 
+  type UndoSpec = {
+    table: string;
+    entity_id: string;
+    action: string;
+    before: Record<string, unknown> | null;
+  };
+  type UndoableChange = {
+    id: string;
+    action: string;
+    entity_type: string;
+    created_at: string;
+    summary: Record<string, unknown>;
+    undo: UndoSpec;
+  };
+
+  /** Changes this user made through the assistant that have not been rolled back yet. */
+  async function undoableChanges(): Promise<UndoableChange[]> {
+    const { data } = await supabase
+      .from("audit_logs")
+      .select("id, action, entity_type, entity_id, details, created_at")
+      .eq("actor_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    const rows = (data ?? []) as {
+      id: string;
+      action: string;
+      entity_type: string;
+      details: Record<string, unknown> | null;
+      created_at: string;
+    }[];
+
+    const undone = new Set(
+      rows
+        .filter((r) => r.action === "undo")
+        .map((r) => String((r.details as Record<string, unknown> | null)?.["undone_change_id"] ?? "")),
+    );
+
+    return rows.flatMap((r) => {
+      if (r.action === "undo" || undone.has(r.id)) return [];
+      const undo = (r.details as Record<string, unknown> | null)?.["__undo"] as UndoSpec | null | undefined;
+      if (!undo?.table || !undo.entity_id) return [];
+      const { __undo: _ignored, ...summary } = (r.details ?? {}) as Record<string, unknown>;
+      void _ignored;
+      return [
+        {
+          id: r.id,
+          action: r.action,
+          entity_type: r.entity_type,
+          created_at: r.created_at,
+          summary,
+          undo,
+        },
+      ];
+    });
+  }
+
 
   /** Resolve a campus by name/code; falls back to the user's own campus. */
   async function campusIdFor(name: string): Promise<{ id: string } | { error: string }> {
