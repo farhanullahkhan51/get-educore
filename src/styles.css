@@ -200,3 +200,37 @@
 .relative.w-full.overflow-auto {
   -webkit-overflow-scrolling: touch;
 }
+
+/* ---- Edit-mode wiggle (iOS home-screen style) ------------------------ */
+@keyframes edit-wiggle {
+  0% { transform: rotate(-0.7deg) translateY(0); }
+  50% { transform: rotate(0.7deg) translateY(-1px); }
+  100% { transform: rotate(-0.7deg) translateY(0); }
+}
+@keyframes edit-wiggle-alt {
+  0% { transform: rotate(0.7deg) translateY(-1px); }
+  50% { transform: rotate(-0.7deg) translateY(0); }
+  100% { transform: rotate(0.7deg) translateY(-1px); }
+}
+
+@utility animate-wiggle {
+  transform-origin: center;
+  animation: edit-wiggle 0.35s ease-in-out infinite;
+}
+
+@utility animate-wiggle-alt {
+  transform-origin: center;
+  animation: edit-wiggle-alt 0.32s ease-in-out infinite;
+  animation-delay: -0.12s;
+}
+
+@utility wiggle-paused {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-wiggle,
+  .animate-wiggle-alt {
+    animation: none !important;
+  }
+}
