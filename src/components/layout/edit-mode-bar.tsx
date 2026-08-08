@@ -10,29 +10,41 @@ export function EditModeButton() {
 
   if (!editing)
     return (
-      <Button variant="outline" size="sm" onClick={startEditing} title="Rearrange this interface">
-        <Pencil className="mr-1 h-3.5 w-3.5" />
-        Edit layout
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={startEditing}
+        title="Rearrange this interface"
+        aria-label="Edit layout"
+      >
+        <Pencil className="h-4 w-4" />
       </Button>
     );
 
   return (
     <div className="flex items-center gap-1">
-      <Button variant="ghost" size="sm" onClick={discard} disabled={saving}>
-        <Undo2 className="mr-1 h-3.5 w-3.5" />
-        Discard
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={discard}
+        disabled={saving}
+        title="Discard changes"
+        aria-label="Discard changes"
+      >
+        <Undo2 className="h-4 w-4" />
       </Button>
       <Button
-        size="sm"
+        size="icon"
         disabled={saving || !dirty}
         onClick={() =>
           save()
             .then(() => toast.success("Layout saved for everyone in your institution"))
             .catch((e: Error) => toast.error(e.message))
         }
+        title={saving ? "Saving…" : "Save layout"}
+        aria-label={saving ? "Saving…" : "Save layout"}
       >
-        <Save className="mr-1 h-3.5 w-3.5" />
-        {saving ? "Saving…" : "Save layout"}
+        <Save className="h-4 w-4" />
       </Button>
     </div>
   );
