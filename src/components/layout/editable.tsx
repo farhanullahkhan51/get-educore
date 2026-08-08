@@ -269,7 +269,7 @@ export function EditableList({
 
   return (
     <div ref={ref} className={className}>
-      {shown.map((block) => {
+      {shown.map((block, i) => {
         const content = render(block);
         if (content === null || content === undefined) return null;
         return (
@@ -280,7 +280,8 @@ export function EditableList({
               "relative",
               editing && "rounded-sm border border-dashed border-primary/40 pl-6 my-0.5",
               editing && block.hidden && "opacity-45",
-              dragging === block.id && "ring-2 ring-primary",
+              editing && (i % 2 === 0 ? "animate-wiggle" : "animate-wiggle-alt"),
+              dragging === block.id && "ring-2 ring-primary wiggle-paused",
             )}
           >
             {editing && (
