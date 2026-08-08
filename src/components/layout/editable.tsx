@@ -365,24 +365,18 @@ export function EditableTabsList({ scope, className }: { scope: string; classNam
             key={block.id}
             value={block.id}
             data-block-id={block.id}
+            onPointerDown={editing ? start(block.id) : undefined}
             className={cn(
-              editing && "border border-dashed border-primary/50",
+              editing &&
+                "cursor-grab touch-none rounded-full border border-dashed border-primary/50 active:cursor-grabbing",
               editing && block.hidden && "opacity-45",
               editing && (i % 2 === 0 ? "animate-wiggle" : "animate-wiggle-alt"),
               dragging === block.id && "ring-2 ring-primary wiggle-paused",
             )}
           >
-            {editing && (
-              <span
-                onPointerDown={start(block.id)}
-                className="mr-1 inline-flex cursor-grab touch-none active:cursor-grabbing"
-                aria-label={`Drag ${block.label}`}
-              >
-                <GripVertical className="h-3 w-3" />
-              </span>
-            )}
             {block.label}
           </TabsTrigger>
+
         ))}
       </TabsList>
       {editing && (
