@@ -189,8 +189,8 @@ function CoursesTab() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label>Program (optional)</Label>
-                  <Select name="program_id" defaultValue={editing?.program_id ?? undefined}>
+                  <Label>Program</Label>
+                  <Select name="program_id" defaultValue={editing?.program_id ?? undefined} required>
                     <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
                     <SelectContent>
                       {programs?.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
