@@ -224,10 +224,19 @@ export function EditableGrid({
             onPointerDown={
               editing
                 ? (e) => {
-                    // Dragging anywhere on the card, except on its controls.
-                    if ((e.target as HTMLElement).closest("button, input, a, [role='button']"))
-                      return;
+                    // Drag from anywhere on the card, except its edit controls.
+                    if ((e.target as HTMLElement).closest("[data-block-chrome]")) return;
                     start(block.id)(e);
+                  }
+                : undefined
+            }
+            onClickCapture={
+              editing
+                ? (e) => {
+                    // While editing, cards are handles — never follow their links.
+                    if ((e.target as HTMLElement).closest("[data-block-chrome]")) return;
+                    e.preventDefault();
+                    e.stopPropagation();
                   }
                 : undefined
             }
