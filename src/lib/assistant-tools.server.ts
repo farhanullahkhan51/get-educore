@@ -557,6 +557,76 @@ export function buildAssistantTools(ctx: AssistantContext) {
       },
     }),
 
+    /* ------------------------------------------------------------------- undo */
+
+    list_undoable_changes: read({
+      description:
+        "List the recent changes you made that can still be rolled back, newest first. Each entry has an id you can pass to undo_change.",
+      inputSchema: z.object({ limit: z.number().int().describe("How many entries to return, e.g. 5.") }),
+      execute: async ({ limit }) => {
+        const items = await undoableChanges();
+        return items.slice(0, Math.min(Math.max(Math.round(limit) || 5, 1), 25));
+      },
+    }),
+
+    undo_change: write({
+      description:
+        "Roll back a change you previously made: re-creates a deleted record, deletes a created record, or restores the previous values of an edited record. Use an empty change_id to undo the most recent change. Always tell the user exactly what will be reverted first.",
+      inputSchema: z.object({
+        change_id: z
+          .string()
+          .describe("Audit entry id from list_undoable_changes, or an empty string for the most recent change."),
+      }),
+      execute: async ({ change_id }) => {
+        const items = await undoableChanges();
+        const target = empty(change_id) ? items[0] : items.find((c) => c.id === change_id.trim());
+        if (!target)
+          return {
+            error: empty(change_id)
+              ? "There is no recent change of mine left to undo."
+              : `Change "${change_id}" was not found, or it has already been undone.`,
+          };
+
+        const { table, entity_id, action, before } = target.undo;
+        if (action === "create") {
+          const { error } = await loose(table).delete().eq("id", entity_id);
+          if (error) return { error: `Could not remove the created record: ${error.message}` };
+        } else if (action === "update") {
+          if (!before) return { error: "No previous values were recorded for that change, so it cannot be undone." };
+          const { error } = await loose(table).update(before).eq("id", entity_id);
+          if (error) return { error: `Could not restore the previous values: ${error.message}` };
+        } else if (action === "delete") {
+          if (!before) return { error: "The deleted record was not captured, so it cannot be restored." };
+          const { error } = await loose(table).insert(before);
+          if (error) return { error: `Could not restore the deleted record: ${error.message}` };
+        } else {
+          return { error: `Changes of type "${action}" cannot be undone automatically.` };
+        }
+
+        if (ctx.tenantId) {
+          await supabase.from("audit_logs").insert({
+            tenant_id: ctx.tenantId,
+            actor_id: userId,
+            action: "undo",
+            entity_type: target.entity_type,
+            entity_id,
+            campus_id: ctx.campusId,
+            details: { undone_change_id: target.id, original_action: action } as never,
+          } as never);
+        }
+
+        return {
+          undone: true,
+          reverted_action: action,
+          entity_type: target.entity_type,
+          entity_id,
+          changed_at: target.created_at,
+        };
+      },
+    }),
+
+
+
     /* --------------------------------------------------------------- students */
 
     create_student: write({
