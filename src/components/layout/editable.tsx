@@ -159,18 +159,10 @@ function EditChrome({
   return (
     <div
       data-block-chrome
-      className="mb-1 flex items-center gap-1 rounded-sm bg-muted/70 px-1.5 py-1 text-xs"
+      className="mb-1 flex items-center gap-1 rounded-full bg-muted/70 px-2 py-1 text-xs"
     >
-      <button
-        type="button"
-        onPointerDown={onDragStart}
-        className="cursor-grab touch-none rounded-sm p-1 hover:bg-background active:cursor-grabbing"
-        title="Drag to reorder"
-        aria-label={`Drag ${block.label}`}
-      >
-        <GripVertical className="h-3.5 w-3.5" />
-      </button>
       <span className="min-w-0 flex-1 truncate font-medium">{block.label}</span>
+
       {block.canRename !== false && <RenameField block={block} onRename={onRename} />}
       {/* resizing intentionally not offered — blocks keep their shipped size */}
 
