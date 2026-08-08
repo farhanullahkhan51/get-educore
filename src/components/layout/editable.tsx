@@ -152,7 +152,7 @@ type BlockChrome = {
 
 function EditChrome({
   block,
-  onDragStart,
+
   onToggleHidden,
   onRename,
 }: BlockChrome) {
