@@ -316,12 +316,13 @@ export function EditableList({
               dragging === block.id && "ring-2 ring-primary wiggle-paused",
             )}
           >
-
-              </div>
-            )}
             {content}
             {editing && (
-              <div className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-0.5">
+              <div
+                data-block-chrome
+                className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-0.5"
+              >
+
                 <RenameField block={block} onRename={(v) => rename(block.id, v)} />
                 <Button
                   type="button"
