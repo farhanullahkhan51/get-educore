@@ -233,10 +233,10 @@ export function EditableGrid({
               SPAN_CLASS[block.span] ?? SPAN_CLASS[3],
               "col-span-12",
               block.height === "tall" && "row-span-2",
-              editing && "cursor-grab touch-none rounded-3xl border border-dashed border-primary/50 bg-muted/30 p-2 shadow-sm [&>div>*]:overflow-hidden [&>div>*]:rounded-2xl active:cursor-grabbing",
+              editing && "relative cursor-grab touch-none rounded-2xl active:cursor-grabbing",
               editing && block.hidden && "opacity-45",
               editing && (i % 2 === 0 ? "animate-wiggle" : "animate-wiggle-alt"),
-              dragging === block.id && "ring-2 ring-primary wiggle-paused",
+              dragging === block.id && "z-50 ring-2 ring-primary ring-offset-2 ring-offset-background wiggle-paused",
             )}
           >
             {editing && (
