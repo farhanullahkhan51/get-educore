@@ -34,6 +34,15 @@ function ProgramsPage() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Program | null>(null);
   const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  const { data: courses } = useQuery({
+    queryKey: ["courses"],
+    queryFn: async () =>
+      (await supabase.from("courses").select("id, code, title, credit_hours, program_id, is_active").order("code")).data ?? [],
+  });
+
+
 
   const { data: campuses } = useQuery({
     queryKey: ["campuses"],
