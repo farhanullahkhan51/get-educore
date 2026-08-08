@@ -47,8 +47,59 @@ function code(prefix: string) {
 export function buildAssistantTools(ctx: AssistantContext) {
   const { supabase, userId } = ctx;
 
-  async function audit(action: string, entityType: string, entityId: string | null, details: unknown) {
+  /** entity_type used in the audit log -> the table it lives in (needed to undo). */
+  const TABLE_FOR: Record<string, string> = {
+    student: "students",
+    staff: "staff",
+    staff_payroll: "staff_payroll",
+    program: "programs",
+    class: "classes",
+    section: "sections",
+    course: "courses",
+    course_assignment: "course_assignments",
+    inquiry: "inquiries",
+    fee_structure: "fee_structures",
+    fee_challan: "fee_challans",
+    scholarship: "scholarships",
+    attendance: "attendance_records",
+    assessment: "assessments",
+    assessment_score: "assessment_scores",
+    report_card: "report_cards",
+    certificate: "certificates",
+  };
+
+  type LooseTable = {
+    select: (c: string) => {
+      eq: (c: string, v: string) => { maybeSingle: () => Promise<{ data: unknown }> };
+    };
+    insert: (v: unknown) => Promise<{ error: { message: string } | null }>;
+    update: (v: unknown) => {
+      eq: (c: string, v: string) => Promise<{ error: { message: string } | null }>;
+    };
+    delete: () => { eq: (c: string, v: string) => Promise<{ error: { message: string } | null }> };
+  };
+  const loose = (table: string) =>
+    (supabase as unknown as { from: (n: string) => LooseTable }).from(table);
+
+  /** Snapshot a row before changing it so the change can be rolled back. */
+  async function snap(entityType: string, id: string): Promise<Record<string, unknown> | null> {
+    const table = TABLE_FOR[entityType];
+    if (!table) return null;
+    const { data } = await loose(table).select("*").eq("id", id).maybeSingle();
+    return (data as Record<string, unknown> | null) ?? null;
+  }
+
+  async function audit(
+    action: string,
+    entityType: string,
+    entityId: string | null,
+    details: unknown,
+    before?: Record<string, unknown> | null,
+  ) {
     if (!ctx.tenantId) return;
+    const table = TABLE_FOR[entityType];
+    const undo =
+      table && entityId ? { table, entity_id: entityId, action, before: before ?? null } : null;
     await supabase.from("audit_logs").insert({
       tenant_id: ctx.tenantId,
       actor_id: userId,
@@ -56,9 +107,67 @@ export function buildAssistantTools(ctx: AssistantContext) {
       entity_type: entityType,
       entity_id: entityId,
       campus_id: ctx.campusId,
-      details: details as never,
+      details: { ...(details as Record<string, unknown>), __undo: undo } as never,
     } as never);
   }
+
+  type UndoSpec = {
+    table: string;
+    entity_id: string;
+    action: string;
+    before: Record<string, unknown> | null;
+  };
+  type UndoableChange = {
+    id: string;
+    action: string;
+    entity_type: string;
+    created_at: string;
+    summary: Record<string, unknown>;
+    undo: UndoSpec;
+  };
+
+  /** Changes this user made through the assistant that have not been rolled back yet. */
+  async function undoableChanges(): Promise<UndoableChange[]> {
+    const { data } = await supabase
+      .from("audit_logs")
+      .select("id, action, entity_type, entity_id, details, created_at")
+      .eq("actor_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    const rows = (data ?? []) as {
+      id: string;
+      action: string;
+      entity_type: string;
+      details: Record<string, unknown> | null;
+      created_at: string;
+    }[];
+
+    const undone = new Set(
+      rows
+        .filter((r) => r.action === "undo")
+        .map((r) => String((r.details as Record<string, unknown> | null)?.["undone_change_id"] ?? "")),
+    );
+
+    return rows.flatMap((r) => {
+      if (r.action === "undo" || undone.has(r.id)) return [];
+      const undo = (r.details as Record<string, unknown> | null)?.["__undo"] as UndoSpec | null | undefined;
+      if (!undo?.table || !undo.entity_id) return [];
+      const { __undo: _ignored, ...summary } = (r.details ?? {}) as Record<string, unknown>;
+      void _ignored;
+      return [
+        {
+          id: r.id,
+          action: r.action,
+          entity_type: r.entity_type,
+          created_at: r.created_at,
+          summary,
+          undo,
+        },
+      ];
+    });
+  }
+
 
   /** Resolve a campus by name/code; falls back to the user's own campus. */
   async function campusIdFor(name: string): Promise<{ id: string } | { error: string }> {
@@ -505,6 +614,76 @@ export function buildAssistantTools(ctx: AssistantContext) {
       },
     }),
 
+    /* ------------------------------------------------------------------- undo */
+
+    list_undoable_changes: read({
+      description:
+        "List the recent changes you made that can still be rolled back, newest first. Each entry has an id you can pass to undo_change.",
+      inputSchema: z.object({ limit: z.number().int().describe("How many entries to return, e.g. 5.") }),
+      execute: async ({ limit }) => {
+        const items = await undoableChanges();
+        return items.slice(0, Math.min(Math.max(Math.round(limit) || 5, 1), 25));
+      },
+    }),
+
+    undo_change: write({
+      description:
+        "Roll back a change you previously made: re-creates a deleted record, deletes a created record, or restores the previous values of an edited record. Use an empty change_id to undo the most recent change. Always tell the user exactly what will be reverted first.",
+      inputSchema: z.object({
+        change_id: z
+          .string()
+          .describe("Audit entry id from list_undoable_changes, or an empty string for the most recent change."),
+      }),
+      execute: async ({ change_id }) => {
+        const items = await undoableChanges();
+        const target = empty(change_id) ? items[0] : items.find((c) => c.id === change_id.trim());
+        if (!target)
+          return {
+            error: empty(change_id)
+              ? "There is no recent change of mine left to undo."
+              : `Change "${change_id}" was not found, or it has already been undone.`,
+          };
+
+        const { table, entity_id, action, before } = target.undo;
+        if (action === "create") {
+          const { error } = await loose(table).delete().eq("id", entity_id);
+          if (error) return { error: `Could not remove the created record: ${error.message}` };
+        } else if (action === "update") {
+          if (!before) return { error: "No previous values were recorded for that change, so it cannot be undone." };
+          const { error } = await loose(table).update(before).eq("id", entity_id);
+          if (error) return { error: `Could not restore the previous values: ${error.message}` };
+        } else if (action === "delete") {
+          if (!before) return { error: "The deleted record was not captured, so it cannot be restored." };
+          const { error } = await loose(table).insert(before);
+          if (error) return { error: `Could not restore the deleted record: ${error.message}` };
+        } else {
+          return { error: `Changes of type "${action}" cannot be undone automatically.` };
+        }
+
+        if (ctx.tenantId) {
+          await supabase.from("audit_logs").insert({
+            tenant_id: ctx.tenantId,
+            actor_id: userId,
+            action: "undo",
+            entity_type: target.entity_type,
+            entity_id,
+            campus_id: ctx.campusId,
+            details: { undone_change_id: target.id, original_action: action } as never,
+          } as never);
+        }
+
+        return {
+          undone: true,
+          reverted_action: action,
+          entity_type: target.entity_type,
+          entity_id,
+          changed_at: target.created_at,
+        };
+      },
+    }),
+
+
+
     /* --------------------------------------------------------------- students */
 
     create_student: write({
@@ -614,6 +793,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
         }
         if (!Object.keys(patch).length) return { error: "Nothing to update — no fields were provided." };
 
+        const before = await snap("student", found.row.id);
         const { data, error } = await supabase
           .from("students")
           .update(patch as never)
@@ -621,7 +801,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
           .select()
           .single();
         if (error) return { error: error.message };
-        await audit("update", "student", found.row.id, patch);
+        await audit("update", "student", found.row.id, patch, before);
         return { updated: data };
       },
     }),
@@ -640,9 +820,10 @@ export function buildAssistantTools(ctx: AssistantContext) {
           return {
             error: `${found.row.first_name} ${found.row.last_name} still has ${count} fee challan(s). Clear or remove those first in the Fees module.`,
           };
+        const before = await snap("student", found.row.id);
         const { error } = await supabase.from("students").delete().eq("id", found.row.id);
         if (error) return { error: error.message };
-        await audit("delete", "student", found.row.id, { student_code: found.row.student_code });
+        await audit("delete", "student", found.row.id, { student_code: found.row.student_code }, before);
         return { deleted: { id: found.row.id, name: `${found.row.first_name} ${found.row.last_name}` } };
       },
     }),
@@ -717,6 +898,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
         set("phone", i.phone);
         set("status", i.status);
         if (!Object.keys(patch).length) return { error: "Nothing to update — no fields were provided." };
+        const before = await snap("staff", found.row.id);
         const { data, error } = await supabase
           .from("staff")
           .update(patch as never)
@@ -724,7 +906,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
           .select()
           .single();
         if (error) return { error: error.message };
-        await audit("update", "staff", found.row.id, patch);
+        await audit("update", "staff", found.row.id, patch, before);
         return { updated: data };
       },
     }),
@@ -740,9 +922,10 @@ export function buildAssistantTools(ctx: AssistantContext) {
           .select("id", { count: "exact", head: true })
           .eq("teacher_id", found.row.id);
         if (count) return { error: `This staff member still has ${count} course assignment(s). Remove those first.` };
+        const before = await snap("staff", found.row.id);
         const { error } = await supabase.from("staff").delete().eq("id", found.row.id);
         if (error) return { error: error.message };
-        await audit("delete", "staff", found.row.id, { staff_code: found.row.staff_code });
+        await audit("delete", "staff", found.row.id, { staff_code: found.row.staff_code }, before);
         return { deleted: { id: found.row.id, name: `${found.row.first_name} ${found.row.last_name}` } };
       },
     }),
@@ -961,6 +1144,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
         if (!empty(i.description)) patch["description"] = i.description.trim();
         if (i.is_active !== "unchanged") patch["is_active"] = i.is_active === "active";
         if (!Object.keys(patch).length) return { error: "Nothing to update — no fields were provided." };
+        const before = await snap("course", found.row.id);
         const { data, error } = await supabase
           .from("courses")
           .update(patch as never)
@@ -968,7 +1152,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
           .select()
           .single();
         if (error) return { error: error.message };
-        await audit("update", "course", found.row.id, patch);
+        await audit("update", "course", found.row.id, patch, before);
         return { updated: data };
       },
     }),
@@ -987,9 +1171,10 @@ export function buildAssistantTools(ctx: AssistantContext) {
           return {
             error: `"${found.row.title}" still has ${assessments ?? 0} assessment(s) and ${assignments ?? 0} teacher assignment(s). Remove those first.`,
           };
+        const before = await snap("course", found.row.id);
         const { error } = await supabase.from("courses").delete().eq("id", found.row.id);
         if (error) return { error: error.message };
-        await audit("delete", "course", found.row.id, { code: found.row.code });
+        await audit("delete", "course", found.row.id, { code: found.row.code }, before);
         return { deleted: { id: found.row.id, title: found.row.title } };
       },
     }),
@@ -1100,6 +1285,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
         if ("error" in found) return found;
         const patch: Record<string, unknown> = { status: i.status };
         if (!empty(i.notes)) patch["notes"] = i.notes.trim();
+        const before = await snap("inquiry", found.row.id);
         const { data, error } = await supabase
           .from("inquiries")
           .update(patch as never)
@@ -1107,7 +1293,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
           .select()
           .single();
         if (error) return { error: error.message };
-        await audit("update", "inquiry", found.row.id, patch);
+        await audit("update", "inquiry", found.row.id, patch, before);
         return { updated: data };
       },
     }),
@@ -1219,6 +1405,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
         const paid = Number(challan.paid_amount ?? 0) + i.amount;
         const status = paid >= net ? "paid" : paid > 0 ? "partial" : "unpaid";
 
+        const before = await snap("fee_challan", challan.id);
         const { error: uErr } = await supabase
           .from("fee_challans")
           .update({
@@ -1238,7 +1425,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
           notes: clean(i.notes),
           created_by: userId,
         } as never);
-        await audit("update", "fee_challan", challan.id, { payment: i.amount, status });
+        await audit("update", "fee_challan", challan.id, { payment: i.amount, status }, before);
         return { challan_no: challan.challan_no, paid_total: paid, outstanding: Math.max(0, net - paid), status };
       },
     }),
@@ -1415,6 +1602,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
         const { data: rows } = await q.limit(5);
         const rc = await findOne(rows, "report card", i.term, (r) => `${r.term} ${r.academic_year}`);
         if ("error" in rc) return rc;
+        const before = await snap("report_card", rc.row.id);
         const { data, error } = await supabase
           .from("report_cards")
           .update({ status: "published", published_at: new Date().toISOString() } as never)
@@ -1422,7 +1610,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
           .select()
           .single();
         if (error) return { error: error.message };
-        await audit("update", "report_card", rc.row.id, { status: "published" });
+        await audit("update", "report_card", rc.row.id, { status: "published" }, before);
         return { published: data };
       },
     }),
@@ -1490,6 +1678,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
           .eq("serial_no", i.serial_no.trim())
           .maybeSingle();
         if (!cert) return { error: `No certificate with serial "${i.serial_no}" was found.` };
+        const before = await snap("certificate", cert.id);
         const { data, error } = await supabase
           .from("certificates")
           .update({
@@ -1501,7 +1690,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
           .select()
           .single();
         if (error) return { error: error.message };
-        await audit("update", "certificate", cert.id, { status: "revoked" });
+        await audit("update", "certificate", cert.id, { status: "revoked" }, before);
         return { revoked: data };
       },
     }),
@@ -1601,7 +1790,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
 
   // Changes requested through the assistant are applied and saved immediately —
   // the user stops the assistant by turning the mic off / not sending the command.
-  const WRITE_TOOLS = ["create_student", "update_student", "delete_student", "create_staff", "update_staff", "delete_staff", "add_payroll_entry", "create_program", "create_class", "create_section", "create_course", "update_course", "delete_course", "assign_course_teacher", "create_inquiry", "update_inquiry_status", "create_fee_structure", "issue_challan", "record_payment", "create_scholarship", "mark_attendance", "create_assessment", "record_marks", "publish_report_card", "issue_certificate", "revoke_certificate", "set_module_layout", "reset_module_layout"] as const;
+  const WRITE_TOOLS = ["create_student", "update_student", "delete_student", "create_staff", "update_staff", "delete_staff", "add_payroll_entry", "create_program", "create_class", "create_section", "create_course", "update_course", "delete_course", "assign_course_teacher", "create_inquiry", "update_inquiry_status", "create_fee_structure", "issue_challan", "record_payment", "create_scholarship", "mark_attendance", "create_assessment", "record_marks", "publish_report_card", "issue_certificate", "revoke_certificate", "set_module_layout", "reset_module_layout", "undo_change"] as const;
 
   void WRITE_TOOLS;
 
