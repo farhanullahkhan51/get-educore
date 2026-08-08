@@ -157,7 +157,10 @@ function EditChrome({
   onRename,
 }: BlockChrome) {
   return (
-    <div className="mb-1 flex items-center gap-1 rounded-sm bg-muted/70 px-1.5 py-1 text-xs">
+    <div
+      data-block-chrome
+      className="mb-1 flex items-center gap-1 rounded-sm bg-muted/70 px-1.5 py-1 text-xs"
+    >
       <button
         type="button"
         onPointerDown={onDragStart}
