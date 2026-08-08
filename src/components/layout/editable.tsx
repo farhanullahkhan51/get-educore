@@ -218,11 +218,21 @@ export function EditableGrid({
           <div
             key={block.id}
             data-block-id={block.id}
+            onPointerDown={
+              editing
+                ? (e) => {
+                    // Dragging anywhere on the card, except on its controls.
+                    if ((e.target as HTMLElement).closest("button, input, a, [role='button']"))
+                      return;
+                    start(block.id)(e);
+                  }
+                : undefined
+            }
             className={cn(
               SPAN_CLASS[block.span] ?? SPAN_CLASS[3],
               "col-span-12",
               block.height === "tall" && "row-span-2",
-              editing && "rounded-md border border-dashed border-primary/50 p-2",
+              editing && "cursor-grab touch-none rounded-md border border-dashed border-primary/50 p-2 active:cursor-grabbing",
               editing && block.hidden && "opacity-45",
               editing && (i % 2 === 0 ? "animate-wiggle" : "animate-wiggle-alt"),
               dragging === block.id && "ring-2 ring-primary wiggle-paused",
