@@ -28,6 +28,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 import { AssistantMenu } from "@/components/assistant/assistant-menu";
 import { EditableList } from "@/components/layout/editable";
 import { EditModeButton, EditModeBanner } from "@/components/layout/edit-mode-bar";
+import { PullToRefresh } from "@/components/layout/pull-to-refresh";
 
 interface NavItem {
   to: string;
@@ -275,7 +276,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <EditModeBanner />
 
-        <div className="mx-auto max-w-7xl px-6 py-8">{children}</div>
+        <PullToRefresh>
+          <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8">{children}</div>
+        </PullToRefresh>
       </main>
     </div>
   );
