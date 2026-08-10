@@ -1,13 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, streamText, stepCountIs, type UIMessage } from "ai";
-import { createOpenAI } from "@ai-sdk/openai";
 import {
-  createLovableAiGatewayRunIdFetch,
-  getLovableAiGatewayResponseHeaders,
-  getLovableAiGatewayRunId,
-} from "@/lib/ai-gateway.server";
+  CAP_REACHED_MESSAGE,
+  checkTenantCap,
+  createAssistantProvider,
+  getChatModelId,
+  getOpenAiKey,
+  recordUsage,
+  resolveTenantId,
+} from "@/lib/ai-provider.server";
 import { getRequestUser } from "@/lib/supabase-request.server";
 import { buildAssistantTools, loadAssistantContext } from "@/lib/assistant-tools.server";
+
 
 const SYSTEM_PROMPT = `You are the EduCore Assistant, an operator built into an academic ERP used by school and college administrators. You can both read and change records.
 
@@ -39,10 +43,15 @@ export const Route = createFileRoute("/api/chat")({
         const threadId = typeof body.threadId === "string" ? body.threadId : null;
         if (!Array.isArray(messages)) return new Response("Messages are required", { status: 400 });
 
-        const apiKey = process.env["LOVABLE_API_KEY"];
+        const apiKey = getOpenAiKey();
         if (!apiKey) return new Response("AI is not configured", { status: 500 });
 
         const { supabase, userId } = auth;
+
+        const tenantId = await resolveTenantId(supabase, userId);
+        const cap = await checkTenantCap(supabase, tenantId);
+        if (!cap.allowed) return new Response(CAP_REACHED_MESSAGE, { status: 429 });
+
 
         if (threadId) {
           const { data: thread } = await supabase.from("ai_threads").select("id").eq("id", threadId).maybeSingle();
@@ -71,33 +80,33 @@ export const Route = createFileRoute("/api/chat")({
           }
         }
 
-        const initialRunId = getLovableAiGatewayRunId(request);
-        const runIdFetch = createLovableAiGatewayRunIdFetch(initialRunId);
-        const gateway = createOpenAI({
-          baseURL: "https://ai.gateway.lovable.dev/v1",
-          apiKey,
-          headers: {
-            "Lovable-API-Key": apiKey,
-            "X-Lovable-AIG-SDK": "vercel-ai-sdk",
-          },
-          fetch: runIdFetch.fetch as typeof fetch,
-        });
+        const openai = createAssistantProvider(apiKey);
+        const modelId = getChatModelId();
         const assistantContext = await loadAssistantContext(supabase, userId);
 
         const result = streamText({
-          model: gateway.responses("openai/gpt-5.6-sol"),
+          model: openai.responses(modelId),
           system: SYSTEM_PROMPT,
           messages: await convertToModelMessages(uiMessages),
           tools: buildAssistantTools(assistantContext),
           stopWhen: stepCountIs(50),
           providerOptions: {
             openai: {
-              forceReasoning: true,
               reasoningEffort: "low",
               reasoningSummary: "auto",
               store: false,
               include: ["reasoning.encrypted_content"],
             },
+          },
+          onFinish: async ({ totalUsage }) => {
+            await recordUsage({
+              tenantId,
+              userId,
+              feature: "chat",
+              model: modelId,
+              inputTokens: totalUsage?.inputTokens ?? 0,
+              outputTokens: totalUsage?.outputTokens ?? 0,
+            });
           },
         });
 
@@ -120,8 +129,12 @@ export const Route = createFileRoute("/api/chat")({
             console.error("[chat] stream error", error);
             return error instanceof Error ? error.message : "An error occurred.";
           },
-          headers: getLovableAiGatewayResponseHeaders(undefined),
+          headers: {
+            "X-AI-Usage-State": cap.nearLimit ? "near-limit" : "ok",
+            "Access-Control-Expose-Headers": "X-AI-Usage-State",
+          },
         });
+
       },
     },
   },

@@ -18,6 +18,8 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Settings2, Building2, Eye } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useTenant, type TenantBranding } from "@/lib/tenant-context";
+import { AiUsageTab } from "@/components/platform/ai-usage-tab";
+
 
 
 export const Route = createFileRoute("/_authenticated/platform")({
@@ -68,10 +70,13 @@ function PlatformPage() {
           <TabsTrigger value="tenants">Tenants</TabsTrigger>
           <TabsTrigger value="plans">Plan Tiers</TabsTrigger>
           <TabsTrigger value="subs">Subscriptions</TabsTrigger>
+          <TabsTrigger value="ai">AI Usage</TabsTrigger>
         </TabsList>
         <TabsContent value="tenants" className="mt-4"><TenantsTab /></TabsContent>
         <TabsContent value="plans" className="mt-4"><PlansTab /></TabsContent>
         <TabsContent value="subs" className="mt-4"><SubsTab /></TabsContent>
+        <TabsContent value="ai" className="mt-4"><AiUsageTab /></TabsContent>
+
       </Tabs>
     </div>
   );

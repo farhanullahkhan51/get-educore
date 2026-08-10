@@ -79,6 +79,91 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_usage: {
+        Row: {
+          cost_usd: number
+          created_at: string
+          feature: string
+          id: string
+          input_tokens: number
+          model: string | null
+          output_tokens: number
+          requests: number
+          tenant_id: string
+          usage_date: string
+          user_id: string | null
+        }
+        Insert: {
+          cost_usd?: number
+          created_at?: string
+          feature?: string
+          id?: string
+          input_tokens?: number
+          model?: string | null
+          output_tokens?: number
+          requests?: number
+          tenant_id: string
+          usage_date?: string
+          user_id?: string | null
+        }
+        Update: {
+          cost_usd?: number
+          created_at?: string
+          feature?: string
+          id?: string
+          input_tokens?: number
+          model?: string | null
+          output_tokens?: number
+          requests?: number
+          tenant_id?: string
+          usage_date?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_usage_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_usage_limits: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          monthly_cost_cap_usd: number | null
+          monthly_request_cap: number | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          monthly_cost_cap_usd?: number | null
+          monthly_request_cap?: number | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          monthly_cost_cap_usd?: number | null
+          monthly_request_cap?: number | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_usage_limits_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assessment_scores: {
         Row: {
           assessment_id: string
