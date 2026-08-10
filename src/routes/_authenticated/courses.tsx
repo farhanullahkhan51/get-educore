@@ -179,10 +179,38 @@ function CoursesTab() {
   const cellCls = densityCell(layout.density);
   const colSpan = 4 + ["campus", "class", "credits"].filter(showCol).length;
 
+  const filterChips = [
+    { value: "all", label: "All courses" },
+    { value: "board", label: "Board" },
+    { value: "science", label: "Board · Science" },
+    { value: "arts", label: "Board · Arts / Humanities" },
+    { value: "cambridge", label: "Cambridge" },
+    { value: "o_level", label: "Cambridge · O-Levels" },
+    { value: "a_level", label: "Cambridge · A-Levels" },
+  ];
+
   return (
     <>
+      <div className="mb-4 flex flex-wrap items-center gap-2 overflow-x-auto">
+        {filterChips.map((f) => (
+          <button
+            key={f.value}
+            type="button"
+            onClick={() => setStreamFilter(f.value)}
+            className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+              streamFilter === f.value
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-muted/40 text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       <div className="mb-4 flex justify-end gap-2">
         <LayoutMenu module="courses" />
+
 
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
           <DialogTrigger asChild>
