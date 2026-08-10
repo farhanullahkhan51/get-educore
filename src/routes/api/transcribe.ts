@@ -1,5 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getRequestUser } from "@/lib/supabase-request.server";
+import {
+  CAP_REACHED_MESSAGE,
+  checkTenantCap,
+  getOpenAiKey,
+  getTranscribeModelId,
+  recordUsage,
+  resolveTenantId,
+} from "@/lib/ai-provider.server";
 
 const MAX_BYTES = 20 * 1024 * 1024;
 
@@ -10,8 +18,13 @@ export const Route = createFileRoute("/api/transcribe")({
         const auth = await getRequestUser(request);
         if (!auth) return new Response("Unauthorized", { status: 401 });
 
-        const apiKey = process.env["LOVABLE_API_KEY"];
+        const apiKey = getOpenAiKey();
         if (!apiKey) return new Response("AI is not configured", { status: 500 });
+
+        const tenantId = await resolveTenantId(auth.supabase, auth.userId);
+        const cap = await checkTenantCap(auth.supabase, tenantId);
+        if (!cap.allowed) return new Response(CAP_REACHED_MESSAGE, { status: 429 });
+
 
         const form = await request.formData();
         const audio = form.get("audio");
