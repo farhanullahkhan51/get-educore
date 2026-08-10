@@ -77,8 +77,9 @@ function CoursesTab() {
     queryFn: async () => (await supabase.from("campuses").select("id, name").order("name")).data ?? [],
   });
   const { data: programs } = useQuery({
-    queryKey: ["programs"],
-    queryFn: async () => (await supabase.from("programs").select("id, name, campus_id").order("name")).data ?? [],
+    queryKey: ["programs", "with-system"],
+    queryFn: async () =>
+      (await supabase.from("programs").select("id, name, campus_id, academic_system").order("name")).data ?? [],
   });
   const { data: classes } = useQuery({
     queryKey: ["classes"],
