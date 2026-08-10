@@ -123,6 +123,7 @@ function CoursesTab() {
       title,
       credit_hours: Number(fd.get("credit_hours") || 1),
       academic_system: String(fd.get("academic_system") || "both") as Course["academic_system"],
+      stream: (fd.get("stream") as string) || null,
       description: String(fd.get("description") || "") || null,
       is_active: true,
     };
