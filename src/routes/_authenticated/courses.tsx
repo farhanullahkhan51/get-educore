@@ -283,7 +283,7 @@ function CoursesTab() {
                   {showCol("campus") && <TableCell className={`text-sm ${cellCls}`}>{campusMap.get(c.campus_id) ?? "—"}</TableCell>}
                   {showCol("class") && (
                     <TableCell className={`text-sm text-muted-foreground ${cellCls}`}>
-                      {[c.program_id && programMap.get(c.program_id), c.class_id && classMap.get(c.class_id)].filter(Boolean).join(" · ") || "—"}
+                      {[c.program_id && programMap.get(c.program_id)?.name, c.class_id && classMap.get(c.class_id)].filter(Boolean).join(" · ") || "—"}
                     </TableCell>
                   )}
                   {showCol("credits") && <TableCell className={`text-sm ${cellCls}`}>{c.credit_hours}</TableCell>}
