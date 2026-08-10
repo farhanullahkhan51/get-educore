@@ -268,7 +268,11 @@ function CoursesTab() {
                 </div>
                 <div className="space-y-2">
                   <Label>Academic system</Label>
-                  <Select name="academic_system" defaultValue={editing?.academic_system ?? "both"}>
+                  <Select
+                    name="academic_system"
+                    value={formSystem}
+                    onValueChange={(v) => setFormSystem(v as Course["academic_system"])}
+                  >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="board">Board</SelectItem>
@@ -278,6 +282,20 @@ function CoursesTab() {
                   </Select>
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label>Group / Level</Label>
+                <Select name="stream" defaultValue={editing?.stream ?? undefined} key={`${editing?.id ?? "new"}-${formSystem}`}>
+                  <SelectTrigger><SelectValue placeholder="Not grouped" /></SelectTrigger>
+                  <SelectContent>
+                    {STREAMS.filter((s) => formSystem === "both" || s.system === formSystem).map((s) => (
+                      <SelectItem key={s.value} value={s.value}>
+                        {s.system === "board" ? "Board" : "Cambridge"} · {s.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="space-y-2">
                 <Label>Description</Label>
                 <Input name="description" defaultValue={editing?.description ?? ""} />
