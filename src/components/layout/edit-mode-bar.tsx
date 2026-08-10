@@ -10,15 +10,15 @@ export function EditModeButton() {
 
   if (!editing)
     return (
-      <span
-        className="inline-flex cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={startEditing}
         title="Rearrange this interface"
         aria-label="Edit layout"
-        role="button"
       >
-        <Pencil className="h-4 w-4" />
-      </span>
+        <Pencil className="h-5 w-5" />
+      </Button>
     );
 
   return (
