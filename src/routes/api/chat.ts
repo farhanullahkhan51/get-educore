@@ -43,10 +43,15 @@ export const Route = createFileRoute("/api/chat")({
         const threadId = typeof body.threadId === "string" ? body.threadId : null;
         if (!Array.isArray(messages)) return new Response("Messages are required", { status: 400 });
 
-        const apiKey = process.env["LOVABLE_API_KEY"];
+        const apiKey = getOpenAiKey();
         if (!apiKey) return new Response("AI is not configured", { status: 500 });
 
         const { supabase, userId } = auth;
+
+        const tenantId = await resolveTenantId(supabase, userId);
+        const cap = await checkTenantCap(supabase, tenantId);
+        if (!cap.allowed) return new Response(CAP_REACHED_MESSAGE, { status: 429 });
+
 
         if (threadId) {
           const { data: thread } = await supabase.from("ai_threads").select("id").eq("id", threadId).maybeSingle();
