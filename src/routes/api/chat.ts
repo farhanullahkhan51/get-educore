@@ -1,13 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, streamText, stepCountIs, type UIMessage } from "ai";
-import { createOpenAI } from "@ai-sdk/openai";
 import {
-  createLovableAiGatewayRunIdFetch,
-  getLovableAiGatewayResponseHeaders,
-  getLovableAiGatewayRunId,
-} from "@/lib/ai-gateway.server";
+  CAP_REACHED_MESSAGE,
+  checkTenantCap,
+  createAssistantProvider,
+  getChatModelId,
+  getOpenAiKey,
+  recordUsage,
+  resolveTenantId,
+} from "@/lib/ai-provider.server";
 import { getRequestUser } from "@/lib/supabase-request.server";
 import { buildAssistantTools, loadAssistantContext } from "@/lib/assistant-tools.server";
+
 
 const SYSTEM_PROMPT = `You are the EduCore Assistant, an operator built into an academic ERP used by school and college administrators. You can both read and change records.
 
