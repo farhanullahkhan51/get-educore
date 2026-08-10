@@ -47,4 +47,5 @@ export const byNumberDesc =
     get(b) - get(a);
 
 /** Extra cell classes for the chosen density. */
-export const densityCell = (d: ModuleLayout["density"]) => (d === "compact" ? "py-1 text-[13px]" : "");
+export const densityCell = (d: ModuleLayout["density"]) =>
+  d === "compact" ? "!py-1 !px-2 text-[13px] leading-tight" : "";

@@ -15,7 +15,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LayoutMenu } from "@/components/layout/layout-menu";
 import { useModuleLayout } from "@/lib/ui-prefs";
-import { useArranged, byText, densityCell } from "@/lib/ui-arrange";
+import { arrange, byText, densityCell } from "@/lib/ui-arrange";
 import { Fragment } from "react";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -135,8 +135,10 @@ function CoursesTab() {
   const classMap = new Map(classes?.map((c) => [c.id, c.name]));
 
   const { layout } = useModuleLayout("courses");
-  const groups = useArranged<Course>(courses ?? [], layout, {
+  const programName = (id: string | null | undefined) => (id && programMap.get(id)) || "Unassigned program";
+  const groups = arrange<Course>(courses ?? [], layout, {
     group: {
+      program: (c) => programName(c.program_id),
       track: (c) => (c.academic_system === "cambridge" ? "Cambridge" : c.academic_system === "board" ? "Board" : "Board & Cambridge"),
       campus: (c) => campusMap.get(c.campus_id) ?? "—",
       class: (c) => (c.class_id && classMap.get(c.class_id)) || "No class",
@@ -147,6 +149,9 @@ function CoursesTab() {
       active: (c) => (c as { is_active?: boolean }).is_active !== false,
     },
     sort: {
+      program: (a, b) =>
+        programName(a.program_id).localeCompare(programName(b.program_id), undefined, { numeric: true }) ||
+        a.title.localeCompare(b.title),
       title: byText((c) => c.title),
       code: byText((c) => c.code),
     },
