@@ -68,10 +68,13 @@ function PlatformPage() {
           <TabsTrigger value="tenants">Tenants</TabsTrigger>
           <TabsTrigger value="plans">Plan Tiers</TabsTrigger>
           <TabsTrigger value="subs">Subscriptions</TabsTrigger>
+          <TabsTrigger value="ai">AI Usage</TabsTrigger>
         </TabsList>
         <TabsContent value="tenants" className="mt-4"><TenantsTab /></TabsContent>
         <TabsContent value="plans" className="mt-4"><PlansTab /></TabsContent>
         <TabsContent value="subs" className="mt-4"><SubsTab /></TabsContent>
+        <TabsContent value="ai" className="mt-4"><AiUsageTab /></TabsContent>
+
       </Tabs>
     </div>
   );
