@@ -122,9 +122,15 @@ export const MODULE_LAYOUTS: Record<string, ModuleSpec> = {
     ],
   }),
   courses: spec("Courses", {
-    groupBy: [...TRACK_GROUP, { value: "campus", label: "Campus" }, { value: "class", label: "Class" }],
+    groupBy: [
+      { value: "program", label: "Program / group" },
+      ...TRACK_GROUP,
+      { value: "campus", label: "Campus" },
+      { value: "class", label: "Class" },
+    ],
     filter: [...TRACK_FILTER, { value: "active", label: "Active only" }],
     sortBy: [
+      { value: "program", label: "Program / group" },
       { value: "title", label: "Title" },
       { value: "code", label: "Code" },
     ],
@@ -133,6 +139,7 @@ export const MODULE_LAYOUTS: Record<string, ModuleSpec> = {
       { value: "campus", label: "Campus" },
       { value: "class", label: "Class" },
     ],
+    defaults: { groupBy: "program", sortBy: "title" },
   }),
   fees: spec("Fees", {
     groupBy: [
