@@ -343,9 +343,16 @@ function CoursesTab() {
                     </TableCell>
                   )}
                   {showCol("credits") && <TableCell className={`text-sm ${cellCls}`}>{c.credit_hours}</TableCell>}
-                  <TableCell className={`text-sm capitalize ${cellCls}`}>{c.academic_system}</TableCell>
+                  <TableCell className={`text-sm ${cellCls}`}>
+                    <span className="capitalize">{c.academic_system}</span>
+                    {streamLabel(c.stream) && (
+                      <span className="ml-2 inline-block rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                        {streamLabel(c.stream)}
+                      </span>
+                    )}
+                  </TableCell>
                   <TableCell className={`text-right ${cellCls}`}>
-                    <Button size="icon" variant="ghost" onClick={() => { setEditing(c); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="ghost" onClick={() => { setEditing(c); setFormSystem(c.academic_system); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
                     <Button size="icon" variant="ghost" onClick={() => handleDelete(c.id)}><Trash2 className="h-4 w-4" /></Button>
                   </TableCell>
                 </TableRow>
