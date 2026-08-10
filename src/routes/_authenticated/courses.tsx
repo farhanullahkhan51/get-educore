@@ -132,26 +132,34 @@ function CoursesTab() {
   }
 
   const campusMap = new Map(campuses?.map((c) => [c.id, c.name]));
-  const programMap = new Map(programs?.map((p) => [p.id, p.name]));
+  const programMap = new Map(programs?.map((p) => [p.id, p]));
   const classMap = new Map(classes?.map((c) => [c.id, c.name]));
 
   const { layout } = useModuleLayout("courses");
-  const programName = (id: string | null | undefined) => (id && programMap.get(id)) || "Unassigned program";
+  /** A course belongs to Board or Cambridge — the program's system wins over the course's. */
+  const systemOf = (c: Course) =>
+    (c.program_id ? programMap.get(c.program_id)?.academic_system : null) ?? c.academic_system ?? "both";
+  const systemLabel = (s: string) => (s === "cambridge" ? "Cambridge" : s === "board" ? "Board" : "Board & Cambridge");
+  const programName = (c: Course) =>
+    (c.program_id ? programMap.get(c.program_id)?.name : null) || "Unassigned program";
+  /** Always prefix with the system so Board groups never mix with Cambridge groups. */
+  const programGroup = (c: Course) => `${systemLabel(systemOf(c))} — ${programName(c)}`;
+
   const groups = arrange<Course>(courses ?? [], layout, {
     group: {
-      program: (c) => programName(c.program_id),
-      track: (c) => (c.academic_system === "cambridge" ? "Cambridge" : c.academic_system === "board" ? "Board" : "Board & Cambridge"),
+      program: programGroup,
+      track: (c) => systemLabel(systemOf(c)),
       campus: (c) => campusMap.get(c.campus_id) ?? "—",
       class: (c) => (c.class_id && classMap.get(c.class_id)) || "No class",
     },
     filter: {
-      board: (c) => c.academic_system !== "cambridge",
-      cambridge: (c) => c.academic_system !== "board",
+      board: (c) => systemOf(c) !== "cambridge",
+      cambridge: (c) => systemOf(c) !== "board",
       active: (c) => (c as { is_active?: boolean }).is_active !== false,
     },
     sort: {
       program: (a, b) =>
-        programName(a.program_id).localeCompare(programName(b.program_id), undefined, { numeric: true }) ||
+        programGroup(a).localeCompare(programGroup(b), undefined, { numeric: true }) ||
         a.title.localeCompare(b.title),
       title: byText((c) => c.title),
       code: byText((c) => c.code),
