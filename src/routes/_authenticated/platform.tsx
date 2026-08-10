@@ -18,6 +18,8 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Settings2, Building2, Eye } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useTenant, type TenantBranding } from "@/lib/tenant-context";
+import { AiUsageTab } from "@/components/platform/ai-usage-tab";
+
 
 
 export const Route = createFileRoute("/_authenticated/platform")({
