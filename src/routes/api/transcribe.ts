@@ -38,8 +38,9 @@ export const Route = createFileRoute("/api/transcribe")({
         const requested = String(form.get("language") ?? "auto");
         const language = requested === "en" || requested === "ur" ? requested : null;
 
+        const model = getTranscribeModelId();
         const upstream = new FormData();
-        upstream.append("model", "openai/gpt-4o-transcribe");
+        upstream.append("model", model);
         upstream.append("file", audio, "recording.wav");
         if (language) {
           upstream.append("language", language);
@@ -58,7 +59,7 @@ export const Route = createFileRoute("/api/transcribe")({
           );
         }
 
-        const response = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
+        const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
           method: "POST",
           headers: { Authorization: `Bearer ${apiKey}` },
           body: upstream,
@@ -66,12 +67,24 @@ export const Route = createFileRoute("/api/transcribe")({
 
         if (!response.ok) {
           const detail = await response.text().catch(() => "");
-          console.error("[transcribe] gateway error", response.status, detail);
-          return new Response(detail || "Transcription failed", { status: response.status });
+          console.error("[transcribe] provider error", response.status, detail);
+          return new Response("Transcription failed", { status: response.status });
         }
 
-        const data = (await response.json()) as { text?: string };
+        const data = (await response.json()) as {
+          text?: string;
+          usage?: { input_tokens?: number; output_tokens?: number };
+        };
+        await recordUsage({
+          tenantId,
+          userId: auth.userId,
+          feature: "voice",
+          model,
+          inputTokens: data.usage?.input_tokens ?? 0,
+          outputTokens: data.usage?.output_tokens ?? 0,
+        });
         return Response.json({ text: data.text ?? "" });
+
       },
     },
   },
