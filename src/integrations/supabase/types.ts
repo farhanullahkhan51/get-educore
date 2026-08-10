@@ -1156,7 +1156,6 @@ export type Database = {
           id: string
           is_active: boolean
           program_id: string | null
-          stream: string | null
           tenant_id: string
           title: string
           updated_at: string
@@ -1172,7 +1171,6 @@ export type Database = {
           id?: string
           is_active?: boolean
           program_id?: string | null
-          stream?: string | null
           tenant_id?: string
           title: string
           updated_at?: string
@@ -1188,7 +1186,6 @@ export type Database = {
           id?: string
           is_active?: boolean
           program_id?: string | null
-          stream?: string | null
           tenant_id?: string
           title?: string
           updated_at?: string
