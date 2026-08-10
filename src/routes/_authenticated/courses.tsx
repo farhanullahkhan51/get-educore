@@ -37,9 +37,19 @@ type Course = {
   title: string;
   credit_hours: number | null;
   academic_system: "board" | "cambridge" | "both";
+  stream: string | null;
   description: string | null;
   is_active: boolean;
 };
+
+const STREAMS = [
+  { value: "science", label: "Science Group", system: "board" as const },
+  { value: "arts", label: "Arts / Humanities", system: "board" as const },
+  { value: "o_level", label: "O-Levels", system: "cambridge" as const },
+  { value: "a_level", label: "A-Levels", system: "cambridge" as const },
+];
+
+const streamLabel = (v?: string | null) => STREAMS.find((s) => s.value === v)?.label ?? null;
 
 type Assignment = {
   id: string;
@@ -71,6 +81,8 @@ function CoursesTab() {
   const { data: me } = useCurrentUser();
   const [editing, setEditing] = useState<Course | null>(null);
   const [open, setOpen] = useState(false);
+  const [streamFilter, setStreamFilter] = useState<string>("all");
+  const [formSystem, setFormSystem] = useState<Course["academic_system"]>("both");
 
   const { data: campuses } = useQuery({
     queryKey: ["campuses"],
@@ -111,6 +123,7 @@ function CoursesTab() {
       title,
       credit_hours: Number(fd.get("credit_hours") || 1),
       academic_system: String(fd.get("academic_system") || "both") as Course["academic_system"],
+      stream: (fd.get("stream") as string) || null,
       description: String(fd.get("description") || "") || null,
       is_active: true,
     };
@@ -134,10 +147,21 @@ function CoursesTab() {
   const programMap = new Map(programs?.map((p) => [p.id, p.name]));
   const classMap = new Map(classes?.map((c) => [c.id, c.name]));
 
+  const visibleCourses = (courses ?? []).filter((c) => {
+    if (streamFilter === "all") return true;
+    if (streamFilter === "board") return c.academic_system !== "cambridge";
+    if (streamFilter === "cambridge") return c.academic_system !== "board";
+    return c.stream === streamFilter;
+  });
+
   const { layout } = useModuleLayout("courses");
-  const groups = useArranged<Course>(courses ?? [], layout, {
+  const groups = useArranged<Course>(visibleCourses, layout, {
     group: {
       track: (c) => (c.academic_system === "cambridge" ? "Cambridge" : c.academic_system === "board" ? "Board" : "Board & Cambridge"),
+      stream: (c) =>
+        streamLabel(c.stream)
+          ? `${c.academic_system === "cambridge" ? "Cambridge" : "Board"} · ${streamLabel(c.stream)}`
+          : "Ungrouped",
       campus: (c) => campusMap.get(c.campus_id) ?? "—",
       class: (c) => (c.class_id && classMap.get(c.class_id)) || "No class",
     },
@@ -155,12 +179,40 @@ function CoursesTab() {
   const cellCls = densityCell(layout.density);
   const colSpan = 4 + ["campus", "class", "credits"].filter(showCol).length;
 
+  const filterChips = [
+    { value: "all", label: "All courses" },
+    { value: "board", label: "Board" },
+    { value: "science", label: "Board · Science" },
+    { value: "arts", label: "Board · Arts / Humanities" },
+    { value: "cambridge", label: "Cambridge" },
+    { value: "o_level", label: "Cambridge · O-Levels" },
+    { value: "a_level", label: "Cambridge · A-Levels" },
+  ];
+
   return (
     <>
+      <div className="mb-4 flex flex-wrap items-center gap-2 overflow-x-auto">
+        {filterChips.map((f) => (
+          <button
+            key={f.value}
+            type="button"
+            onClick={() => setStreamFilter(f.value)}
+            className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+              streamFilter === f.value
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-muted/40 text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       <div className="mb-4 flex justify-end gap-2">
         <LayoutMenu module="courses" />
 
-        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
+
+        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditing(null); setFormSystem("both"); } }}>
           <DialogTrigger asChild>
             <Button><Plus className="mr-1 h-4 w-4" /> New course</Button>
           </DialogTrigger>
@@ -216,7 +268,11 @@ function CoursesTab() {
                 </div>
                 <div className="space-y-2">
                   <Label>Academic system</Label>
-                  <Select name="academic_system" defaultValue={editing?.academic_system ?? "both"}>
+                  <Select
+                    name="academic_system"
+                    value={formSystem}
+                    onValueChange={(v) => setFormSystem(v as Course["academic_system"])}
+                  >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="board">Board</SelectItem>
@@ -226,6 +282,20 @@ function CoursesTab() {
                   </Select>
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label>Group / Level</Label>
+                <Select name="stream" defaultValue={editing?.stream ?? undefined} key={`${editing?.id ?? "new"}-${formSystem}`}>
+                  <SelectTrigger><SelectValue placeholder="Not grouped" /></SelectTrigger>
+                  <SelectContent>
+                    {STREAMS.filter((s) => formSystem === "both" || s.system === formSystem).map((s) => (
+                      <SelectItem key={s.value} value={s.value}>
+                        {s.system === "board" ? "Board" : "Cambridge"} · {s.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="space-y-2">
                 <Label>Description</Label>
                 <Input name="description" defaultValue={editing?.description ?? ""} />
@@ -273,9 +343,16 @@ function CoursesTab() {
                     </TableCell>
                   )}
                   {showCol("credits") && <TableCell className={`text-sm ${cellCls}`}>{c.credit_hours}</TableCell>}
-                  <TableCell className={`text-sm capitalize ${cellCls}`}>{c.academic_system}</TableCell>
+                  <TableCell className={`text-sm ${cellCls}`}>
+                    <span className="capitalize">{c.academic_system}</span>
+                    {streamLabel(c.stream) && (
+                      <span className="ml-2 inline-block rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                        {streamLabel(c.stream)}
+                      </span>
+                    )}
+                  </TableCell>
                   <TableCell className={`text-right ${cellCls}`}>
-                    <Button size="icon" variant="ghost" onClick={() => { setEditing(c); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="ghost" onClick={() => { setEditing(c); setFormSystem(c.academic_system); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
                     <Button size="icon" variant="ghost" onClick={() => handleDelete(c.id)}><Trash2 className="h-4 w-4" /></Button>
                   </TableCell>
                 </TableRow>
