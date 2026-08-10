@@ -147,10 +147,21 @@ function CoursesTab() {
   const programMap = new Map(programs?.map((p) => [p.id, p.name]));
   const classMap = new Map(classes?.map((c) => [c.id, c.name]));
 
+  const visibleCourses = (courses ?? []).filter((c) => {
+    if (streamFilter === "all") return true;
+    if (streamFilter === "board") return c.academic_system !== "cambridge";
+    if (streamFilter === "cambridge") return c.academic_system !== "board";
+    return c.stream === streamFilter;
+  });
+
   const { layout } = useModuleLayout("courses");
-  const groups = useArranged<Course>(courses ?? [], layout, {
+  const groups = useArranged<Course>(visibleCourses, layout, {
     group: {
       track: (c) => (c.academic_system === "cambridge" ? "Cambridge" : c.academic_system === "board" ? "Board" : "Board & Cambridge"),
+      stream: (c) =>
+        streamLabel(c.stream)
+          ? `${c.academic_system === "cambridge" ? "Cambridge" : "Board"} · ${streamLabel(c.stream)}`
+          : "Ungrouped",
       campus: (c) => campusMap.get(c.campus_id) ?? "—",
       class: (c) => (c.class_id && classMap.get(c.class_id)) || "No class",
     },
