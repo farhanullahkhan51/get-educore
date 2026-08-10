@@ -75,33 +75,33 @@ export const Route = createFileRoute("/api/chat")({
           }
         }
 
-        const initialRunId = getLovableAiGatewayRunId(request);
-        const runIdFetch = createLovableAiGatewayRunIdFetch(initialRunId);
-        const gateway = createOpenAI({
-          baseURL: "https://ai.gateway.lovable.dev/v1",
-          apiKey,
-          headers: {
-            "Lovable-API-Key": apiKey,
-            "X-Lovable-AIG-SDK": "vercel-ai-sdk",
-          },
-          fetch: runIdFetch.fetch as typeof fetch,
-        });
+        const openai = createAssistantProvider(apiKey);
+        const modelId = getChatModelId();
         const assistantContext = await loadAssistantContext(supabase, userId);
 
         const result = streamText({
-          model: gateway.responses("openai/gpt-5.6-sol"),
+          model: openai.responses(modelId),
           system: SYSTEM_PROMPT,
           messages: await convertToModelMessages(uiMessages),
           tools: buildAssistantTools(assistantContext),
           stopWhen: stepCountIs(50),
           providerOptions: {
             openai: {
-              forceReasoning: true,
               reasoningEffort: "low",
               reasoningSummary: "auto",
               store: false,
               include: ["reasoning.encrypted_content"],
             },
+          },
+          onFinish: async ({ totalUsage }) => {
+            await recordUsage({
+              tenantId,
+              userId,
+              feature: "chat",
+              model: modelId,
+              inputTokens: totalUsage?.inputTokens ?? 0,
+              outputTokens: totalUsage?.outputTokens ?? 0,
+            });
           },
         });
 
@@ -124,8 +124,12 @@ export const Route = createFileRoute("/api/chat")({
             console.error("[chat] stream error", error);
             return error instanceof Error ? error.message : "An error occurred.";
           },
-          headers: getLovableAiGatewayResponseHeaders(undefined),
+          headers: {
+            "X-AI-Usage-State": cap.nearLimit ? "near-limit" : "ok",
+            "Access-Control-Expose-Headers": "X-AI-Usage-State",
+          },
         });
+
       },
     },
   },
