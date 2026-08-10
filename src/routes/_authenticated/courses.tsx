@@ -212,7 +212,7 @@ function CoursesTab() {
         <LayoutMenu module="courses" />
 
 
-        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
+        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditing(null); setFormSystem("both"); } }}>
           <DialogTrigger asChild>
             <Button><Plus className="mr-1 h-4 w-4" /> New course</Button>
           </DialogTrigger>
