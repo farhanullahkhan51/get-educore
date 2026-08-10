@@ -37,9 +37,19 @@ type Course = {
   title: string;
   credit_hours: number | null;
   academic_system: "board" | "cambridge" | "both";
+  stream: string | null;
   description: string | null;
   is_active: boolean;
 };
+
+const STREAMS = [
+  { value: "science", label: "Science Group", system: "board" as const },
+  { value: "arts", label: "Arts / Humanities", system: "board" as const },
+  { value: "o_level", label: "O-Levels", system: "cambridge" as const },
+  { value: "a_level", label: "A-Levels", system: "cambridge" as const },
+];
+
+const streamLabel = (v?: string | null) => STREAMS.find((s) => s.value === v)?.label ?? null;
 
 type Assignment = {
   id: string;
