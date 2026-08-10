@@ -1,6 +1,6 @@
 # White-label the AI Assistant (own OpenAI key + tenant usage caps)
 
-Goal: the assistant keeps working exactly as it does today, but calls OpenAI directly with your own API key, carries no trace of the platform it was built on, and每 tenant has a usage cap and a usage dashboard in Platform Admin.
+Goal: the assistant keeps working exactly as it does today, but calls OpenAI directly with your own API key, carries no trace of the platform it was built on, and each tenant gets a usage cap plus a usage dashboard in Platform Admin.
 
 ## 1. Switch the assistant to your own OpenAI account
 
