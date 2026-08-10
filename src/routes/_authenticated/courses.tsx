@@ -81,6 +81,8 @@ function CoursesTab() {
   const { data: me } = useCurrentUser();
   const [editing, setEditing] = useState<Course | null>(null);
   const [open, setOpen] = useState(false);
+  const [streamFilter, setStreamFilter] = useState<string>("all");
+  const [formSystem, setFormSystem] = useState<Course["academic_system"]>("both");
 
   const { data: campuses } = useQuery({
     queryKey: ["campuses"],
