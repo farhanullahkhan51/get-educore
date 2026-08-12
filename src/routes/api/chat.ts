@@ -83,24 +83,31 @@ export const Route = createFileRoute("/api/chat")({
           }
         }
 
-        const openai = createAssistantProvider(apiKey);
-        const modelId = getChatModelId();
+        const modelId = selected.model;
+        const provider = selected.isFallback
+          ? createFallbackProvider(selected.apiKey)
+          : createAssistantProvider(selected.apiKey);
+        const model = selected.isFallback ? provider.chat(modelId) : provider.responses(modelId);
         const assistantContext = await loadAssistantContext(supabase, userId);
 
         const result = streamText({
-          model: openai.responses(modelId),
+          model,
           system: SYSTEM_PROMPT,
           messages: await convertToModelMessages(uiMessages),
           tools: buildAssistantTools(assistantContext),
           stopWhen: stepCountIs(50),
-          providerOptions: {
-            openai: {
-              reasoningEffort: "low",
-              reasoningSummary: "auto",
-              store: false,
-              include: ["reasoning.encrypted_content"],
-            },
-          },
+          ...(selected.isFallback
+            ? {}
+            : {
+                providerOptions: {
+                  openai: {
+                    reasoningEffort: "low",
+                    reasoningSummary: "auto",
+                    store: false,
+                    include: ["reasoning.encrypted_content"],
+                  },
+                },
+              }),
           onFinish: async ({ totalUsage }) => {
             await recordUsage({
               tenantId,
@@ -130,13 +137,17 @@ export const Route = createFileRoute("/api/chat")({
           },
           onError: (error) => {
             console.error("[chat] stream error", error);
+            // Take the provider out of rotation so the next message switches automatically.
+            markProviderDown(selected.provider, error);
             return error instanceof Error ? error.message : "An error occurred.";
           },
           headers: {
             "X-AI-Usage-State": cap.nearLimit ? "near-limit" : "ok",
-            "Access-Control-Expose-Headers": "X-AI-Usage-State",
+            "X-AI-Provider": selected.provider,
+            "Access-Control-Expose-Headers": "X-AI-Usage-State, X-AI-Provider",
           },
         });
+
 
       },
     },
