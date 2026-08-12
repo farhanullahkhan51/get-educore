@@ -45,8 +45,9 @@ export const Route = createFileRoute("/api/chat")({
         const threadId = typeof body.threadId === "string" ? body.threadId : null;
         if (!Array.isArray(messages)) return new Response("Messages are required", { status: 400 });
 
-        const apiKey = getOpenAiKey();
-        if (!apiKey) return new Response("AI is not configured", { status: 500 });
+        const selected = await selectChatProvider();
+        if (!selected) return new Response("AI is not configured", { status: 500 });
+
 
         const { supabase, userId } = auth;
 
