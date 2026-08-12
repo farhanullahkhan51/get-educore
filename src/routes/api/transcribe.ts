@@ -81,52 +81,75 @@ export const Route = createFileRoute("/api/transcribe")({
         const requested = String(form.get("language") ?? "auto");
         const language = requested === "en" || requested === "ur" ? requested : null;
 
-        const model = getTranscribeModelId();
-        const upstream = new FormData();
-        upstream.append("model", model);
-        upstream.append("file", audio, "recording.wav");
-        if (language) {
-          upstream.append("language", language);
-          upstream.append(
-            "prompt",
-            language === "en"
-              ? "Transcribe verbatim in English using Latin script. Never output Urdu script."
-              : "Transcribe verbatim in Urdu using Urdu script. Never transliterate into Latin script.",
-          );
-        } else {
-          // No `language` field: let the model auto-detect. The prompt keeps it from
-          // defaulting to Urdu script when the speaker is actually using English.
-          upstream.append(
-            "prompt",
-            "Transcribe verbatim in the language actually spoken. If the speaker uses English, output English in Latin script. If the speaker uses Urdu, output Urdu in Urdu script. Never translate or transliterate between the two.",
-          );
-        }
+        const instruction = language
+          ? language === "en"
+            ? "Transcribe this recording verbatim in English using Latin script. Never output Urdu script. Reply with the transcript only."
+            : "Transcribe this recording verbatim in Urdu using Urdu script. Never transliterate into Latin script. Reply with the transcript only."
+          : "Transcribe this recording verbatim in the language actually spoken. If the speaker uses English, output English in Latin script. If the speaker uses Urdu, output Urdu in Urdu script. Never translate or transliterate between the two. Reply with the transcript only.";
 
-        const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${apiKey}` },
-          body: upstream,
-        });
+        const useOpenAi = Boolean(apiKey) && !isProviderDown("openai");
 
-        if (!response.ok) {
+        const finish = async (result: {
+          model: string;
+          text: string;
+          inputTokens: number;
+          outputTokens: number;
+        }) => {
+          await recordUsage({
+            tenantId,
+            userId: auth.userId,
+            feature: "voice",
+            model: result.model,
+            inputTokens: result.inputTokens,
+            outputTokens: result.outputTokens,
+          });
+          return Response.json({ text: result.text });
+        };
+
+        if (useOpenAi) {
+          const model = getTranscribeModelId();
+          const upstream = new FormData();
+          upstream.append("model", model);
+          upstream.append("file", audio, "recording.wav");
+          if (language) upstream.append("language", language);
+          upstream.append("prompt", instruction);
+
+          const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${apiKey}` },
+            body: upstream,
+          });
+
+          if (response.ok) {
+            const data = (await response.json()) as {
+              text?: string;
+              usage?: { input_tokens?: number; output_tokens?: number };
+            };
+            return finish({
+              model,
+              text: data.text ?? "",
+              inputTokens: data.usage?.input_tokens ?? 0,
+              outputTokens: data.usage?.output_tokens ?? 0,
+            });
+          }
+
           const detail = await response.text().catch(() => "");
           console.error("[transcribe] provider error", response.status, detail);
-          return new Response("Transcription failed", { status: response.status });
+          markProviderDown("openai", detail);
+          if (!geminiKey) return new Response("Transcription failed", { status: response.status });
         }
 
-        const data = (await response.json()) as {
-          text?: string;
-          usage?: { input_tokens?: number; output_tokens?: number };
-        };
-        await recordUsage({
-          tenantId,
-          userId: auth.userId,
-          feature: "voice",
-          model,
-          inputTokens: data.usage?.input_tokens ?? 0,
-          outputTokens: data.usage?.output_tokens ?? 0,
-        });
-        return Response.json({ text: data.text ?? "" });
+        if (!geminiKey || isProviderDown("gemini")) {
+          return new Response("Transcription failed", { status: 502 });
+        }
+
+        try {
+          return await finish(await transcribeWithGemini(geminiKey, audio, instruction));
+        } catch (error) {
+          console.error("[transcribe] fallback failed", error);
+          return new Response("Transcription failed", { status: 502 });
+        }
+
 
       },
     },
