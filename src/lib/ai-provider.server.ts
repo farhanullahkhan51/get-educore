@@ -5,6 +5,10 @@ import type { Database } from "@/integrations/supabase/types";
 /** Default assistant model. Override with the ASSISTANT_MODEL env var. */
 const DEFAULT_CHAT_MODEL = "gpt-5.6-sol";
 const DEFAULT_TRANSCRIBE_MODEL = "gpt-4o-transcribe";
+const DEFAULT_FALLBACK_MODEL = "gemini-2.5-flash";
+
+/** Gemini exposes an OpenAI-compatible surface, so one SDK covers both providers. */
+const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/";
 
 export function getChatModelId(): string {
   return process.env["ASSISTANT_MODEL"]?.trim() || DEFAULT_CHAT_MODEL;
@@ -14,13 +18,100 @@ export function getTranscribeModelId(): string {
   return process.env["ASSISTANT_TRANSCRIBE_MODEL"]?.trim() || DEFAULT_TRANSCRIBE_MODEL;
 }
 
+export function getFallbackModelId(): string {
+  return process.env["ASSISTANT_FALLBACK_MODEL"]?.trim() || DEFAULT_FALLBACK_MODEL;
+}
+
 export function getOpenAiKey(): string | undefined {
   return process.env["OPENAI_API_KEY"]?.trim() || undefined;
+}
+
+export function getGeminiKey(): string | undefined {
+  return process.env["GEMINI_API_KEY"]?.trim() || undefined;
 }
 
 /** OpenAI provider bound to the platform's own account. */
 export function createAssistantProvider(apiKey: string) {
   return createOpenAI({ apiKey });
+}
+
+/** Gemini provider over its OpenAI-compatible endpoint. */
+export function createFallbackProvider(apiKey: string) {
+  return createOpenAI({ apiKey, baseURL: GEMINI_BASE_URL });
+}
+
+/* -------------------- provider health + switching -------------------- */
+
+export type ProviderName = "openai" | "gemini";
+
+const COOLDOWN_MS = 10 * 60 * 1000;
+const PROBE_TTL_MS = 5 * 60 * 1000;
+
+const downUntil: Record<ProviderName, number> = { openai: 0, gemini: 0 };
+const probe: Record<ProviderName, { at: number; ok: boolean }> = {
+  openai: { at: 0, ok: false },
+  gemini: { at: 0, ok: false },
+};
+
+/** Mark a provider unhealthy so the next request switches automatically. */
+export function markProviderDown(provider: ProviderName, reason?: unknown) {
+  downUntil[provider] = Date.now() + COOLDOWN_MS;
+  probe[provider] = { at: Date.now(), ok: false };
+  console.error(`[ai] ${provider} marked unavailable`, reason instanceof Error ? reason.message : reason);
+}
+
+export function isProviderDown(provider: ProviderName): boolean {
+  return Date.now() < downUntil[provider];
+}
+
+/** Cheap reachability/auth check; cached so it does not add latency per request. */
+async function isReachable(provider: ProviderName, apiKey: string, model: string): Promise<boolean> {
+  const cached = probe[provider];
+  if (Date.now() - cached.at < PROBE_TTL_MS) return cached.ok;
+  const url =
+    provider === "openai"
+      ? `https://api.openai.com/v1/models/${encodeURIComponent(model)}`
+      : `${GEMINI_BASE_URL}models`;
+  let ok = false;
+  try {
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` } });
+    ok = res.ok;
+    if (!ok) console.error(`[ai] ${provider} probe failed`, res.status);
+  } catch (error) {
+    console.error(`[ai] ${provider} probe threw`, error);
+  }
+  probe[provider] = { at: Date.now(), ok };
+  return ok;
+}
+
+export type SelectedProvider = {
+  provider: ProviderName;
+  model: string;
+  apiKey: string;
+  /** true when this is the Gemini fallback rather than the primary provider */
+  isFallback: boolean;
+};
+
+/**
+ * Pick the provider to serve this request: OpenAI when healthy, otherwise
+ * Gemini Flash. Falls back on cooldowns set by earlier stream errors too.
+ */
+export async function selectChatProvider(): Promise<SelectedProvider | null> {
+  const openaiKey = getOpenAiKey();
+  const geminiKey = getGeminiKey();
+
+  if (openaiKey && !isProviderDown("openai")) {
+    if (!geminiKey || (await isReachable("openai", openaiKey, getChatModelId()))) {
+      return { provider: "openai", model: getChatModelId(), apiKey: openaiKey, isFallback: false };
+    }
+  }
+  if (geminiKey && !isProviderDown("gemini")) {
+    return { provider: "gemini", model: getFallbackModelId(), apiKey: geminiKey, isFallback: true };
+  }
+  if (openaiKey) {
+    return { provider: "openai", model: getChatModelId(), apiKey: openaiKey, isFallback: false };
+  }
+  return null;
 }
 
 /* -------------------- pricing -------------------- */
@@ -35,12 +126,16 @@ const RATES: Record<string, { input: number; output: number }> = {
   "gpt-5.4": { input: 1.25, output: 10 },
   "gpt-5.4-mini": { input: 0.25, output: 2 },
   "gpt-4o-transcribe": { input: 2.5, output: 10 },
+  "gemini-2.5-flash": { input: 0.3, output: 2.5 },
+  "gemini-2.5-flash-lite": { input: 0.1, output: 0.4 },
+  "gemini-2.0-flash": { input: 0.1, output: 0.4 },
 };
 
 export function estimateCostUsd(model: string, inputTokens: number, outputTokens: number): number {
   const rate = RATES[model] ?? RATES["default"]!;
   return (inputTokens / 1_000_000) * rate.input + (outputTokens / 1_000_000) * rate.output;
 }
+
 
 /* -------------------- usage + caps -------------------- */
 

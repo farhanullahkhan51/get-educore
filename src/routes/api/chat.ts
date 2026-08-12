@@ -4,13 +4,15 @@ import {
   CAP_REACHED_MESSAGE,
   checkTenantCap,
   createAssistantProvider,
-  getChatModelId,
-  getOpenAiKey,
+  createFallbackProvider,
+  markProviderDown,
   recordUsage,
   resolveTenantId,
+  selectChatProvider,
 } from "@/lib/ai-provider.server";
 import { getRequestUser } from "@/lib/supabase-request.server";
 import { buildAssistantTools, loadAssistantContext } from "@/lib/assistant-tools.server";
+
 
 
 const SYSTEM_PROMPT = `You are the EduCore Assistant, an operator built into an academic ERP used by school and college administrators. You can both read and change records.
@@ -43,8 +45,9 @@ export const Route = createFileRoute("/api/chat")({
         const threadId = typeof body.threadId === "string" ? body.threadId : null;
         if (!Array.isArray(messages)) return new Response("Messages are required", { status: 400 });
 
-        const apiKey = getOpenAiKey();
-        if (!apiKey) return new Response("AI is not configured", { status: 500 });
+        const selected = await selectChatProvider();
+        if (!selected) return new Response("AI is not configured", { status: 500 });
+
 
         const { supabase, userId } = auth;
 
@@ -80,24 +83,31 @@ export const Route = createFileRoute("/api/chat")({
           }
         }
 
-        const openai = createAssistantProvider(apiKey);
-        const modelId = getChatModelId();
+        const modelId = selected.model;
+        const provider = selected.isFallback
+          ? createFallbackProvider(selected.apiKey)
+          : createAssistantProvider(selected.apiKey);
+        const model = selected.isFallback ? provider.chat(modelId) : provider.responses(modelId);
         const assistantContext = await loadAssistantContext(supabase, userId);
 
         const result = streamText({
-          model: openai.responses(modelId),
+          model,
           system: SYSTEM_PROMPT,
           messages: await convertToModelMessages(uiMessages),
           tools: buildAssistantTools(assistantContext),
           stopWhen: stepCountIs(50),
-          providerOptions: {
-            openai: {
-              reasoningEffort: "low",
-              reasoningSummary: "auto",
-              store: false,
-              include: ["reasoning.encrypted_content"],
-            },
-          },
+          ...(selected.isFallback
+            ? {}
+            : {
+                providerOptions: {
+                  openai: {
+                    reasoningEffort: "low",
+                    reasoningSummary: "auto",
+                    store: false,
+                    include: ["reasoning.encrypted_content"],
+                  },
+                },
+              }),
           onFinish: async ({ totalUsage }) => {
             await recordUsage({
               tenantId,
@@ -127,13 +137,17 @@ export const Route = createFileRoute("/api/chat")({
           },
           onError: (error) => {
             console.error("[chat] stream error", error);
+            // Take the provider out of rotation so the next message switches automatically.
+            markProviderDown(selected.provider, error);
             return error instanceof Error ? error.message : "An error occurred.";
           },
           headers: {
             "X-AI-Usage-State": cap.nearLimit ? "near-limit" : "ok",
-            "Access-Control-Expose-Headers": "X-AI-Usage-State",
+            "X-AI-Provider": selected.provider,
+            "Access-Control-Expose-Headers": "X-AI-Usage-State, X-AI-Provider",
           },
         });
+
 
       },
     },
