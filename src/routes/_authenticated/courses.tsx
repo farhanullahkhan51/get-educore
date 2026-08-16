@@ -18,7 +18,7 @@ import { useModuleLayout } from "@/lib/ui-prefs";
 import { arrange, byText, densityCell } from "@/lib/ui-arrange";
 import { Fragment } from "react";
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { generateCode } from "@/lib/generate-code";
