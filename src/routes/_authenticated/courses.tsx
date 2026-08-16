@@ -330,16 +330,21 @@ function AssignmentsTab() {
   const [open, setOpen] = useState(false);
 
   const { data: courses } = useQuery({
-    queryKey: ["courses"],
-    queryFn: async () => (await supabase.from("courses").select("id, code, title, campus_id").order("code")).data ?? [],
+    queryKey: ["courses", "for-assignments"],
+    queryFn: async () => (await supabase.from("courses").select("id, code, title, campus_id, program_id, academic_system").order("code")).data ?? [],
   });
   const { data: sections } = useQuery({
     queryKey: ["sections"],
     queryFn: async () => (await supabase.from("sections").select("id, name, class_id").order("name")).data ?? [],
   });
   const { data: classes } = useQuery({
-    queryKey: ["classes"],
-    queryFn: async () => (await supabase.from("classes").select("id, name, campus_id").order("name")).data ?? [],
+    queryKey: ["classes", "with-program"],
+    queryFn: async () => (await supabase.from("classes").select("id, name, campus_id, program_id, academic_system").order("name")).data ?? [],
+  });
+  const { data: programs } = useQuery({
+    queryKey: ["programs", "with-system"],
+    queryFn: async () =>
+      (await supabase.from("programs").select("id, name, campus_id, academic_system").order("name")).data ?? [],
   });
   const { data: staff } = useQuery({
     queryKey: ["staff"],
