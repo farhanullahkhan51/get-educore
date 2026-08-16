@@ -393,6 +393,40 @@ function AssignmentsTab() {
   }));
   const staffMap = new Map(staff?.map((s) => [s.id, `${s.first_name} ${s.last_name}`]));
 
+  // ---- Program-wise grouping for the pickers ----
+  const programMap = new Map((programs ?? []).map((p) => [p.id, p]));
+  const systemLabel = (s?: string | null) =>
+    s === "cambridge" ? "Cambridge" : s === "board" ? "Board" : "Board & Cambridge";
+  const groupLabelFor = (programId: string | null | undefined, fallbackSystem?: string | null) => {
+    const p = programId ? programMap.get(programId) : null;
+    return p ? `${systemLabel(p.academic_system)} — ${p.name}` : `${systemLabel(fallbackSystem)} — Unassigned program`;
+  };
+  function groupBy<T>(rows: T[], label: (r: T) => string) {
+    const m = new Map<string, T[]>();
+    for (const r of rows) {
+      const k = label(r);
+      if (!m.has(k)) m.set(k, []);
+      m.get(k)!.push(r);
+    }
+    return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }));
+  }
+  const courseGroups = groupBy(courses ?? [], (c: any) => groupLabelFor(c.program_id, c.academic_system));
+  const sectionGroups = groupBy(sections ?? [], (s) => {
+    const cls: any = classes?.find((c) => c.id === s.class_id);
+    return groupLabelFor(cls?.program_id, cls?.academic_system);
+  });
+
+  /** Sections a teacher already teaches — shown inline so double-booking is obvious. */
+  const teacherSections = new Map<string, string[]>();
+  for (const a of assignments ?? []) {
+    const label = sectionMap.get(a.section_id);
+    if (!label) continue;
+    const list = teacherSections.get(a.teacher_id) ?? [];
+    if (!list.includes(label)) list.push(label);
+    teacherSections.set(a.teacher_id, list);
+  }
+
+
   return (
     <>
       <div className="mb-4 flex justify-end">
