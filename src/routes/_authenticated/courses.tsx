@@ -445,7 +445,16 @@ function AssignmentsTab() {
                 <Select name="course_id" required>
                   <SelectTrigger><SelectValue placeholder="Select course" /></SelectTrigger>
                   <SelectContent>
-                    {courses?.map((c) => <SelectItem key={c.id} value={c.id}>{c.code} · {c.title}</SelectItem>)}
+                    {courseGroups.map(([label, rows]) => (
+                      <SelectGroup key={label}>
+                        <SelectLabel className={`-mx-1 mt-1 border-l-2 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ${groupChipCls(label)}`}>
+                          {label} · {rows.length}
+                        </SelectLabel>
+                        {rows.map((c: any) => (
+                          <SelectItem key={c.id} value={c.id}>{c.code} · {c.title}</SelectItem>
+                        ))}
+                      </SelectGroup>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -454,7 +463,16 @@ function AssignmentsTab() {
                 <Select name="section_id" required>
                   <SelectTrigger><SelectValue placeholder="Select section" /></SelectTrigger>
                   <SelectContent>
-                    {sections?.map((s) => <SelectItem key={s.id} value={s.id}>{sectionMap.get(s.id)}</SelectItem>)}
+                    {sectionGroups.map(([label, rows]) => (
+                      <SelectGroup key={label}>
+                        <SelectLabel className={`-mx-1 mt-1 border-l-2 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ${groupChipCls(label)}`}>
+                          {label} · {rows.length}
+                        </SelectLabel>
+                        {rows.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>{sectionMap.get(s.id)}</SelectItem>
+                        ))}
+                      </SelectGroup>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -463,7 +481,23 @@ function AssignmentsTab() {
                 <Select name="teacher_id" required>
                   <SelectTrigger><SelectValue placeholder="Select teacher" /></SelectTrigger>
                   <SelectContent>
-                    {staff?.map((s) => <SelectItem key={s.id} value={s.id}>{`${s.first_name} ${s.last_name}`} {s.designation ? `· ${s.designation}` : ""}</SelectItem>)}
+                    {staff?.map((s) => {
+                      const assigned = teacherSections.get(s.id) ?? [];
+                      return (
+                        <SelectItem key={s.id} value={s.id} className={assigned.length ? "bg-amber-50 dark:bg-amber-950/30" : undefined}>
+                          <span className="flex flex-col items-start">
+                            <span>
+                              {s.first_name} {s.last_name}{s.designation ? ` · ${s.designation}` : ""}
+                            </span>
+                            {assigned.length > 0 && (
+                              <span className="text-[11px] font-medium text-amber-700 dark:text-amber-300">
+                                Already assigned: {assigned.join(", ")}
+                              </span>
+                            )}
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
