@@ -2767,6 +2767,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      campus_of_uid_text: { Args: { _uid_text: string }; Returns: string }
       can_manage_fees: {
         Args: { _campus_id: string; _user_id: string }
         Returns: boolean
@@ -2784,6 +2785,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_platform_owner: { Args: { _user_id: string }; Returns: boolean }
       is_student_owner: {
         Args: { _student_id: string; _user_id: string }
         Returns: boolean
@@ -2826,6 +2828,7 @@ export type Database = {
         Args: { _section_id: string; _user_id: string }
         Returns: boolean
       }
+      tenant_of_uid_text: { Args: { _uid_text: string }; Returns: string }
     }
     Enums: {
       academic_system: "board" | "cambridge" | "both"
