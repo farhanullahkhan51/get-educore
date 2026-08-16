@@ -270,8 +270,8 @@ function CoursesTab() {
               {groups.map((group) => (
                 <Fragment key={group.key}>
                   {group.label && (
-                    <TableRow className="bg-muted/50 hover:bg-muted/50">
-                      <TableCell colSpan={colSpan} className="py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <TableRow className={groupRowCls(group.label)}>
+                      <TableCell colSpan={colSpan} className={`py-2 text-xs font-semibold uppercase tracking-wide ${groupTextCls(group.label)}`}>
                         {group.label} · {group.rows.length}
                       </TableCell>
                     </TableRow>
