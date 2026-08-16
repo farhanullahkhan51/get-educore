@@ -18,7 +18,7 @@ import { useModuleLayout } from "@/lib/ui-prefs";
 import { arrange, byText, densityCell } from "@/lib/ui-arrange";
 import { Fragment } from "react";
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { generateCode } from "@/lib/generate-code";
@@ -49,6 +49,32 @@ type Assignment = {
   teacher_id: string;
   academic_year: string | null;
 };
+
+/** Board groups read blue, Cambridge groups read orange. */
+function trackOf(label: string): "board" | "cambridge" | "other" {
+  const l = label.toLowerCase();
+  if (l.startsWith("cambridge")) return "cambridge";
+  if (l.startsWith("board")) return "board";
+  return "other";
+}
+const groupRowCls = (label: string) =>
+  ({
+    board: "bg-blue-50 hover:bg-blue-50 dark:bg-blue-950/40 dark:hover:bg-blue-950/40",
+    cambridge: "bg-orange-50 hover:bg-orange-50 dark:bg-orange-950/40 dark:hover:bg-orange-950/40",
+    other: "bg-muted/50 hover:bg-muted/50",
+  })[trackOf(label)];
+const groupChipCls = (label: string) =>
+  ({
+    board: "border-blue-500 bg-blue-50 text-blue-800 dark:bg-blue-950/40 dark:text-blue-200",
+    cambridge: "border-orange-500 bg-orange-50 text-orange-800 dark:bg-orange-950/40 dark:text-orange-200",
+    other: "border-border bg-muted text-muted-foreground",
+  })[trackOf(label)];
+const groupTextCls = (label: string) =>
+  ({
+    board: "text-blue-800 dark:text-blue-200",
+    cambridge: "text-orange-800 dark:text-orange-200",
+    other: "text-muted-foreground",
+  })[trackOf(label)];
 
 function CoursesPage() {
   return (
@@ -270,8 +296,8 @@ function CoursesTab() {
               {groups.map((group) => (
                 <Fragment key={group.key}>
                   {group.label && (
-                    <TableRow className="bg-muted/50 hover:bg-muted/50">
-                      <TableCell colSpan={colSpan} className="py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <TableRow className={groupRowCls(group.label)}>
+                      <TableCell colSpan={colSpan} className={`py-2 text-xs font-semibold uppercase tracking-wide ${groupTextCls(group.label)}`}>
                         {group.label} · {group.rows.length}
                       </TableCell>
                     </TableRow>
@@ -310,16 +336,21 @@ function AssignmentsTab() {
   const [open, setOpen] = useState(false);
 
   const { data: courses } = useQuery({
-    queryKey: ["courses"],
-    queryFn: async () => (await supabase.from("courses").select("id, code, title, campus_id").order("code")).data ?? [],
+    queryKey: ["courses", "for-assignments"],
+    queryFn: async () => (await supabase.from("courses").select("id, code, title, campus_id, program_id, academic_system").order("code")).data ?? [],
   });
   const { data: sections } = useQuery({
     queryKey: ["sections"],
     queryFn: async () => (await supabase.from("sections").select("id, name, class_id").order("name")).data ?? [],
   });
   const { data: classes } = useQuery({
-    queryKey: ["classes"],
-    queryFn: async () => (await supabase.from("classes").select("id, name, campus_id").order("name")).data ?? [],
+    queryKey: ["classes", "with-program"],
+    queryFn: async () => (await supabase.from("classes").select("id, name, campus_id, program_id, academic_system").order("name")).data ?? [],
+  });
+  const { data: programs } = useQuery({
+    queryKey: ["programs", "with-system"],
+    queryFn: async () =>
+      (await supabase.from("programs").select("id, name, campus_id, academic_system").order("name")).data ?? [],
   });
   const { data: staff } = useQuery({
     queryKey: ["staff"],
@@ -368,6 +399,40 @@ function AssignmentsTab() {
   }));
   const staffMap = new Map(staff?.map((s) => [s.id, `${s.first_name} ${s.last_name}`]));
 
+  // ---- Program-wise grouping for the pickers ----
+  const programMap = new Map((programs ?? []).map((p) => [p.id, p]));
+  const systemLabel = (s?: string | null) =>
+    s === "cambridge" ? "Cambridge" : s === "board" ? "Board" : "Board & Cambridge";
+  const groupLabelFor = (programId: string | null | undefined, fallbackSystem?: string | null) => {
+    const p = programId ? programMap.get(programId) : null;
+    return p ? `${systemLabel(p.academic_system)} — ${p.name}` : `${systemLabel(fallbackSystem)} — Unassigned program`;
+  };
+  function groupBy<T>(rows: T[], label: (r: T) => string) {
+    const m = new Map<string, T[]>();
+    for (const r of rows) {
+      const k = label(r);
+      if (!m.has(k)) m.set(k, []);
+      m.get(k)!.push(r);
+    }
+    return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }));
+  }
+  const courseGroups = groupBy(courses ?? [], (c: any) => groupLabelFor(c.program_id, c.academic_system));
+  const sectionGroups = groupBy(sections ?? [], (s) => {
+    const cls: any = classes?.find((c) => c.id === s.class_id);
+    return groupLabelFor(cls?.program_id, cls?.academic_system);
+  });
+
+  /** Sections a teacher already teaches — shown inline so double-booking is obvious. */
+  const teacherSections = new Map<string, string[]>();
+  for (const a of assignments ?? []) {
+    const label = sectionMap.get(a.section_id);
+    if (!label) continue;
+    const list = teacherSections.get(a.teacher_id) ?? [];
+    if (!list.includes(label)) list.push(label);
+    teacherSections.set(a.teacher_id, list);
+  }
+
+
   return (
     <>
       <div className="mb-4 flex justify-end">
@@ -386,7 +451,16 @@ function AssignmentsTab() {
                 <Select name="course_id" required>
                   <SelectTrigger><SelectValue placeholder="Select course" /></SelectTrigger>
                   <SelectContent>
-                    {courses?.map((c) => <SelectItem key={c.id} value={c.id}>{c.code} · {c.title}</SelectItem>)}
+                    {courseGroups.map(([label, rows]) => (
+                      <SelectGroup key={label}>
+                        <SelectLabel className={`-mx-1 mt-1 border-l-2 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ${groupChipCls(label)}`}>
+                          {label} · {rows.length}
+                        </SelectLabel>
+                        {rows.map((c: any) => (
+                          <SelectItem key={c.id} value={c.id}>{c.code} · {c.title}</SelectItem>
+                        ))}
+                      </SelectGroup>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -395,7 +469,16 @@ function AssignmentsTab() {
                 <Select name="section_id" required>
                   <SelectTrigger><SelectValue placeholder="Select section" /></SelectTrigger>
                   <SelectContent>
-                    {sections?.map((s) => <SelectItem key={s.id} value={s.id}>{sectionMap.get(s.id)}</SelectItem>)}
+                    {sectionGroups.map(([label, rows]) => (
+                      <SelectGroup key={label}>
+                        <SelectLabel className={`-mx-1 mt-1 border-l-2 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ${groupChipCls(label)}`}>
+                          {label} · {rows.length}
+                        </SelectLabel>
+                        {rows.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>{sectionMap.get(s.id)}</SelectItem>
+                        ))}
+                      </SelectGroup>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -404,7 +487,23 @@ function AssignmentsTab() {
                 <Select name="teacher_id" required>
                   <SelectTrigger><SelectValue placeholder="Select teacher" /></SelectTrigger>
                   <SelectContent>
-                    {staff?.map((s) => <SelectItem key={s.id} value={s.id}>{`${s.first_name} ${s.last_name}`} {s.designation ? `· ${s.designation}` : ""}</SelectItem>)}
+                    {staff?.map((s) => {
+                      const assigned = teacherSections.get(s.id) ?? [];
+                      return (
+                        <SelectItem key={s.id} value={s.id} className={assigned.length ? "bg-amber-50 dark:bg-amber-950/30" : undefined}>
+                          <span className="flex flex-col items-start">
+                            <span>
+                              {s.first_name} {s.last_name}{s.designation ? ` · ${s.designation}` : ""}
+                            </span>
+                            {assigned.length > 0 && (
+                              <span className="text-[11px] font-medium text-amber-700 dark:text-amber-300">
+                                Already assigned: {assigned.join(", ")}
+                              </span>
+                            )}
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
