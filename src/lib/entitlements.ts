@@ -12,6 +12,7 @@ export const FEATURES = [
   { key: "board", label: "BISE Board module" },
   { key: "cambridge", label: "Cambridge module" },
   { key: "track_switch", label: "Track switch (Board ↔ Cambridge)" },
+  { key: "timetable", label: "Timetable & scheduling" },
   { key: "certificates", label: "Certificates & documents" },
   { key: "certificates_all_templates", label: "All certificate templates" },
   { key: "portal", label: "Student portal" },

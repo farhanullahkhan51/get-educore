@@ -20,6 +20,7 @@ import {
   Award,
   Landmark,
   Menu,
+  CalendarDays,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -107,6 +108,13 @@ const NAV: NavItem[] = [
     icon: Layers,
     roles: ["super_admin", "campus_admin"],
     feature: "track_switch",
+  },
+  {
+    to: "/timetable",
+    label: "Timetable",
+    icon: CalendarDays,
+    roles: ["super_admin", "campus_admin", "teacher"],
+    feature: "timetable",
   },
   {
     to: "/fees",
