@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -139,7 +137,7 @@ function BillingPage() {
   }
 
   return (
-    <AppShell>
+    <>
       <PageHeader title="Billing & Plan" description="Your subscription, invoices and payment method." />
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -300,6 +298,6 @@ function BillingPage() {
           </form>
         </DialogContent>
       </Dialog>
-    </AppShell>
+    </>
   );
 }
