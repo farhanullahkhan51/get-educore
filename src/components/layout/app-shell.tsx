@@ -31,6 +31,7 @@ import { EditModeButton, EditModeBanner } from "@/components/layout/edit-mode-ba
 import { PullToRefresh } from "@/components/layout/pull-to-refresh";
 import { useEntitlements, type FeatureKey } from "@/lib/entitlements";
 import { TrialBanner } from "@/components/layout/trial-banner";
+import { ReadOnlyShield } from "@/components/layout/read-only-shield";
 
 interface NavItem {
   to: string;
