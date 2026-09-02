@@ -46,6 +46,7 @@ type PayrollEntry = {
 
 function StaffPage() {
   const qc = useQueryClient();
+  const ent = useEntitlements();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Staff | null>(null);
   const [uploadFor, setUploadFor] = useState<Staff | null>(null);

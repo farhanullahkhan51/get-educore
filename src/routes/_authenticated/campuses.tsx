@@ -33,6 +33,7 @@ type Campus = {
 
 function CampusesPage() {
   const qc = useQueryClient();
+  const ent = useEntitlements();
   const { data: user } = useCurrentUser();
   const isSuper = user?.roles.includes("super_admin");
   const [editing, setEditing] = useState<Campus | null>(null);

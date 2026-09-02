@@ -47,6 +47,7 @@ type Student = {
 
 function StudentsPage() {
   const qc = useQueryClient();
+  const ent = useEntitlements();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Student | null>(null);
   const [viewing, setViewing] = useState<Student | null>(null);
