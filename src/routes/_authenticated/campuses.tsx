@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { generateCode } from "@/lib/generate-code";
+import { useEntitlements, limitMessage } from "@/lib/entitlements";
 
 export const Route = createFileRoute("/_authenticated/campuses")({
   component: CampusesPage,
@@ -32,6 +33,7 @@ type Campus = {
 
 function CampusesPage() {
   const qc = useQueryClient();
+  const ent = useEntitlements();
   const { data: user } = useCurrentUser();
   const isSuper = user?.roles.includes("super_admin");
   const [editing, setEditing] = useState<Campus | null>(null);
@@ -48,6 +50,10 @@ function CampusesPage() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const cap = ent.limit("campus_limit");
+    if (!editing && cap !== null && (campuses?.length ?? 0) >= cap) {
+      return toast.error(limitMessage("campuses", cap, ent.planName));
+    }
     const fd = new FormData(e.currentTarget);
     const name = String(fd.get("name"));
     let code = String(fd.get("code") || "").trim().toUpperCase();

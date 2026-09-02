@@ -16,6 +16,7 @@ import { SystemBadge } from "./campuses";
 import { LayoutMenu } from "@/components/layout/layout-menu";
 import { useModuleLayout } from "@/lib/ui-prefs";
 import { useArranged, byText, densityCell } from "@/lib/ui-arrange";
+import { useEntitlements, limitMessage } from "@/lib/entitlements";
 
 
 export const Route = createFileRoute("/_authenticated/students")({
@@ -46,6 +47,7 @@ type Student = {
 
 function StudentsPage() {
   const qc = useQueryClient();
+  const ent = useEntitlements();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Student | null>(null);
   const [viewing, setViewing] = useState<Student | null>(null);
@@ -120,6 +122,10 @@ function StudentsPage() {
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const cap = ent.limit("student_limit");
+    if (cap !== null && (students?.length ?? 0) >= cap) {
+      return toast.error(limitMessage("students", cap, ent.planName));
+    }
     const fd = new FormData(e.currentTarget);
     const code = "STU-" + Date.now().toString(36).toUpperCase();
     const { error } = await supabase.from("students").insert({

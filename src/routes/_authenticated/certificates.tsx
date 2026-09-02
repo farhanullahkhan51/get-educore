@@ -21,9 +21,10 @@ import {
 import { toast } from "sonner";
 import { Award, Plus, Printer, Ban, Search, Eye, Pencil, Trash2 } from "lucide-react";
 import { useTenantId, getActiveTenantName } from "@/lib/tenant-context";
+import { FeatureGate } from "@/components/layout/feature-gate";
 
 export const Route = createFileRoute("/_authenticated/certificates")({
-  component: CertificatesPage,
+  component: GatedCertificatesPage,
 });
 
 type CertType =
@@ -632,5 +633,13 @@ function CertificatesPage() {
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function GatedCertificatesPage() {
+  return (
+    <FeatureGate feature="certificates" title="Certificates">
+      <CertificatesPage />
+    </FeatureGate>
   );
 }

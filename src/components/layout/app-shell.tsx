@@ -29,12 +29,15 @@ import { AssistantMenu } from "@/components/assistant/assistant-menu";
 import { EditableList } from "@/components/layout/editable";
 import { EditModeButton, EditModeBanner } from "@/components/layout/edit-mode-bar";
 import { PullToRefresh } from "@/components/layout/pull-to-refresh";
+import { useEntitlements, type FeatureKey } from "@/lib/entitlements";
 
 interface NavItem {
   to: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   roles: AppRole[];
+  /** Plan/academic-system capability required to see this module. */
+  feature?: FeatureKey;
 }
 
 const NAV: NavItem[] = [
@@ -45,7 +48,7 @@ const NAV: NavItem[] = [
     roles: ["super_admin", "campus_admin", "admissions_officer", "finance_officer", "teacher"],
   },
 
-  { to: "/portal", label: "My Portal", icon: GraduationCap, roles: ["student"] },
+  { to: "/portal", label: "My Portal", icon: GraduationCap, roles: ["student"], feature: "portal" },
   { to: "/campuses", label: "Campuses", icon: Building2, roles: ["super_admin"] },
   { to: "/programs", label: "Programs", icon: BookOpen, roles: ["super_admin", "campus_admin"] },
   {
@@ -59,6 +62,7 @@ const NAV: NavItem[] = [
     label: "Admissions",
     icon: Inbox,
     roles: ["super_admin", "campus_admin", "admissions_officer"],
+    feature: "admissions",
   },
   {
     to: "/students",
@@ -73,6 +77,7 @@ const NAV: NavItem[] = [
     label: "Academics",
     icon: ClipboardCheck,
     roles: ["super_admin", "campus_admin", "teacher"],
+    feature: "academics",
   },
   {
     to: "/results",
@@ -85,30 +90,35 @@ const NAV: NavItem[] = [
     label: "BISE Board",
     icon: Landmark,
     roles: ["super_admin", "campus_admin", "admissions_officer"],
+    feature: "board",
   },
   {
     to: "/cambridge",
     label: "Cambridge",
     icon: BookMarked,
     roles: ["super_admin", "campus_admin", "admissions_officer"],
+    feature: "cambridge",
   },
   {
     to: "/track-switch",
     label: "Track Switch",
     icon: Layers,
     roles: ["super_admin", "campus_admin"],
+    feature: "track_switch",
   },
   {
     to: "/fees",
     label: "Fees & Finance",
     icon: Wallet,
     roles: ["super_admin", "campus_admin", "finance_officer"],
+    feature: "fees",
   },
   {
     to: "/certificates",
     label: "Certificates",
     icon: Award,
     roles: ["super_admin", "campus_admin", "admissions_officer"],
+    feature: "certificates",
   },
   { to: "/users", label: "Users & Roles", icon: UserCog, roles: ["super_admin"] },
   { to: "/platform", label: "Platform Admin", icon: ShieldCheck, roles: ["super_admin"] },
@@ -117,6 +127,7 @@ const NAV: NavItem[] = [
 export function AppShell({ children }: { children: ReactNode }) {
   const { data: user, isLoading } = useCurrentUser();
   const { tenant, preview, setPreview } = useTenant();
+  const ent = useEntitlements();
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -161,6 +172,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         const item = navByPath.get(block.id);
         if (!item) return null;
         if (!(user?.roles.some((r) => item.roles.includes(r)) ?? false)) return null;
+        if (item.feature && !ent.can(item.feature)) return null;
         const Icon = item.icon;
         const active = location.pathname === item.to || location.pathname.startsWith(item.to + "/");
         return (
@@ -245,8 +257,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <EditModeButton />
-            <AssistantMenu />
+            {ent.can("edit_mode") && <EditModeButton />}
+            {ent.can("ai_assistant") && <AssistantMenu />}
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" aria-label="Open navigation">
@@ -269,8 +281,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         {/* Desktop top bar */}
         <div className="sticky top-0 z-30 hidden items-center justify-end border-b bg-background px-6 py-2 md:flex">
           <div className="flex items-center gap-2">
-            <EditModeButton />
-            <AssistantMenu />
+            {ent.can("edit_mode") && <EditModeButton />}
+            {ent.can("ai_assistant") && <AssistantMenu />}
           </div>
         </div>
 

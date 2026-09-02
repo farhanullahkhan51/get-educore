@@ -20,9 +20,10 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Wallet, AlertTriangle, CheckCircle2, Upload, Link2, Eye, Printer } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { FeatureGate } from "@/components/layout/feature-gate";
 
 export const Route = createFileRoute("/_authenticated/fees")({
-  component: FeesPage,
+  component: GatedFeesPage,
 });
 
 type FeeStructure = {
@@ -1605,5 +1606,13 @@ function MatchDialog({ txn, onClose, onDone }: { txn: BankTxn; onClose: () => vo
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function GatedFeesPage() {
+  return (
+    <FeatureGate feature="fees" title="Fees & Finance">
+      <FeesPage />
+    </FeatureGate>
   );
 }

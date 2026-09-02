@@ -16,9 +16,10 @@ import { EditableTabs } from "@/components/layout/editable";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Pencil, ListChecks, Printer, FileDown, ShieldAlert, Loader2, Trash2 } from "lucide-react";
+import { FeatureGate } from "@/components/layout/feature-gate";
 
 export const Route = createFileRoute("/_authenticated/board")({
-  component: BoardPage,
+  component: GatedBoardPage,
 });
 
 type Registration = {
@@ -664,4 +665,12 @@ function gradeFor(total: number | null, max: number): string | null {
   if (p >= 40) return "D";
   if (p >= 33) return "E";
   return "F";
+}
+
+function GatedBoardPage() {
+  return (
+    <FeatureGate feature="board" title="BISE Board">
+      <BoardPage />
+    </FeatureGate>
+  );
 }

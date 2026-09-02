@@ -12,6 +12,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { CalendarCheck, Wallet, Award, FileText, CalendarClock } from "lucide-react";
+import { FeatureGate } from "@/components/layout/feature-gate";
 
 export const Route = createFileRoute("/_authenticated/portal")({
   head: () => ({
@@ -24,7 +25,7 @@ export const Route = createFileRoute("/_authenticated/portal")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: StudentPortalPage,
+  component: GatedStudentPortalPage,
 });
 
 function StudentPortalPage() {
@@ -437,5 +438,13 @@ function Row({ label, value }: { label: string; value: string | null }) {
       <span className="text-xs uppercase tracking-widest text-muted-foreground">{label}</span>
       <span className="font-medium">{value ?? "—"}</span>
     </div>
+  );
+}
+
+function GatedStudentPortalPage() {
+  return (
+    <FeatureGate feature="portal" title="Student Portal">
+      <StudentPortalPage />
+    </FeatureGate>
   );
 }

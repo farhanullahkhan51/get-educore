@@ -13,12 +13,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Settings2, Building2, Eye } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useTenant, type TenantBranding } from "@/lib/tenant-context";
 import { AiUsageTab } from "@/components/platform/ai-usage-tab";
+import { FEATURES } from "@/lib/entitlements";
+import { Checkbox } from "@/components/ui/checkbox";
 
 
 
@@ -35,6 +36,7 @@ type Tenant = {
   plan_tier_id: string | null;
   status: string;
   created_at: string;
+  academic_system: "board" | "cambridge" | "both";
 };
 
 type PlanTier = {
@@ -42,6 +44,8 @@ type PlanTier = {
   name: string;
   student_limit: number | null;
   campus_limit: number | null;
+  staff_limit: number | null;
+  ai_message_limit: number | null;
   feature_flags: Record<string, unknown>;
 };
 
@@ -119,6 +123,7 @@ function TenantsTab() {
       custom_domain: String(fd.get("custom_domain") || "") || null,
       plan_tier_id: String(fd.get("plan_tier_id") || "") || null,
       status: String(fd.get("status") || "active") as "active" | "trial" | "suspended",
+      academic_system: String(fd.get("academic_system") || "both") as "board" | "cambridge" | "both",
     };
     const res = editing
       ? await supabase.from("tenants").update(payload).eq("id", editing.id)
@@ -169,6 +174,13 @@ function TenantsTab() {
       email_sender_name: s?.email_sender_name ?? null,
       default_currency: s?.default_currency ?? "USD",
       default_timezone: s?.default_timezone ?? "UTC",
+      academic_system: t.academic_system ?? "both",
+      plan_name: plans?.find((p) => p.id === t.plan_tier_id)?.name ?? null,
+      feature_flags: (plans?.find((p) => p.id === t.plan_tier_id)?.feature_flags ?? null) as Record<string, boolean> | null,
+      student_limit: plans?.find((p) => p.id === t.plan_tier_id)?.student_limit ?? null,
+      campus_limit: plans?.find((p) => p.id === t.plan_tier_id)?.campus_limit ?? null,
+      staff_limit: plans?.find((p) => p.id === t.plan_tier_id)?.staff_limit ?? null,
+      ai_message_limit: plans?.find((p) => p.id === t.plan_tier_id)?.ai_message_limit ?? null,
     } satisfies TenantBranding);
     toast.success(`Previewing ${t.name}`);
   }
@@ -290,6 +302,20 @@ function TenantsTab() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div>
+              <Label>Examination system</Label>
+              <Select name="academic_system" defaultValue={editing?.academic_system ?? "both"}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="board">BISE Board only</SelectItem>
+                  <SelectItem value="cambridge">Cambridge only</SelectItem>
+                  <SelectItem value="both">Board &amp; Cambridge</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Chosen when the institution buys a plan. Narrowing it later only hides the module — existing records are kept.
+              </p>
             </div>
             <DialogFooter>
               <Button type="submit">{editing ? "Save" : "Create"}</Button>
@@ -749,17 +775,14 @@ function PlansTab() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    let flags: Record<string, unknown> = {};
-    try {
-      const raw = String(fd.get("feature_flags") || "").trim();
-      if (raw) flags = JSON.parse(raw);
-    } catch {
-      return toast.error("Feature flags must be valid JSON.");
-    }
+    const flags: Record<string, boolean> = {};
+    for (const f of FEATURES) flags[f.key] = fd.get(`feat.${f.key}`) === "on";
     const payload = {
       name: String(fd.get("name")),
       student_limit: fd.get("student_limit") ? Number(fd.get("student_limit")) : null,
       campus_limit: fd.get("campus_limit") ? Number(fd.get("campus_limit")) : null,
+      staff_limit: fd.get("staff_limit") ? Number(fd.get("staff_limit")) : null,
+      ai_message_limit: fd.get("ai_message_limit") ? Number(fd.get("ai_message_limit")) : null,
       feature_flags: flags as never,
     };
     const res = editing
@@ -843,10 +866,29 @@ function PlansTab() {
                 <Input id="campus_limit" name="campus_limit" type="number" defaultValue={editing?.campus_limit ?? ""} placeholder="Blank = unlimited" />
               </div>
             </div>
-            <div>
-              <Label htmlFor="feature_flags">Feature Flags (JSON)</Label>
-              <Textarea id="feature_flags" name="feature_flags" rows={4}
-                defaultValue={editing ? JSON.stringify(editing.feature_flags ?? {}, null, 2) : `{\n  "board": true,\n  "cambridge": true\n}`} />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="staff_limit">Staff Limit</Label>
+                <Input id="staff_limit" name="staff_limit" type="number" defaultValue={editing?.staff_limit ?? ""} placeholder="Blank = unlimited" />
+              </div>
+              <div>
+                <Label htmlFor="ai_message_limit">AI messages / month</Label>
+                <Input id="ai_message_limit" name="ai_message_limit" type="number" defaultValue={editing?.ai_message_limit ?? ""} placeholder="Blank = unlimited" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Included features</Label>
+              <div className="grid max-h-56 grid-cols-1 gap-2 overflow-y-auto rounded-sm border p-3 sm:grid-cols-2">
+                {FEATURES.map((f) => (
+                  <label key={f.key} className="flex items-start gap-2 text-sm">
+                    <Checkbox
+                      name={`feat.${f.key}`}
+                      defaultChecked={(editing?.feature_flags?.[f.key] ?? true) !== false}
+                    />
+                    <span>{f.label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
             <DialogFooter>
               <Button type="submit">{editing ? "Save" : "Create"}</Button>

@@ -20,6 +20,7 @@ import {
   GraduationCap, Users, Wallet, ClipboardCheck, TrendingUp, AlertTriangle, Inbox, Building2,
 } from "lucide-react";
 import { format, subMonths, startOfMonth } from "date-fns";
+import { useEntitlements } from "@/lib/entitlements";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -86,6 +87,7 @@ function Dashboard() {
   const { data: user } = useCurrentUser();
   const isSuper = user?.roles.includes("super_admin") ?? false;
   const [campus, setCampus] = useState<string>("all");
+  const ent = useEntitlements();
 
   const { data: campuses } = useQuery({
     queryKey: ["insights-campuses"],
@@ -259,6 +261,26 @@ function Dashboard() {
             </SelectContent>
           </Select>
         </div>
+      ) : null}
+
+      {ent.planName && isSuper ? (
+        <Card className="mb-6 shadow-none">
+          <CardContent className="flex flex-wrap items-center gap-x-8 gap-y-3 py-4">
+            <div>
+              <div className="text-xs uppercase tracking-wide text-muted-foreground">Plan</div>
+              <div className="font-serif text-base">{ent.planName}</div>
+            </div>
+            <div>
+              <div className="text-xs uppercase tracking-wide text-muted-foreground">Examination system</div>
+              <div className="text-sm">
+                {ent.academicSystem === "both" ? "Board & Cambridge" : ent.academicSystem === "board" ? "BISE Board" : "Cambridge"}
+              </div>
+            </div>
+            <PlanUsage label="Students" used={metrics.studentTotal} cap={ent.limit("student_limit")} />
+            <PlanUsage label="Staff" used={data?.staff.length ?? 0} cap={ent.limit("staff_limit")} />
+            <PlanUsage label="Campuses" used={campuses?.length ?? 0} cap={ent.limit("campus_limit")} />
+          </CardContent>
+        </Card>
       ) : null}
 
       <EditableGrid
@@ -503,5 +525,26 @@ function Dashboard() {
         }}
       />
     </>
+  );
+}
+
+function PlanUsage({ label, used, cap }: { label: string; used: number; cap: number | null }) {
+  const pct = cap ? Math.min(100, Math.round((used / cap) * 100)) : 0;
+  return (
+    <div className="min-w-32">
+      <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="text-sm">
+        {used}
+        <span className="text-muted-foreground"> / {cap ?? "Unlimited"}</span>
+      </div>
+      {cap ? (
+        <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-muted">
+          <div
+            className={pct >= 90 ? "h-full bg-destructive" : "h-full bg-primary"}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      ) : null}
+    </div>
   );
 }
