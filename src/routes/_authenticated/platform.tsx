@@ -35,6 +35,7 @@ type Tenant = {
   plan_tier_id: string | null;
   status: string;
   created_at: string;
+  academic_system: "board" | "cambridge" | "both";
 };
 
 type PlanTier = {
@@ -42,6 +43,8 @@ type PlanTier = {
   name: string;
   student_limit: number | null;
   campus_limit: number | null;
+  staff_limit: number | null;
+  ai_message_limit: number | null;
   feature_flags: Record<string, unknown>;
 };
 
