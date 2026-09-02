@@ -47,8 +47,9 @@ export const provisionInstitution = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => signupSchema.parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getRequestHeader } = await import("@tanstack/react-start/server");
 
-    // Anti-abuse: cap signups from one email / short window.
+    // Anti-abuse: cap signups from one email and from one network, per hour.
     const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     const { count: recent } = await supabaseAdmin
       .from("signup_requests")
@@ -56,6 +57,27 @@ export const provisionInstitution = createServerFn({ method: "POST" })
       .eq("email", data.email)
       .gte("created_at", since);
     if ((recent ?? 0) >= 3) throw new Error("Too many signups from this email. Please try again later.");
+
+    const ip =
+      (getRequestHeader("cf-connecting-ip") ??
+        getRequestHeader("x-forwarded-for")?.split(",")[0] ??
+        "")
+        .trim() || null;
+    let ipHash: string | null = null;
+    if (ip) {
+      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ip));
+      ipHash = Array.from(new Uint8Array(digest))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+      const { count: fromIp } = await supabaseAdmin
+        .from("signup_requests")
+        .select("id", { count: "exact", head: true })
+        .eq("ip_hash", ipHash)
+        .gte("created_at", since);
+      if ((fromIp ?? 0) >= 5) {
+        throw new Error("Too many signups from this network. Please try again later.");
+      }
+    }
 
     const { data: slugOk } = await supabaseAdmin.rpc("slug_available", { _slug: data.slug });
     if (!slugOk) throw new Error("That workspace address is no longer available.");
