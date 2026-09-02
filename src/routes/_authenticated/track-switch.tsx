@@ -14,9 +14,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { ArrowLeftRight, Plus } from "lucide-react";
 import { useTenantId } from "@/lib/tenant-context";
+import { FeatureGate } from "@/components/layout/feature-gate";
 
 export const Route = createFileRoute("/_authenticated/track-switch")({
-  component: TrackSwitchPage,
+  component: GatedTrackSwitchPage,
 });
 
 type Switch = {
@@ -308,5 +309,13 @@ function TrackSwitchPage() {
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function GatedTrackSwitchPage() {
+  return (
+    <FeatureGate feature="track_switch" title="Track Switch">
+      <TrackSwitchPage />
+    </FeatureGate>
   );
 }

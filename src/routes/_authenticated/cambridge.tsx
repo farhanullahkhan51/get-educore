@@ -16,9 +16,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Plus, Pencil, ListChecks, Printer, Trash2, Loader2, Save } from "lucide-react";
 import { getActiveTenantName, useTenantId } from "@/lib/tenant-context";
+import { FeatureGate } from "@/components/layout/feature-gate";
 
 export const Route = createFileRoute("/_authenticated/cambridge")({
-  component: CambridgePage,
+  component: GatedCambridgePage,
 });
 
 type Registration = {
@@ -610,5 +611,13 @@ function ResultsTab() {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function GatedCambridgePage() {
+  return (
+    <FeatureGate feature="cambridge" title="Cambridge">
+      <CambridgePage />
+    </FeatureGate>
   );
 }
