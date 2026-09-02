@@ -21,6 +21,14 @@ export type TenantBranding = {
   email_sender_name: string | null;
   default_currency: string;
   default_timezone: string;
+  /** Which examination systems this institution bought: board, cambridge or both. */
+  academic_system: "board" | "cambridge" | "both";
+  plan_name: string | null;
+  feature_flags: Record<string, boolean> | null;
+  student_limit: number | null;
+  campus_limit: number | null;
+  staff_limit: number | null;
+  ai_message_limit: number | null;
 };
 
 type TenantContextValue = {
