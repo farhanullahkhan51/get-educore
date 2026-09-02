@@ -29,6 +29,7 @@ import { AssistantMenu } from "@/components/assistant/assistant-menu";
 import { EditableList } from "@/components/layout/editable";
 import { EditModeButton, EditModeBanner } from "@/components/layout/edit-mode-bar";
 import { PullToRefresh } from "@/components/layout/pull-to-refresh";
+import { useEntitlements, type FeatureKey } from "@/lib/entitlements";
 
 interface NavItem {
   to: string;
