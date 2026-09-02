@@ -1,58 +1,67 @@
-# White-label: what exists today, and what's missing for Google
+# Self-serve signup, 20-day trial, and payment collection
 
-## What already works (verified in the code)
+## What this adds
 
-- Every institution is a tenant row with its own slug, optional custom domain, logo, favicon, colours, font, letterhead, signature and currency/timezone.
-- The app resolves the tenant from the browser hostname (`resolve_tenant_by_host`) and applies that institution's colours, font, logo, favicon and browser tab title at runtime. So on-screen the client sees only their own name, never EduCore.
-- Platform Admin can create tenants, set a custom domain, and see a domain status badge; there is also a per-tenant preview mode.
-- Data is isolated per tenant through row-level security.
+Today you create every institution by hand in Platform Admin and there is no billing. This makes the platform sell itself: an institution signs up on a public page, gets its own branded workspace instantly with a 20-day free trial, then either pays by card or gets activated by you after a bank transfer.
 
-## What does NOT work yet — the honest answer on Google
+## 1. Public pricing and signup
 
-**Today: no. A client's institution would not show up correctly in Google search.** Three concrete reasons:
+- **Pricing page** — Starter / Pro / Enterprise side by side with what each includes, monthly and yearly toggle, PKR and USD display, and a "Start 20-day free trial" button. Publicly indexable.
+- **Signup wizard** (no payment required to start):
+  1. Institution name, contact person, email, phone, city
+  2. Choose examination system: BISE Board / Cambridge / Both
+  3. Choose plan
+  4. Pick a workspace address — `yourschool.<yourdomain>` — checked live for availability
+  5. Set a password
+- On submit the system creates: the tenant (status `trial`), its settings row with defaults, the first Super Admin account for that institution, and a subscription row with `trialing` and a trial end date 20 days out. The user lands straight in their own branded dashboard.
 
-1. **The HTML sent to Google still says "EduCore".** The page title, description and social preview are hard-coded in the app shell; the institution's name is only swapped in by JavaScript after the page loads. Search crawlers and WhatsApp/Facebook link previews read the first HTML response, so they see "EduCore — School & College Management ERP".
-2. **The custom domain field is just a text box.** Nothing verifies the domain, issues an SSL certificate, or actually routes `portal.theirschool.edu.pk` to the app. The status badge is stored, not checked.
-3. **There is no robots.txt, sitemap, or per-institution public page** that Google could index in the first place. The only public pages are the landing page and the inquiry form.
+## 2. The 20-day trial
 
-Also worth knowing: the app itself is mostly a private, logged-in system. Even fully white-labelled, Google will only ever index the public surface (landing page + inquiry form) — not the dashboard. Most institutions keep their marketing site separate and use this ERP at a subdomain like `portal.theirschool.edu.pk`.
+- A banner across the app shows days remaining, and from day 15 a "Choose a plan" call to action.
+- Reminder emails on day 10, day 17, day 19 and on expiry.
+- On expiry the workspace goes read-only: data is safe and viewable, but creating students, challans, results and certificates is blocked with an upgrade prompt. Nothing is deleted.
+- Trials are capped to the Starter limits unless you grant otherwise.
 
-## What to build to make white-labelling real
+## 3. Payment collection — two channels
 
-### 1. Server-rendered tenant branding (the part that fixes Google)
-Resolve the tenant on the server from the request hostname, before the page is sent, so the HTML already contains:
-- `<title>` and description using the institution's name
-- `og:title`, `og:description`, `og:image` (their logo/letterhead)
-- their favicon
-- their theme colours inlined, so there is no flash of EduCore navy on first paint
+**Card checkout (online, automatic)**
+- Built-in card checkout with monthly and yearly prices per tier.
+- After a successful payment the subscription flips to `active`, the tenant to `active`, and the plan tier is applied immediately, so all the feature gating you already built starts enforcing the paid tier.
+- Renewals, failed payments and cancellations arrive by webhook and update the subscription automatically; a failed renewal moves the tenant to `past_due` with a grace period before read-only.
+- Institutions get a Billing page: current plan, next renewal date, payment method, invoices, upgrade/downgrade and cancel.
 
-This makes search results, WhatsApp shares and browser tabs show the institution, not EduCore.
+Important caveat: card checkout requires a seller entity in a supported country — Pakistan-registered sellers are not supported by the built-in providers. If your billing entity is in Pakistan, we ship the manual channel first and turn on card checkout later without rework.
 
-### 2. Custom domain, done properly
-- Platform Admin shows the exact DNS record the client must add (CNAME + a TXT verification token — the token column already exists).
-- A "Verify" action checks DNS live and moves the status through pending → verifying → verified → active.
-- Documentation of the one-time step needed on the hosting side to attach the domain and issue SSL.
-- Until a custom domain is active, each institution gets `theirslug.yourdomain.com` automatically.
+**Bank transfer (manual, for local institutions)**
+- The Billing page offers "Pay by bank transfer": the system issues a numbered invoice with your account details and the exact amount.
+- The institution uploads a payment proof / transaction reference.
+- A **Billing** section in Platform Admin lists pending payments; you mark one as received, choose the period, and the tenant activates on the spot with the invoice marked paid.
+- Renewal reminders go out 14 and 3 days before period end.
 
-### 3. Public, indexable institution page
-A branded public page per tenant (name, campuses, programmes, admissions call-to-action, inquiry form link) with proper headings, JSON-LD `EducationalOrganization` markup, a per-tenant `robots.txt` and `sitemap.xml`. This is what actually earns a Google listing.
+## 4. Platform Admin additions
 
-### 4. Remove remaining EduCore traces
-- Fallback name "EduCore" only used when no tenant resolves (your own marketing host).
-- Emails, printed challans, certificates and report cards all carry the tenant letterhead — audit each print template.
-- Error pages, 404 and the sign-in screen use tenant branding too.
+- Signups feed a list showing trial status, days left, chosen plan and payment channel.
+- Manual controls to extend a trial, change plan, mark paid, suspend or reactivate a tenant.
+- Revenue summary: active subscriptions per tier, monthly recurring revenue, trials converting, overdue accounts.
 
-### 5. Sell it as a plan feature
-Custom domain stays an Enterprise (or paid add-on) entitlement; subdomain white-labelling is included in every tier.
+## 5. Guard rails
+
+- Signup is rate-limited and email-verified so nobody can spam workspaces.
+- A reserved list blocks slugs like `admin`, `app`, `api`, `www`, `educore`.
+- Plan limits (students, campuses, staff, AI messages) are enforced server-side as well as in the UI, so a downgraded institution cannot keep adding beyond its cap.
 
 ## Technical notes
 
-- Tenant resolution moves into a server function / root `beforeLoad` keyed on the request `Host` header, feeding the root route's `head()`; the existing client-side `TenantProvider` keeps handling live preview and post-load updates.
-- `resolve_tenant_by_host` already returns everything needed, so the server path can reuse it with the publishable client.
-- DNS verification runs in a server route using a DNS-over-HTTPS lookup; no new dependency.
-- Add `src/routes/api/public/robots[.]txt` and sitemap handlers that branch on hostname.
-- No schema change required: `custom_domain`, `custom_domain_status` and `domain_verification_token` already exist on `tenants`.
+- New tables: `invoices` (tenant, number, amount, currency, period, channel, status, proof URL, paid date) and `signup_requests` for pre-verification; `subscriptions` gains `trial_ends_at`, `provider`, `provider_subscription_id`, `billing_email`.
+- Tenant provisioning runs in one privileged server function: create auth user, tenant, settings, subscription, first Super Admin role, and Starter-equivalent defaults — all or nothing.
+- Card checkout uses Lovable's built-in payments (Stripe or Paddle, decided by an eligibility check once you confirm the billing entity's country) with a signed webhook at `/api/public/billing/webhook` that updates `subscriptions`, `invoices` and `tenants.status`.
+- Trial/expiry enforcement lives alongside the existing `useEntitlements` gating plus a server-side check in write paths, so a read-only workspace cannot be bypassed from the client.
+- Reminder and invoice emails go out through the platform's email sending, using each tenant's branding.
+- Pricing page is a public SSR route with its own metadata; it does not sit behind auth.
 
-## Scope note
+## Suggested order
 
-This covers making each institution look and index as its own brand. It does not add self-serve signup or payment collection — you still assign plans and domains from Platform Admin.
+1. Signup wizard + tenant provisioning + 20-day trial (no money involved)
+2. Trial banner, expiry read-only mode, reminder emails
+3. Bank-transfer invoices + Platform Admin billing controls
+4. Card checkout and webhooks once the billing entity is settled
