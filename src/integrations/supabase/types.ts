@@ -1727,14 +1727,98 @@ export type Database = {
           },
         ]
       }
+      invoices: {
+        Row: {
+          amount: number
+          billing_cycle: Database["public"]["Enums"]["billing_cycle"]
+          channel: string
+          created_at: string
+          currency: string
+          id: string
+          invoice_no: string
+          marked_by: string | null
+          notes: string | null
+          paid_on: string | null
+          period_end: string | null
+          period_start: string | null
+          plan_tier_id: string | null
+          proof_url: string | null
+          reference: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          billing_cycle?: Database["public"]["Enums"]["billing_cycle"]
+          channel?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          invoice_no: string
+          marked_by?: string | null
+          notes?: string | null
+          paid_on?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          plan_tier_id?: string | null
+          proof_url?: string | null
+          reference?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          billing_cycle?: Database["public"]["Enums"]["billing_cycle"]
+          channel?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          invoice_no?: string
+          marked_by?: string | null
+          notes?: string | null
+          paid_on?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          plan_tier_id?: string | null
+          proof_url?: string | null
+          reference?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_plan_tier_id_fkey"
+            columns: ["plan_tier_id"]
+            isOneToOne: false
+            referencedRelation: "plan_tiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_tiers: {
         Row: {
           ai_message_limit: number | null
           campus_limit: number | null
           created_at: string
+          description: string | null
           feature_flags: Json
           id: string
+          is_public: boolean
           name: string
+          price_monthly_pkr: number | null
+          price_monthly_usd: number | null
+          price_yearly_pkr: number | null
+          price_yearly_usd: number | null
           sort_order: number
           staff_limit: number | null
           student_limit: number | null
@@ -1744,9 +1828,15 @@ export type Database = {
           ai_message_limit?: number | null
           campus_limit?: number | null
           created_at?: string
+          description?: string | null
           feature_flags?: Json
           id?: string
+          is_public?: boolean
           name: string
+          price_monthly_pkr?: number | null
+          price_monthly_usd?: number | null
+          price_yearly_pkr?: number | null
+          price_yearly_usd?: number | null
           sort_order?: number
           staff_limit?: number | null
           student_limit?: number | null
@@ -1756,9 +1846,15 @@ export type Database = {
           ai_message_limit?: number | null
           campus_limit?: number | null
           created_at?: string
+          description?: string | null
           feature_flags?: Json
           id?: string
+          is_public?: boolean
           name?: string
+          price_monthly_pkr?: number | null
+          price_monthly_usd?: number | null
+          price_yearly_pkr?: number | null
+          price_yearly_usd?: number | null
           sort_order?: number
           staff_limit?: number | null
           student_limit?: number | null
@@ -2166,6 +2262,69 @@ export type Database = {
           },
         ]
       }
+      signup_requests: {
+        Row: {
+          academic_system: Database["public"]["Enums"]["academic_system"]
+          city: string | null
+          contact_name: string
+          created_at: string
+          email: string
+          id: string
+          institution_name: string
+          ip_hash: string | null
+          phone: string | null
+          plan_tier_id: string | null
+          requested_slug: string
+          status: string
+          tenant_id: string | null
+        }
+        Insert: {
+          academic_system?: Database["public"]["Enums"]["academic_system"]
+          city?: string | null
+          contact_name: string
+          created_at?: string
+          email: string
+          id?: string
+          institution_name: string
+          ip_hash?: string | null
+          phone?: string | null
+          plan_tier_id?: string | null
+          requested_slug: string
+          status?: string
+          tenant_id?: string | null
+        }
+        Update: {
+          academic_system?: Database["public"]["Enums"]["academic_system"]
+          city?: string | null
+          contact_name?: string
+          created_at?: string
+          email?: string
+          id?: string
+          institution_name?: string
+          ip_hash?: string | null
+          phone?: string | null
+          plan_tier_id?: string | null
+          requested_slug?: string
+          status?: string
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signup_requests_plan_tier_id_fkey"
+            columns: ["plan_tier_id"]
+            isOneToOne: false
+            referencedRelation: "plan_tiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signup_requests_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff: {
         Row: {
           academic_system: Database["public"]["Enums"]["academic_system"]
@@ -2442,32 +2601,50 @@ export type Database = {
       subscriptions: {
         Row: {
           billing_cycle: Database["public"]["Enums"]["billing_cycle"]
+          billing_email: string | null
           created_at: string
           current_period_end: string | null
+          current_period_start: string | null
           id: string
+          payment_channel: string
           plan_tier_id: string
+          provider: string | null
+          provider_subscription_id: string | null
           status: Database["public"]["Enums"]["subscription_status"]
           tenant_id: string
+          trial_ends_at: string | null
           updated_at: string
         }
         Insert: {
           billing_cycle?: Database["public"]["Enums"]["billing_cycle"]
+          billing_email?: string | null
           created_at?: string
           current_period_end?: string | null
+          current_period_start?: string | null
           id?: string
+          payment_channel?: string
           plan_tier_id: string
+          provider?: string | null
+          provider_subscription_id?: string | null
           status?: Database["public"]["Enums"]["subscription_status"]
           tenant_id: string
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Update: {
           billing_cycle?: Database["public"]["Enums"]["billing_cycle"]
+          billing_email?: string | null
           created_at?: string
           current_period_end?: string | null
+          current_period_start?: string | null
           id?: string
+          payment_channel?: string
           plan_tier_id?: string
+          provider?: string | null
+          provider_subscription_id?: string | null
           status?: Database["public"]["Enums"]["subscription_status"]
           tenant_id?: string
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2803,6 +2980,20 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      my_billing_state: {
+        Args: never
+        Returns: {
+          billing_cycle: Database["public"]["Enums"]["billing_cycle"]
+          current_period_end: string
+          days_left: number
+          plan_name: string
+          read_only: boolean
+          subscription_status: Database["public"]["Enums"]["subscription_status"]
+          tenant_id: string
+          tenant_status: Database["public"]["Enums"]["tenant_status"]
+          trial_ends_at: string
+        }[]
+      }
       resolve_tenant_by_host: {
         Args: { _host: string }
         Returns: {
@@ -2835,6 +3026,7 @@ export type Database = {
         Args: { _seat_index: number; _section_id: string; _student_id: string }
         Returns: undefined
       }
+      slug_available: { Args: { _slug: string }; Returns: boolean }
       student_has_outstanding_challans: {
         Args: { _student_id: string }
         Returns: boolean
