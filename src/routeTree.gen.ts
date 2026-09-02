@@ -34,6 +34,7 @@ import { Route as AuthenticatedCertificatesRouteImport } from './routes/_authent
 import { Route as AuthenticatedCampusesRouteImport } from './routes/_authenticated/campuses'
 import { Route as AuthenticatedCambridgeRouteImport } from './routes/_authenticated/cambridge'
 import { Route as AuthenticatedBoardRouteImport } from './routes/_authenticated/board'
+import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as AuthenticatedAdmissionsRouteImport } from './routes/_authenticated/admissions'
 import { Route as AuthenticatedAcademicsRouteImport } from './routes/_authenticated/academics'
 import { Route as AuthenticatedAssistantIndexRouteImport } from './routes/_authenticated/assistant.index'
@@ -165,6 +166,11 @@ const AuthenticatedBoardRoute = AuthenticatedBoardRouteImport.update({
   path: '/board',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedBillingRoute = AuthenticatedBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdmissionsRoute = AuthenticatedAdmissionsRouteImport.update({
   id: '/admissions',
   path: '/admissions',
@@ -196,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/academics': typeof AuthenticatedAcademicsRoute
   '/admissions': typeof AuthenticatedAdmissionsRoute
+  '/billing': typeof AuthenticatedBillingRoute
   '/board': typeof AuthenticatedBoardRoute
   '/cambridge': typeof AuthenticatedCambridgeRoute
   '/campuses': typeof AuthenticatedCampusesRoute
@@ -226,6 +233,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/academics': typeof AuthenticatedAcademicsRoute
   '/admissions': typeof AuthenticatedAdmissionsRoute
+  '/billing': typeof AuthenticatedBillingRoute
   '/board': typeof AuthenticatedBoardRoute
   '/cambridge': typeof AuthenticatedCambridgeRoute
   '/campuses': typeof AuthenticatedCampusesRoute
@@ -258,6 +266,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_authenticated/academics': typeof AuthenticatedAcademicsRoute
   '/_authenticated/admissions': typeof AuthenticatedAdmissionsRoute
+  '/_authenticated/billing': typeof AuthenticatedBillingRoute
   '/_authenticated/board': typeof AuthenticatedBoardRoute
   '/_authenticated/cambridge': typeof AuthenticatedCambridgeRoute
   '/_authenticated/campuses': typeof AuthenticatedCampusesRoute
@@ -290,6 +299,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/academics'
     | '/admissions'
+    | '/billing'
     | '/board'
     | '/cambridge'
     | '/campuses'
@@ -320,6 +330,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/academics'
     | '/admissions'
+    | '/billing'
     | '/board'
     | '/cambridge'
     | '/campuses'
@@ -351,6 +362,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_authenticated/academics'
     | '/_authenticated/admissions'
+    | '/_authenticated/billing'
     | '/_authenticated/board'
     | '/_authenticated/cambridge'
     | '/_authenticated/campuses'
@@ -562,6 +574,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBoardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/billing': {
+      id: '/_authenticated/billing'
+      path: '/billing'
+      fullPath: '/billing'
+      preLoaderRoute: typeof AuthenticatedBillingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admissions': {
       id: '/_authenticated/admissions'
       path: '/admissions'
@@ -596,6 +615,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAcademicsRoute: typeof AuthenticatedAcademicsRoute
   AuthenticatedAdmissionsRoute: typeof AuthenticatedAdmissionsRoute
+  AuthenticatedBillingRoute: typeof AuthenticatedBillingRoute
   AuthenticatedBoardRoute: typeof AuthenticatedBoardRoute
   AuthenticatedCambridgeRoute: typeof AuthenticatedCambridgeRoute
   AuthenticatedCampusesRoute: typeof AuthenticatedCampusesRoute
@@ -620,6 +640,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAcademicsRoute: AuthenticatedAcademicsRoute,
   AuthenticatedAdmissionsRoute: AuthenticatedAdmissionsRoute,
+  AuthenticatedBillingRoute: AuthenticatedBillingRoute,
   AuthenticatedBoardRoute: AuthenticatedBoardRoute,
   AuthenticatedCambridgeRoute: AuthenticatedCambridgeRoute,
   AuthenticatedCampusesRoute: AuthenticatedCampusesRoute,
