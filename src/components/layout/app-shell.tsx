@@ -288,7 +288,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        <TrialBanner />
+        <div data-allow-readonly>
+          <TrialBanner />
+        </div>
+        <ReadOnlyShield />
 
         <EditModeBanner />
 
