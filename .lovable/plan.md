@@ -17,8 +17,8 @@ Today you create every institution by hand in Platform Admin and there is no bil
 
 ## 2. The 20-day trial
 
-- A banner across the app shows days remaining, and from day 15 a "Choose a plan" call to action.
-- Reminder emails on day 10, day 17, day 19 and on expiry.
+- A banner across the app shows days remaining, and from day 10 a "Choose a plan" call to action.
+- Reminder emails on day 6, day 14 and on expiry (day 20).
 - On expiry the workspace goes read-only: data is safe and viewable, but creating students, challans, results and certificates is blocked with an upgrade prompt. Nothing is deleted.
 - Trials are capped to the Starter limits unless you grant otherwise.
 
