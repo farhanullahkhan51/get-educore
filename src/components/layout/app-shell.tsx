@@ -35,6 +35,8 @@ interface NavItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   roles: AppRole[];
+  /** Plan/academic-system capability required to see this module. */
+  feature?: FeatureKey;
 }
 
 const NAV: NavItem[] = [
