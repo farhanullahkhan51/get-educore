@@ -1729,29 +1729,38 @@ export type Database = {
       }
       plan_tiers: {
         Row: {
+          ai_message_limit: number | null
           campus_limit: number | null
           created_at: string
           feature_flags: Json
           id: string
           name: string
+          sort_order: number
+          staff_limit: number | null
           student_limit: number | null
           updated_at: string
         }
         Insert: {
+          ai_message_limit?: number | null
           campus_limit?: number | null
           created_at?: string
           feature_flags?: Json
           id?: string
           name: string
+          sort_order?: number
+          staff_limit?: number | null
           student_limit?: number | null
           updated_at?: string
         }
         Update: {
+          ai_message_limit?: number | null
           campus_limit?: number | null
           created_at?: string
           feature_flags?: Json
           id?: string
           name?: string
+          sort_order?: number
+          staff_limit?: number | null
           student_limit?: number | null
           updated_at?: string
         }
@@ -2539,6 +2548,7 @@ export type Database = {
       }
       tenants: {
         Row: {
+          academic_system: Database["public"]["Enums"]["academic_system"]
           created_at: string
           custom_domain: string | null
           custom_domain_status: Database["public"]["Enums"]["custom_domain_status"]
@@ -2551,6 +2561,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          academic_system?: Database["public"]["Enums"]["academic_system"]
           created_at?: string
           custom_domain?: string | null
           custom_domain_status?: Database["public"]["Enums"]["custom_domain_status"]
@@ -2563,6 +2574,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          academic_system?: Database["public"]["Enums"]["academic_system"]
           created_at?: string
           custom_domain?: string | null
           custom_domain_status?: Database["public"]["Enums"]["custom_domain_status"]
@@ -2794,22 +2806,29 @@ export type Database = {
       resolve_tenant_by_host: {
         Args: { _host: string }
         Returns: {
+          academic_system: Database["public"]["Enums"]["academic_system"]
           accent_color: string
+          ai_message_limit: number
+          campus_limit: number
           custom_domain: string
           default_currency: string
           default_timezone: string
           email_sender_name: string
           favicon_url: string
+          feature_flags: Json
           font: string
           id: string
           letterhead_url: string
           logo_url: string
           name: string
+          plan_name: string
           primary_color: string
           secondary_color: string
           signature_url: string
           slug: string
+          staff_limit: number
           status: Database["public"]["Enums"]["tenant_status"]
+          student_limit: number
         }[]
       }
       set_section_seat: {
