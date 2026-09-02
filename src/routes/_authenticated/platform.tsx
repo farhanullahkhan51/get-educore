@@ -302,6 +302,20 @@ function TenantsTab() {
                 </Select>
               </div>
             </div>
+            <div>
+              <Label>Examination system</Label>
+              <Select name="academic_system" defaultValue={editing?.academic_system ?? "both"}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="board">BISE Board only</SelectItem>
+                  <SelectItem value="cambridge">Cambridge only</SelectItem>
+                  <SelectItem value="both">Board &amp; Cambridge</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Chosen when the institution buys a plan. Narrowing it later only hides the module — existing records are kept.
+              </p>
+            </div>
             <DialogFooter>
               <Button type="submit">{editing ? "Save" : "Create"}</Button>
             </DialogFooter>
