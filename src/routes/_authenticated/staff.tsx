@@ -17,6 +17,7 @@ import { Fragment } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Upload, FileText, Pencil, Wallet, Trash2 } from "lucide-react";
+import { useEntitlements, limitMessage } from "@/lib/entitlements";
 
 export const Route = createFileRoute("/_authenticated/staff")({
   component: StaffPage,
@@ -62,6 +63,10 @@ function StaffPage() {
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const cap = ent.limit("staff_limit");
+    if (cap !== null && (staff?.length ?? 0) >= cap) {
+      return toast.error(limitMessage("staff members", cap, ent.planName));
+    }
     const fd = new FormData(e.currentTarget);
     const code = "STF-" + Date.now().toString(36).toUpperCase();
     const { error } = await supabase.from("staff").insert({
