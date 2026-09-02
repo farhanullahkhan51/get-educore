@@ -87,7 +87,9 @@ function TimetablePage() {
     queryKey: ["campuses"],
     queryFn: async () => (await supabase.from("campuses").select("id, name").order("name")).data ?? [],
   });
-  const activeCampus = campusId || campuses?.[0]?.id || "";
+  // Default to the signed-in user's own campus so sections/teachers appear immediately.
+  const ownCampus = (campuses ?? []).some((c) => c.id === user?.campusId) ? user?.campusId : null;
+  const activeCampus = campusId || ownCampus || campuses?.[0]?.id || "";
 
   const { data: periods } = useQuery({
     queryKey: ["timetable.periods", activeCampus],
