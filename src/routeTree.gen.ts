@@ -39,6 +39,7 @@ import { Route as AuthenticatedAdmissionsRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAcademicsRouteImport } from './routes/_authenticated/academics'
 import { Route as AuthenticatedAssistantIndexRouteImport } from './routes/_authenticated/assistant.index'
 import { Route as AuthenticatedAssistantThreadIdRouteImport } from './routes/_authenticated/assistant.$threadId'
+import { Route as ApiPublicBillingRemindersRouteImport } from './routes/api/public/billing/reminders'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -193,6 +194,12 @@ const AuthenticatedAssistantThreadIdRoute =
     path: '/assistant/$threadId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicBillingRemindersRoute =
+  ApiPublicBillingRemindersRouteImport.update({
+    id: '/api/public/billing/reminders',
+    path: '/api/public/billing/reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -224,6 +231,7 @@ export interface FileRoutesByFullPath {
   '/api/transcribe': typeof ApiTranscribeRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/assistant/': typeof AuthenticatedAssistantIndexRoute
+  '/api/public/billing/reminders': typeof ApiPublicBillingRemindersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -255,6 +263,7 @@ export interface FileRoutesByTo {
   '/api/transcribe': typeof ApiTranscribeRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/assistant': typeof AuthenticatedAssistantIndexRoute
+  '/api/public/billing/reminders': typeof ApiPublicBillingRemindersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -288,6 +297,7 @@ export interface FileRoutesById {
   '/api/transcribe': typeof ApiTranscribeRoute
   '/_authenticated/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/_authenticated/assistant/': typeof AuthenticatedAssistantIndexRoute
+  '/api/public/billing/reminders': typeof ApiPublicBillingRemindersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -321,6 +331,7 @@ export interface FileRouteTypes {
     | '/api/transcribe'
     | '/assistant/$threadId'
     | '/assistant/'
+    | '/api/public/billing/reminders'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -352,6 +363,7 @@ export interface FileRouteTypes {
     | '/api/transcribe'
     | '/assistant/$threadId'
     | '/assistant'
+    | '/api/public/billing/reminders'
   id:
     | '__root__'
     | '/'
@@ -384,6 +396,7 @@ export interface FileRouteTypes {
     | '/api/transcribe'
     | '/_authenticated/assistant/$threadId'
     | '/_authenticated/assistant/'
+    | '/api/public/billing/reminders'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -395,6 +408,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiTranscribeRoute: typeof ApiTranscribeRoute
+  ApiPublicBillingRemindersRoute: typeof ApiPublicBillingRemindersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -609,6 +623,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAssistantThreadIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/billing/reminders': {
+      id: '/api/public/billing/reminders'
+      path: '/api/public/billing/reminders'
+      fullPath: '/api/public/billing/reminders'
+      preLoaderRoute: typeof ApiPublicBillingRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -674,6 +695,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   ApiChatRoute: ApiChatRoute,
   ApiTranscribeRoute: ApiTranscribeRoute,
+  ApiPublicBillingRemindersRoute: ApiPublicBillingRemindersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

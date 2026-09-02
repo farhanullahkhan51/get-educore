@@ -147,6 +147,44 @@ export const markInvoicePaid = createServerFn({ method: "POST" })
       .update({ status: "active", plan_tier_id: invoice.plan_tier_id })
       .eq("id", invoice.tenant_id);
 
+    // Confirmation email to the institution's billing contact.
+    const { data: sub } = await supabaseAdmin
+      .from("subscriptions")
+      .select("billing_email")
+      .eq("tenant_id", invoice.tenant_id)
+      .maybeSingle();
+    if (sub?.billing_email) {
+      const { data: tenant } = await supabaseAdmin
+        .from("tenants")
+        .select("name")
+        .eq("id", invoice.tenant_id)
+        .single();
+      const { data: settings } = await supabaseAdmin
+        .from("tenant_settings")
+        .select("primary_color, email_sender_name")
+        .eq("tenant_id", invoice.tenant_id)
+        .maybeSingle();
+      const { sendEmail, brandedHtml } = await import("@/lib/email.server");
+      const institution = tenant?.name ?? "Your institution";
+      await sendEmail({
+        to: sub.billing_email,
+        subject: `${institution} — payment received (${invoice.invoice_no})`,
+        fromName: settings?.email_sender_name || institution,
+        html: brandedHtml({
+          institution,
+          color: settings?.primary_color,
+          heading: "Payment received — your plan is active",
+          body: `<p>We have confirmed your bank transfer for invoice <strong>${invoice.invoice_no}</strong>.</p>
+                 <p>Your workspace is fully active${invoice.period_end ? ` until ${invoice.period_end}` : ""}. Thank you.</p>`,
+        }),
+      });
+      await supabaseAdmin
+        .from("billing_reminders")
+        .delete()
+        .eq("tenant_id", invoice.tenant_id)
+        .in("kind", ["day6", "day14", "expiry"]);
+    }
+
     return { ok: true };
   });
 

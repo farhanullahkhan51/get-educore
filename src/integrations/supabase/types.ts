@@ -587,6 +587,44 @@ export type Database = {
           },
         ]
       }
+      billing_reminders: {
+        Row: {
+          created_at: string
+          email: string | null
+          error: string | null
+          id: string
+          kind: string
+          status: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          error?: string | null
+          id?: string
+          kind: string
+          status?: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          error?: string | null
+          id?: string
+          kind?: string
+          status?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_reminders_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       board_exam_entries: {
         Row: {
           created_at: string
@@ -3039,6 +3077,7 @@ export type Database = {
         Args: { _section_id: string; _user_id: string }
         Returns: boolean
       }
+      tenant_is_writable: { Args: { _tenant: string }; Returns: boolean }
       tenant_of_uid_text: { Args: { _uid_text: string }; Returns: string }
     }
     Enums: {
