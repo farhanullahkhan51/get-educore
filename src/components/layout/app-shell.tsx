@@ -30,6 +30,7 @@ import { EditableList } from "@/components/layout/editable";
 import { EditModeButton, EditModeBanner } from "@/components/layout/edit-mode-bar";
 import { PullToRefresh } from "@/components/layout/pull-to-refresh";
 import { useEntitlements, type FeatureKey } from "@/lib/entitlements";
+import { TrialBanner } from "@/components/layout/trial-banner";
 
 interface NavItem {
   to: string;
@@ -120,6 +121,7 @@ const NAV: NavItem[] = [
     roles: ["super_admin", "campus_admin", "admissions_officer"],
     feature: "certificates",
   },
+  { to: "/billing", label: "Billing & Plan", icon: Wallet, roles: ["super_admin"] },
   { to: "/users", label: "Users & Roles", icon: UserCog, roles: ["super_admin"] },
   { to: "/platform", label: "Platform Admin", icon: ShieldCheck, roles: ["super_admin"] },
 ];
@@ -285,6 +287,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             {ent.can("ai_assistant") && <AssistantMenu />}
           </div>
         </div>
+
+        <TrialBanner />
 
         <EditModeBanner />
 

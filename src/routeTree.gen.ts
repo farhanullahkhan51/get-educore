@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as InquireRouteImport } from './routes/inquire'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -32,11 +34,22 @@ import { Route as AuthenticatedCertificatesRouteImport } from './routes/_authent
 import { Route as AuthenticatedCampusesRouteImport } from './routes/_authenticated/campuses'
 import { Route as AuthenticatedCambridgeRouteImport } from './routes/_authenticated/cambridge'
 import { Route as AuthenticatedBoardRouteImport } from './routes/_authenticated/board'
+import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as AuthenticatedAdmissionsRouteImport } from './routes/_authenticated/admissions'
 import { Route as AuthenticatedAcademicsRouteImport } from './routes/_authenticated/academics'
 import { Route as AuthenticatedAssistantIndexRouteImport } from './routes/_authenticated/assistant.index'
 import { Route as AuthenticatedAssistantThreadIdRouteImport } from './routes/_authenticated/assistant.$threadId'
 
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InquireRoute = InquireRouteImport.update({
   id: '/inquire',
   path: '/inquire',
@@ -153,6 +166,11 @@ const AuthenticatedBoardRoute = AuthenticatedBoardRouteImport.update({
   path: '/board',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedBillingRoute = AuthenticatedBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdmissionsRoute = AuthenticatedAdmissionsRouteImport.update({
   id: '/admissions',
   path: '/admissions',
@@ -180,8 +198,11 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/inquire': typeof InquireRoute
+  '/pricing': typeof PricingRoute
+  '/signup': typeof SignupRoute
   '/academics': typeof AuthenticatedAcademicsRoute
   '/admissions': typeof AuthenticatedAdmissionsRoute
+  '/billing': typeof AuthenticatedBillingRoute
   '/board': typeof AuthenticatedBoardRoute
   '/cambridge': typeof AuthenticatedCambridgeRoute
   '/campuses': typeof AuthenticatedCampusesRoute
@@ -208,8 +229,11 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/inquire': typeof InquireRoute
+  '/pricing': typeof PricingRoute
+  '/signup': typeof SignupRoute
   '/academics': typeof AuthenticatedAcademicsRoute
   '/admissions': typeof AuthenticatedAdmissionsRoute
+  '/billing': typeof AuthenticatedBillingRoute
   '/board': typeof AuthenticatedBoardRoute
   '/cambridge': typeof AuthenticatedCambridgeRoute
   '/campuses': typeof AuthenticatedCampusesRoute
@@ -238,8 +262,11 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/inquire': typeof InquireRoute
+  '/pricing': typeof PricingRoute
+  '/signup': typeof SignupRoute
   '/_authenticated/academics': typeof AuthenticatedAcademicsRoute
   '/_authenticated/admissions': typeof AuthenticatedAdmissionsRoute
+  '/_authenticated/billing': typeof AuthenticatedBillingRoute
   '/_authenticated/board': typeof AuthenticatedBoardRoute
   '/_authenticated/cambridge': typeof AuthenticatedCambridgeRoute
   '/_authenticated/campuses': typeof AuthenticatedCampusesRoute
@@ -268,8 +295,11 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/inquire'
+    | '/pricing'
+    | '/signup'
     | '/academics'
     | '/admissions'
+    | '/billing'
     | '/board'
     | '/cambridge'
     | '/campuses'
@@ -296,8 +326,11 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/inquire'
+    | '/pricing'
+    | '/signup'
     | '/academics'
     | '/admissions'
+    | '/billing'
     | '/board'
     | '/cambridge'
     | '/campuses'
@@ -325,8 +358,11 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/inquire'
+    | '/pricing'
+    | '/signup'
     | '/_authenticated/academics'
     | '/_authenticated/admissions'
+    | '/_authenticated/billing'
     | '/_authenticated/board'
     | '/_authenticated/cambridge'
     | '/_authenticated/campuses'
@@ -355,12 +391,28 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   InquireRoute: typeof InquireRoute
+  PricingRoute: typeof PricingRoute
+  SignupRoute: typeof SignupRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiTranscribeRoute: typeof ApiTranscribeRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/inquire': {
       id: '/inquire'
       path: '/inquire'
@@ -522,6 +574,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBoardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/billing': {
+      id: '/_authenticated/billing'
+      path: '/billing'
+      fullPath: '/billing'
+      preLoaderRoute: typeof AuthenticatedBillingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admissions': {
       id: '/_authenticated/admissions'
       path: '/admissions'
@@ -556,6 +615,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAcademicsRoute: typeof AuthenticatedAcademicsRoute
   AuthenticatedAdmissionsRoute: typeof AuthenticatedAdmissionsRoute
+  AuthenticatedBillingRoute: typeof AuthenticatedBillingRoute
   AuthenticatedBoardRoute: typeof AuthenticatedBoardRoute
   AuthenticatedCambridgeRoute: typeof AuthenticatedCambridgeRoute
   AuthenticatedCampusesRoute: typeof AuthenticatedCampusesRoute
@@ -580,6 +640,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAcademicsRoute: AuthenticatedAcademicsRoute,
   AuthenticatedAdmissionsRoute: AuthenticatedAdmissionsRoute,
+  AuthenticatedBillingRoute: AuthenticatedBillingRoute,
   AuthenticatedBoardRoute: AuthenticatedBoardRoute,
   AuthenticatedCambridgeRoute: AuthenticatedCambridgeRoute,
   AuthenticatedCampusesRoute: AuthenticatedCampusesRoute,
@@ -609,6 +670,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   InquireRoute: InquireRoute,
+  PricingRoute: PricingRoute,
+  SignupRoute: SignupRoute,
   ApiChatRoute: ApiChatRoute,
   ApiTranscribeRoute: ApiTranscribeRoute,
 }

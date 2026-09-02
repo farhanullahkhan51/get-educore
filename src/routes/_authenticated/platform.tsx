@@ -18,6 +18,7 @@ import { Plus, Pencil, Trash2, Settings2, Building2, Eye } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useTenant, type TenantBranding } from "@/lib/tenant-context";
 import { AiUsageTab } from "@/components/platform/ai-usage-tab";
+import { BillingTab } from "@/components/platform/billing-tab";
 import { FEATURES } from "@/lib/entitlements";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -74,11 +75,13 @@ function PlatformPage() {
           <TabsTrigger value="tenants">Tenants</TabsTrigger>
           <TabsTrigger value="plans">Plan Tiers</TabsTrigger>
           <TabsTrigger value="subs">Subscriptions</TabsTrigger>
+          <TabsTrigger value="billing">Billing</TabsTrigger>
           <TabsTrigger value="ai">AI Usage</TabsTrigger>
         </TabsList>
         <TabsContent value="tenants" className="mt-4"><TenantsTab /></TabsContent>
         <TabsContent value="plans" className="mt-4"><PlansTab /></TabsContent>
         <TabsContent value="subs" className="mt-4"><SubsTab /></TabsContent>
+        <TabsContent value="billing" className="mt-4"><BillingTab /></TabsContent>
         <TabsContent value="ai" className="mt-4"><AiUsageTab /></TabsContent>
 
       </Tabs>
