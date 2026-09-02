@@ -122,6 +122,7 @@ function TenantsTab() {
       custom_domain: String(fd.get("custom_domain") || "") || null,
       plan_tier_id: String(fd.get("plan_tier_id") || "") || null,
       status: String(fd.get("status") || "active") as "active" | "trial" | "suspended",
+      academic_system: String(fd.get("academic_system") || "both") as "board" | "cambridge" | "both",
     };
     const res = editing
       ? await supabase.from("tenants").update(payload).eq("id", editing.id)
