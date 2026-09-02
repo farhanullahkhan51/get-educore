@@ -169,6 +169,13 @@ function TenantsTab() {
       email_sender_name: s?.email_sender_name ?? null,
       default_currency: s?.default_currency ?? "USD",
       default_timezone: s?.default_timezone ?? "UTC",
+      academic_system: t.academic_system ?? "both",
+      plan_name: plans?.find((p) => p.id === t.plan_tier_id)?.name ?? null,
+      feature_flags: (plans?.find((p) => p.id === t.plan_tier_id)?.feature_flags ?? null) as Record<string, boolean> | null,
+      student_limit: plans?.find((p) => p.id === t.plan_tier_id)?.student_limit ?? null,
+      campus_limit: plans?.find((p) => p.id === t.plan_tier_id)?.campus_limit ?? null,
+      staff_limit: plans?.find((p) => p.id === t.plan_tier_id)?.staff_limit ?? null,
+      ai_message_limit: plans?.find((p) => p.id === t.plan_tier_id)?.ai_message_limit ?? null,
     } satisfies TenantBranding);
     toast.success(`Previewing ${t.name}`);
   }
