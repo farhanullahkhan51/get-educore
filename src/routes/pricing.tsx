@@ -98,7 +98,7 @@ function PricingPage() {
             <Link to="/auth">
               <Button variant="ghost" size="sm">Sign in</Button>
             </Link>
-            <Link to="/signup">
+            <Link to="/signup" search={{ plan: undefined }}>
               <Button size="sm">Start free trial</Button>
             </Link>
           </div>
