@@ -26,9 +26,6 @@ export function ReadOnlyShield() {
       // Never block the way out: billing page, trial banner, dialogs' close buttons.
       if (control.closest("[data-allow-readonly]")) return;
       if (window.location.pathname.startsWith("/billing")) return;
-      if (control.getAttribute("type") === "button" && control.closest("[role='dialog']") === null) {
-        // fall through to the text check below
-      }
 
       const label = `${control.textContent ?? ""} ${control.getAttribute("aria-label") ?? ""} ${control.getAttribute("title") ?? ""}`;
       if (!WRITE_WORDS.test(label)) return;
