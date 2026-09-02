@@ -167,9 +167,10 @@ function TimetablePage() {
   };
 
   async function saveSlot(section: string, period: Period, course: string, teacher: string, room: string) {
+    if (!tenant?.id) return false;
     const existing = entryAt(section, period.id);
     const payload = {
-      tenant_id: tenant?.id,
+      tenant_id: tenant.id,
       campus_id: period.campus_id,
       section_id: section,
       period_id: period.id,
