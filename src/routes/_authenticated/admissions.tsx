@@ -18,9 +18,10 @@ import { Phone, Mail, MapPin, Clock, ArrowRight, UserPlus, Search, ExternalLink 
 import { formatDistanceToNow } from "date-fns";
 import { generateCode } from "@/lib/generate-code";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { FeatureGate } from "@/components/layout/feature-gate";
 
 export const Route = createFileRoute("/_authenticated/admissions")({
-  component: AdmissionsPage,
+  component: GatedAdmissionsPage,
 });
 
 type Status = "new" | "contacted" | "visited" | "converted" | "lost";
@@ -722,5 +723,13 @@ function ConvertDialog({
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function GatedAdmissionsPage() {
+  return (
+    <FeatureGate feature="admissions" title="Admissions">
+      <AdmissionsPage />
+    </FeatureGate>
   );
 }

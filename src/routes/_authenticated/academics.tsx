@@ -17,9 +17,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Plus, Save, Users } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { FeatureGate } from "@/components/layout/feature-gate";
 
 export const Route = createFileRoute("/_authenticated/academics")({
-  component: AcademicsPage,
+  component: GatedAcademicsPage,
 });
 
 type Student = { id: string; first_name: string; last_name: string; student_code: string; section_id: string | null };
@@ -508,4 +509,12 @@ export function gpaFor(percent: number): number {
   if (percent >= 60) return 2.0;
   if (percent >= 50) return 1.0;
   return 0.0;
+}
+
+function GatedAcademicsPage() {
+  return (
+    <FeatureGate feature="academics" title="Academics">
+      <AcademicsPage />
+    </FeatureGate>
+  );
 }
