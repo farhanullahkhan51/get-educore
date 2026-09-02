@@ -1,73 +1,58 @@
-# Plan tiers cleanup + what's still missing in EduCore
+# White-label: what exists today, and what's missing for Google
 
-## Current state (checked in the database)
+## What already works (verified in the code)
 
-There are **four** plan rows, not three: legacy `Starter`, `Pro`, `Enterprise` (created at first setup, all with **empty feature flags**) plus a newer `Professional` row seeded with the full feature list. Two institutions are attached to the legacy `Enterprise` row. Because Starter/Pro/Enterprise have empty flags, they currently unlock **everything** — gating only really works on the `Professional` row.
+- Every institution is a tenant row with its own slug, optional custom domain, logo, favicon, colours, font, letterhead, signature and currency/timezone.
+- The app resolves the tenant from the browser hostname (`resolve_tenant_by_host`) and applies that institution's colours, font, logo, favicon and browser tab title at runtime. So on-screen the client sees only their own name, never EduCore.
+- Platform Admin can create tenants, set a custom domain, and see a domain status badge; there is also a per-tenant preview mode.
+- Data is isolated per tenant through row-level security.
 
-## 1. Fix the tiers (three only, "Pro" not "Professional")
+## What does NOT work yet — the honest answer on Google
 
-- Keep the three original rows: **Starter**, **Pro**, **Enterprise** (keeping the IDs means the two live institutions stay linked).
-- Copy the seeded feature set from `Professional` into `Pro`, then delete the `Professional` row.
-- Fill in proper feature flags and limits for Starter and Enterprise so gating actually applies.
-- Set `sort_order` 1 / 2 / 3 so the plan list always shows Starter → Pro → Enterprise.
+**Today: no. A client's institution would not show up correctly in Google search.** Three concrete reasons:
 
-Proposed limits:
+1. **The HTML sent to Google still says "EduCore".** The page title, description and social preview are hard-coded in the app shell; the institution's name is only swapped in by JavaScript after the page loads. Search crawlers and WhatsApp/Facebook link previews read the first HTML response, so they see "EduCore — School & College Management ERP".
+2. **The custom domain field is just a text box.** Nothing verifies the domain, issues an SSL certificate, or actually routes `portal.theirschool.edu.pk` to the app. The status badge is stored, not checked.
+3. **There is no robots.txt, sitemap, or per-institution public page** that Google could index in the first place. The only public pages are the landing page and the inquiry form.
 
-| | Starter | Pro | Enterprise |
-|---|---|---|---|
-| Campuses | 1 | 3 | unlimited |
-| Students | 500 | 2,500 | unlimited |
-| Staff | 60 | 300 | unlimited |
-| AI messages / month | 0 | 1,000 | 10,000 |
+Also worth knowing: the app itself is mostly a private, logged-in system. Even fully white-labelled, Google will only ever index the public surface (landing page + inquiry form) — not the dashboard. Most institutions keep their marketing site separate and use this ERP at a subdomain like `portal.theirschool.edu.pk`.
 
-## 2. Features every tier must include (never gate these)
+## What to build to make white-labelling real
 
-These are the "the product doesn't work without them" items and should stay on in all three plans:
+### 1. Server-rendered tenant branding (the part that fixes Google)
+Resolve the tenant on the server from the request hostname, before the page is sent, so the HTML already contains:
+- `<title>` and description using the institution's name
+- `og:title`, `og:description`, `og:image` (their logo/letterhead)
+- their favicon
+- their theme colours inlined, so there is no flash of EduCore navy on first paint
 
-- Students, staff, campuses, classes & sections (with the seating chart)
-- Courses, programs and teaching assignments
-- Attendance and gradebook, marks-based results
-- Fees, challans and receipts (basic)
-- Admissions inquiries + public inquiry form
-- Certificates (core set of templates)
-- Users & roles, audit log, logo-level branding
-- Mobile view with pull-to-refresh
+This makes search results, WhatsApp shares and browser tabs show the institution, not EduCore.
 
-Differentiators to keep gated: bank reconciliation, payroll, Cambridge module, track switch, student portal, insights/analytics, AI assistant, full branding, custom domain, edit mode, all certificate templates.
+### 2. Custom domain, done properly
+- Platform Admin shows the exact DNS record the client must add (CNAME + a TXT verification token — the token column already exists).
+- A "Verify" action checks DNS live and moves the status through pending → verifying → verified → active.
+- Documentation of the one-time step needed on the hosting side to attach the domain and issue SSL.
+- Until a custom domain is active, each institution gets `theirslug.yourdomain.com` automatically.
 
-## 3. What's still missing from the system
+### 3. Public, indexable institution page
+A branded public page per tenant (name, campuses, programmes, admissions call-to-action, inquiry form link) with proper headings, JSON-LD `EducationalOrganization` markup, a per-tenant `robots.txt` and `sitemap.xml`. This is what actually earns a Google listing.
 
-Ranked by how often Pakistani schools/colleges actually ask for it:
+### 4. Remove remaining EduCore traces
+- Fallback name "EduCore" only used when no tenant resolves (your own marketing host).
+- Emails, printed challans, certificates and report cards all carry the tenant letterhead — audit each print template.
+- Error pages, 404 and the sign-in screen use tenant branding too.
 
-**High value, notable gaps**
-1. **Timetable / period scheduling** — no timetable module at all today; teacher clash detection, per-section weekly grid, printable timetable.
-2. **Communication** — no SMS/WhatsApp/email to guardians: fee reminders, absence alerts, result published notices.
-3. **Parent/guardian portal** — students have a portal, guardians do not (fees due, attendance, results).
-4. **Online fee payment** — challans are print-only; no payment link or gateway reconciliation.
-5. **Exports & printable reports** — PDF/Excel export for students, fee collection, defaulters, attendance registers.
-6. **Bulk import** — CSV import for students, staff, marks and bank statements.
-
-**Medium value**
-7. Homework / assignment submission and teacher announcements
-8. Library, transport (routes and fees), hostel modules
-9. Staff leave & attendance (payroll exists but no leave/attendance link)
-10. Expense / petty cash ledger to complete the finance picture
-11. Discipline and health records on the student profile
-12. Alumni and school-leaving history
-
-**Platform / hygiene upgrades**
-13. Self-serve signup + checkout so plans sell themselves (currently you assign plans manually)
-14. Notification centre and email templates on tenant branding
-15. Data export / backup per institution (a selling point for enterprise buyers)
-16. Urdu / RTL language option
-17. Security pass on the 31 database linter warnings about publicly executable functions
-
-## 4. Recommendation
-
-Ship in this order: tier cleanup (this plan) → timetable → guardian communication (SMS/email) → exports and bulk import → online fee payment. Those five turn the ERP from "complete records system" into something a principal notices daily, and each maps cleanly onto a Pro/Enterprise upsell.
+### 5. Sell it as a plan feature
+Custom domain stays an Enterprise (or paid add-on) entitlement; subdomain white-labelling is included in every tier.
 
 ## Technical notes
 
-- One migration: update `plan_tiers` rows (flags, limits, `sort_order`), delete the `Professional` row, no schema change needed.
-- Platform Admin plan editor already renders named feature checkboxes, so no UI change is required beyond the tiers reading correctly.
-- Nothing in `useEntitlements` changes; empty-flag plans currently mean "allow all", which stops being a problem once every tier has explicit flags.
+- Tenant resolution moves into a server function / root `beforeLoad` keyed on the request `Host` header, feeding the root route's `head()`; the existing client-side `TenantProvider` keeps handling live preview and post-load updates.
+- `resolve_tenant_by_host` already returns everything needed, so the server path can reuse it with the publishable client.
+- DNS verification runs in a server route using a DNS-over-HTTPS lookup; no new dependency.
+- Add `src/routes/api/public/robots[.]txt` and sitemap handlers that branch on hostname.
+- No schema change required: `custom_domain`, `custom_domain_status` and `domain_verification_token` already exist on `tenants`.
+
+## Scope note
+
+This covers making each institution look and index as its own brand. It does not add self-serve signup or payment collection — you still assign plans and domains from Platform Admin.
