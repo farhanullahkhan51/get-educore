@@ -174,6 +174,7 @@ export const provisionInstitution = createServerFn({ method: "POST" })
       academic_system: data.academic_system,
       plan_tier_id: data.plan_tier_id,
       tenant_id: tenant.id,
+      ip_hash: ipHash,
       status: "provisioned",
     });
 
