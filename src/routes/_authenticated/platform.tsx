@@ -774,17 +774,14 @@ function PlansTab() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    let flags: Record<string, unknown> = {};
-    try {
-      const raw = String(fd.get("feature_flags") || "").trim();
-      if (raw) flags = JSON.parse(raw);
-    } catch {
-      return toast.error("Feature flags must be valid JSON.");
-    }
+    const flags: Record<string, boolean> = {};
+    for (const f of FEATURES) flags[f.key] = fd.get(`feat.${f.key}`) === "on";
     const payload = {
       name: String(fd.get("name")),
       student_limit: fd.get("student_limit") ? Number(fd.get("student_limit")) : null,
       campus_limit: fd.get("campus_limit") ? Number(fd.get("campus_limit")) : null,
+      staff_limit: fd.get("staff_limit") ? Number(fd.get("staff_limit")) : null,
+      ai_message_limit: fd.get("ai_message_limit") ? Number(fd.get("ai_message_limit")) : null,
       feature_flags: flags as never,
     };
     const res = editing
