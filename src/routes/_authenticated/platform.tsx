@@ -867,10 +867,29 @@ function PlansTab() {
                 <Input id="campus_limit" name="campus_limit" type="number" defaultValue={editing?.campus_limit ?? ""} placeholder="Blank = unlimited" />
               </div>
             </div>
-            <div>
-              <Label htmlFor="feature_flags">Feature Flags (JSON)</Label>
-              <Textarea id="feature_flags" name="feature_flags" rows={4}
-                defaultValue={editing ? JSON.stringify(editing.feature_flags ?? {}, null, 2) : `{\n  "board": true,\n  "cambridge": true\n}`} />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="staff_limit">Staff Limit</Label>
+                <Input id="staff_limit" name="staff_limit" type="number" defaultValue={editing?.staff_limit ?? ""} placeholder="Blank = unlimited" />
+              </div>
+              <div>
+                <Label htmlFor="ai_message_limit">AI messages / month</Label>
+                <Input id="ai_message_limit" name="ai_message_limit" type="number" defaultValue={editing?.ai_message_limit ?? ""} placeholder="Blank = unlimited" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Included features</Label>
+              <div className="grid max-h-56 grid-cols-1 gap-2 overflow-y-auto rounded-sm border p-3 sm:grid-cols-2">
+                {FEATURES.map((f) => (
+                  <label key={f.key} className="flex items-start gap-2 text-sm">
+                    <Checkbox
+                      name={`feat.${f.key}`}
+                      defaultChecked={(editing?.feature_flags?.[f.key] ?? true) !== false}
+                    />
+                    <span>{f.label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
             <DialogFooter>
               <Button type="submit">{editing ? "Save" : "Create"}</Button>
