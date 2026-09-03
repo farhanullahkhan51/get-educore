@@ -134,6 +134,17 @@ function InquirePage() {
     );
   }
 
+  if (tenantLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <PublicHeader />
+        <main className="mx-auto max-w-3xl px-6 py-24 text-center">
+          <p className="text-muted-foreground">Loading institution details…</p>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <PublicHeader />
