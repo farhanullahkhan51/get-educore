@@ -8,9 +8,11 @@ import {
   type ReactNode,
 } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenantId } from "@/lib/tenant-context";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { insertAuditLog } from "@/lib/audit.functions";
 import {
   EMPTY_LAYOUT,
   SPAN_OPTIONS,
@@ -55,6 +57,7 @@ export function UiLayoutsProvider({ children }: { children: ReactNode }) {
   const { data: user } = useCurrentUser();
   const tenantId = useTenantId();
   const qc = useQueryClient();
+  const logAudit = useServerFn(insertAuditLog);
   const [editing, setEditing] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, SurfaceLayout>>({});
 
@@ -108,13 +111,14 @@ export function UiLayoutsProvider({ children }: { children: ReactNode }) {
             });
           if (error) throw error;
         }
-        await supabase.from("audit_logs").insert({
-          tenant_id: tenantId,
-          actor_id: user?.userId ?? null,
-          action: "update",
-          entity_type: "ui_layout",
-          details: { scope, layout } as never,
-        } as never);
+        await logAudit({
+          data: {
+            tenant_id: tenantId,
+            action: "update",
+            entity_type: "ui_layout",
+            details: { scope, layout },
+          },
+        });
       }
     },
     onSuccess: () => {

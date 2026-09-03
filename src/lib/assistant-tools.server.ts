@@ -2,6 +2,7 @@ import { tool } from "ai";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   MODULE_LAYOUTS,
   MODULE_KEYS,
@@ -100,7 +101,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
     const table = TABLE_FOR[entityType];
     const undo =
       table && entityId ? { table, entity_id: entityId, action, before: before ?? null } : null;
-    await supabase.from("audit_logs").insert({
+    await supabaseAdmin.from("audit_logs").insert({
       tenant_id: ctx.tenantId,
       actor_id: userId,
       action,
