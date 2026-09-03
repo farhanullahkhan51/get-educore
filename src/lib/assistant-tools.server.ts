@@ -2,6 +2,7 @@ import { tool } from "ai";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   MODULE_LAYOUTS,
   MODULE_KEYS,
