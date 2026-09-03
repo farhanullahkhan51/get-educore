@@ -408,7 +408,8 @@ function StaffImport({
       const { data: existing } = await supabase.from("staff").select("staff_code").eq("campus_id", campusId);
       const taken = (existing ?? []).map((s) => s.staff_code);
 
-      const inserts: Record<string, unknown>[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const inserts: any[] = [];
       const rowMeta: { row: number; label: string }[] = [];
 
       rows.forEach((r, i) => {
@@ -571,7 +572,7 @@ function MarksImport({ campusId, tenantId }: { campusId: string; tenantId: strin
         const marksRaw = (r.marks ?? "").trim();
         const isAbsent = /^absent$/i.test(marksRaw) || /^a$/i.test(marksRaw);
         const marks = isAbsent || marksRaw === "" ? null : Number(marksRaw);
-        if (!isAbsent && marksRaw !== "" && (Number.isNaN(marks) || marks < 0 || marks > assessment.max_marks)) {
+        if (!isAbsent && marksRaw !== "" && (marks === null || Number.isNaN(marks) || marks < 0 || marks > assessment.max_marks)) {
           out.push({ row: rowNum, label, ok: false, message: `Marks must be 0–${assessment.max_marks} or "absent"` });
           continue;
         }
