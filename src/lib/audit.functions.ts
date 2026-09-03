@@ -1,14 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Json } from "@/integrations/supabase/types";
 
 const insertAuditLogSchema = z.object({
   tenant_id: z.string().uuid(),
-  action: z.enum(["create", "update", "delete", "login", "logout", "export", "import", "pay", "issue", "revoke", "switch"]),
+  action: z.string().min(1).max(40),
   entity_type: z.string().min(1).max(80),
   entity_id: z.string().uuid().optional().nullable(),
   campus_id: z.string().uuid().optional().nullable(),
-  details: z.record(z.unknown()).optional().nullable(),
+  details: z.record(z.any()).optional().nullable(),
 });
 
 /**
@@ -29,7 +30,7 @@ export const insertAuditLog = createServerFn({ method: "POST" })
       entity_type: data.entity_type,
       entity_id: data.entity_id,
       campus_id: data.campus_id,
-      details: data.details,
+      details: (data.details ?? null) as Json | null,
     });
     if (error) throw error;
     return { ok: true };
