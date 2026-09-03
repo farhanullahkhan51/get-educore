@@ -48,16 +48,20 @@ function InquirePage() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [campusId, setCampusId] = useState<string>("");
+  const { tenant, isLoading: tenantLoading } = useTenant();
 
   const { data: campuses } = useQuery({
-    queryKey: ["public-campuses"],
-    queryFn: async () => (await supabase.from("campuses").select("id, name, academic_system").order("name")).data ?? [],
+    queryKey: ["public-campuses", tenant?.id],
+    enabled: !!tenant?.id,
+    queryFn: async () =>
+      (await supabase.rpc("get_public_campuses", { _tenant_id: tenant!.id })).data ?? [],
   });
 
   const { data: programs } = useQuery({
     queryKey: ["public-programs", campusId],
     enabled: !!campusId,
-    queryFn: async () => (await supabase.from("programs").select("id, name, academic_system").eq("campus_id", campusId).order("name")).data ?? [],
+    queryFn: async () =>
+      (await supabase.rpc("get_public_programs", { _campus_id: campusId })).data ?? [],
   });
 
   const selectedCampus = campuses?.find((c) => c.id === campusId);
