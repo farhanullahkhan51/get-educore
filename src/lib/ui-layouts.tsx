@@ -57,6 +57,7 @@ export function UiLayoutsProvider({ children }: { children: ReactNode }) {
   const { data: user } = useCurrentUser();
   const tenantId = useTenantId();
   const qc = useQueryClient();
+  const logAudit = useServerFn(insertAuditLog);
   const [editing, setEditing] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, SurfaceLayout>>({});
 
