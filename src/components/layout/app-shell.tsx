@@ -21,6 +21,7 @@ import {
   Landmark,
   Menu,
   CalendarDays,
+  ArrowDownUp,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -129,6 +130,12 @@ const NAV: NavItem[] = [
     icon: Award,
     roles: ["super_admin", "campus_admin", "admissions_officer"],
     feature: "certificates",
+  },
+  {
+    to: "/import-export",
+    label: "Import & Export",
+    icon: ArrowDownUp,
+    roles: ["super_admin", "campus_admin"],
   },
   { to: "/billing", label: "Billing & Plan", icon: Wallet, roles: ["super_admin"] },
   { to: "/users", label: "Users & Roles", icon: UserCog, roles: ["super_admin"] },
