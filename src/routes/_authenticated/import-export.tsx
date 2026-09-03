@@ -301,7 +301,8 @@ function StudentImport({
       const classByName = new Map(classes.map((c) => [c.name.trim().toLowerCase(), c.id]));
       const secByKey = new Map(sections.map((s) => [`${s.class_id}:${s.name.trim().toLowerCase()}`, s.id]));
 
-      const inserts: Record<string, unknown>[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const inserts: any[] = [];
       const rowMeta: { row: number; label: string }[] = [];
 
       rows.forEach((r, i) => {
