@@ -111,13 +111,14 @@ export function UiLayoutsProvider({ children }: { children: ReactNode }) {
             });
           if (error) throw error;
         }
-        await supabase.from("audit_logs").insert({
-          tenant_id: tenantId,
-          actor_id: user?.userId ?? null,
-          action: "update",
-          entity_type: "ui_layout",
-          details: { scope, layout } as never,
-        } as never);
+        await logAudit({
+          data: {
+            tenant_id: tenantId,
+            action: "update",
+            entity_type: "ui_layout",
+            details: { scope, layout },
+          },
+        });
       }
     },
     onSuccess: () => {
