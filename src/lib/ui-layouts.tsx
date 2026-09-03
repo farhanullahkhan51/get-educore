@@ -8,9 +8,11 @@ import {
   type ReactNode,
 } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenantId } from "@/lib/tenant-context";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { insertAuditLog } from "@/lib/audit.functions";
 import {
   EMPTY_LAYOUT,
   SPAN_OPTIONS,
