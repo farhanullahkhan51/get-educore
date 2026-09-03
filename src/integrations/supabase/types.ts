@@ -3146,6 +3146,14 @@ export type Database = {
           name: string
         }[]
       }
+      get_public_programs: {
+        Args: { _campus_id: string }
+        Returns: {
+          academic_system: string
+          id: string
+          name: string
+        }[]
+      }
       get_user_campus: { Args: { _user_id: string }; Returns: string }
       get_user_tenant: { Args: { _user_id: string }; Returns: string }
       has_campus_access: {
