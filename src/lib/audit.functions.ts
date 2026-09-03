@@ -9,7 +9,7 @@ const insertAuditLogSchema = z.object({
   entity_type: z.string().min(1).max(80),
   entity_id: z.string().uuid().optional().nullable(),
   campus_id: z.string().uuid().optional().nullable(),
-  details: z.record(z.any()).optional().nullable(),
+  details: z.any().optional().nullable(),
 });
 
 /**
