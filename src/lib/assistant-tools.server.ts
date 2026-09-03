@@ -101,7 +101,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
     const table = TABLE_FOR[entityType];
     const undo =
       table && entityId ? { table, entity_id: entityId, action, before: before ?? null } : null;
-    await supabase.from("audit_logs").insert({
+    await supabaseAdmin.from("audit_logs").insert({
       tenant_id: ctx.tenantId,
       actor_id: userId,
       action,
