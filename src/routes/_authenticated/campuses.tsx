@@ -75,6 +75,7 @@ function CampusesPage() {
     setOpen(false);
     setEditing(null);
     qc.invalidateQueries({ queryKey: ["campuses"] });
+    qc.invalidateQueries({ queryKey: ["plan-usage"] });
   }
 
   async function handleDelete(id: string) {
@@ -83,6 +84,7 @@ function CampusesPage() {
     if (error) return toast.error(error.message);
     toast.success("Campus deleted");
     qc.invalidateQueries({ queryKey: ["campuses"] });
+    qc.invalidateQueries({ queryKey: ["plan-usage"] });
   }
 
   return (
@@ -92,9 +94,13 @@ function CampusesPage() {
         title="Campuses"
         description="Each campus operates under one academic system: Pakistani Board (BISE), Cambridge (O/A-Level), or both."
         actions={isSuper && (
+          <div className="flex items-center gap-2">
+          {campusLimit.reached && campusLimit.cap !== null ? (
+            <LimitNotice cap={campusLimit.cap} label="campuses" />
+          ) : null}
           <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
             <DialogTrigger asChild>
-              <Button><Plus className="mr-1 h-4 w-4" /> New campus</Button>
+              <Button disabled={campusLimit.reached}><Plus className="mr-1 h-4 w-4" /> New campus</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
