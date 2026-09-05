@@ -21,6 +21,8 @@ import { AiUsageTab } from "@/components/platform/ai-usage-tab";
 import { BillingTab } from "@/components/platform/billing-tab";
 import { FEATURES } from "@/lib/entitlements";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useServerFn } from "@tanstack/react-start";
+import { verifyCustomDomain, type DomainCheck } from "@/lib/domains.functions";
 
 
 
@@ -98,6 +100,9 @@ function TenantsTab() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Tenant | null>(null);
   const [settingsFor, setSettingsFor] = useState<Tenant | null>(null);
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
+  const [domainCheck, setDomainCheck] = useState<DomainCheck | null>(null);
+  const verifyDomain = useServerFn(verifyCustomDomain);
 
   const { data: tenants } = useQuery({
     queryKey: ["platform.tenants"],
@@ -194,6 +199,21 @@ function TenantsTab() {
     return plans?.find((p) => p.id === id)?.name ?? "—";
   }
 
+  async function runVerify(tenantId: string) {
+    setVerifyingId(tenantId);
+    try {
+      const result = await verifyDomain({ data: { tenantId } });
+      setDomainCheck(result);
+      if (result.status === "verified") toast.success(result.message);
+      else toast.message(result.message);
+      qc.invalidateQueries({ queryKey: ["platform.tenants"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not check the domain");
+    } finally {
+      setVerifyingId(null);
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
@@ -224,7 +244,18 @@ function TenantsTab() {
                     <TableCell className="text-xs">
                       {t.custom_domain ?? <span className="opacity-50">—</span>}
                       {t.custom_domain && (
-                        <Badge variant="outline" className="ml-2">{t.custom_domain_status}</Badge>
+                        <>
+                          <Badge variant="outline" className="ml-2">{t.custom_domain_status}</Badge>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="ml-1 h-6 px-2 text-xs"
+                            disabled={verifyingId === t.id}
+                            onClick={() => runVerify(t.id)}
+                          >
+                            {verifyingId === t.id ? "Checking…" : "Verify"}
+                          </Button>
+                        </>
                       )}
                     </TableCell>
                     <TableCell>{planName(t.plan_tier_id)}</TableCell>
@@ -262,6 +293,38 @@ function TenantsTab() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={!!domainCheck} onOpenChange={(o) => !o && setDomainCheck(null)}>
+        <DialogContent className="max-w-lg w-[95vw]">
+          <DialogHeader>
+            <DialogTitle>Domain setup — {domainCheck?.domain}</DialogTitle>
+          </DialogHeader>
+          {domainCheck && (
+            <div className="space-y-3 text-sm">
+              <p>
+                Status:{" "}
+                <Badge variant={domainCheck.status === "verified" ? "default" : "secondary"}>
+                  {domainCheck.status}
+                </Badge>
+              </p>
+              <p className="text-muted-foreground">{domainCheck.message}</p>
+              <div className="rounded-md border p-3 space-y-1 text-xs">
+                <div><span className="text-muted-foreground">Type:</span> <code>{domainCheck.recordType}</code></div>
+                <div><span className="text-muted-foreground">Name:</span> <code>{domainCheck.recordName}</code></div>
+                <div className="break-all"><span className="text-muted-foreground">Value:</span> <code>{domainCheck.recordValue}</code></div>
+              </div>
+              {domainCheck.found.length > 0 && (
+                <div className="text-xs text-muted-foreground break-all">
+                  Currently published: {domainCheck.found.join(", ")}
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDomainCheck(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-lg w-[95vw] max-h-[90vh] overflow-y-auto">

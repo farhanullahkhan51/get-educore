@@ -3,12 +3,31 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { GraduationCap, ShieldCheck, LineChart, Users } from "lucide-react";
 import { useTenant } from "@/lib/tenant-context";
+import { getPublicSite } from "@/lib/public-site.functions";
 
 export const Route = createFileRoute("/")({
   beforeLoad: async () => {
     if (typeof window === "undefined") return;
     const { data } = await supabase.auth.getSession();
     if (data.session) throw redirect({ to: "/dashboard" });
+  },
+  loader: () => getPublicSite(),
+  head: ({ loaderData }) => {
+    const site = loaderData ?? { name: "EduCore", origin: "https://get-educore.lovable.app" };
+    const title = `${site.name} — Academic ERP for admissions, fees and results`;
+    const description = `${site.name} unifies admissions, fees, attendance, results and certificates across every campus, with Board (BISE) and Cambridge support.`;
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: `${site.origin}/` },
+        { name: "twitter:card", content: "summary" },
+      ],
+      links: [{ rel: "canonical", href: `${site.origin}/` }],
+    };
   },
   component: Landing,
 });

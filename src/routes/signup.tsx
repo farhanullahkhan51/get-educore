@@ -11,28 +11,30 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { CheckCircle2, GraduationCap, Loader2 } from "lucide-react";
+import { getPublicSite } from "@/lib/public-site.functions";
 
 export const Route = createFileRoute("/signup")({
   validateSearch: (search: Record<string, unknown>) => ({
     plan: typeof search["plan"] === "string" ? (search["plan"] as string) : undefined,
   }),
-  head: () => ({
-    meta: [
-      { title: "Start your 20-day free trial — EduCore" },
-      {
-        name: "description",
-        content:
-          "Create your institution's academic ERP workspace in minutes. 20-day free trial, no card required, Board and Cambridge ready.",
-      },
-      { property: "og:title", content: "Start your 20-day free trial — EduCore" },
-      {
-        property: "og:description",
-        content: "Set up admissions, fees, attendance, results and certificates for your institution.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
+  loader: () => getPublicSite(),
+  head: ({ loaderData }) => {
+    const site = loaderData ?? { name: "EduCore", origin: "https://get-educore.lovable.app" };
+    const title = `Start your 20-day free trial — ${site.name}`;
+    const description = `Create your institution's ${site.name} workspace in minutes. 20-day free trial, no card required, Board and Cambridge ready.`;
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: `${site.origin}/signup` },
+        { name: "twitter:card", content: "summary" },
+      ],
+      links: [{ rel: "canonical", href: `${site.origin}/signup` }],
+    };
+  },
   component: SignupPage,
 });
 
@@ -46,6 +48,7 @@ const slugify = (value: string) =>
     .slice(0, 31);
 
 function SignupPage() {
+  const site = Route.useLoaderData();
   const navigate = useNavigate();
   const { plan: planFromUrl } = Route.useSearch();
   const checkSlug = useServerFn(checkWorkspaceSlug);
@@ -163,10 +166,14 @@ function SignupPage() {
       <header className="hairline">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-5">
           <Link to="/" className="flex items-center gap-2">
-            <div className="grid h-8 w-8 place-items-center rounded-sm bg-primary text-primary-foreground">
-              <GraduationCap className="h-4 w-4" />
-            </div>
-            <span className="font-serif text-lg font-semibold tracking-tight">EduCore</span>
+            {site.logoUrl ? (
+              <img src={site.logoUrl} alt={`${site.name} logo`} className="h-8 w-8 rounded-sm object-contain" />
+            ) : (
+              <div className="grid h-8 w-8 place-items-center rounded-sm bg-primary text-primary-foreground">
+                <GraduationCap className="h-4 w-4" />
+              </div>
+            )}
+            <span className="font-serif text-lg font-semibold tracking-tight">{site.name}</span>
           </Link>
           <Link to="/pricing">
             <Button variant="ghost" size="sm">See plans</Button>

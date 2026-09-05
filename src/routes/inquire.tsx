@@ -12,18 +12,27 @@ import { toast } from "sonner";
 import { GraduationCap, CheckCircle2 } from "lucide-react";
 import { z } from "zod";
 import { useTenant } from "@/lib/tenant-context";
+import { getPublicSite } from "@/lib/public-site.functions";
 
 export const Route = createFileRoute("/inquire")({
-  head: () => ({
-    meta: [
-      { title: "Admissions Inquiry — EduCore" },
-      { name: "description", content: "Register your interest in enrolling at one of our campuses. Our admissions team will be in touch shortly." },
-      { property: "og:title", content: "Admissions Inquiry — EduCore" },
-      { property: "og:description", content: "Register your interest in enrolling at one of our campuses." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
+  loader: () => getPublicSite(),
+  head: ({ loaderData }) => {
+    const site = loaderData ?? { name: "EduCore", origin: "https://get-educore.lovable.app" };
+    const title = `Admissions Inquiry — ${site.name}`;
+    const description = `Register your interest in enrolling at a ${site.name} campus. Our admissions team will be in touch shortly.`;
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: `${site.origin}/inquire` },
+        { name: "twitter:card", content: "summary" },
+      ],
+      links: [{ rel: "canonical", href: `${site.origin}/inquire` }],
+    };
+  },
   component: InquirePage,
 });
 

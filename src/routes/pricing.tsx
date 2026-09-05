@@ -7,25 +7,27 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check, GraduationCap, Minus } from "lucide-react";
 import { FEATURES } from "@/lib/entitlements";
+import { getPublicSite } from "@/lib/public-site.functions";
 
 export const Route = createFileRoute("/pricing")({
-  head: () => ({
-    meta: [
-      { title: "Pricing — EduCore Academic ERP" },
-      {
-        name: "description",
-        content:
-          "Simple plans for schools and colleges: admissions, fees, attendance, results and certificates. Start a 20-day free trial, no card required.",
-      },
-      { property: "og:title", content: "Pricing — EduCore Academic ERP" },
-      {
-        property: "og:description",
-        content: "Starter, Pro and Enterprise plans for Board and Cambridge institutions. 20-day free trial.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
+  loader: () => getPublicSite(),
+  head: ({ loaderData }) => {
+    const site = loaderData ?? { name: "EduCore", origin: "https://get-educore.lovable.app" };
+    const title = `Pricing — ${site.name} Academic ERP`;
+    const description = `Simple plans for schools and colleges on ${site.name}: admissions, fees, attendance, results and certificates. Start a 20-day free trial, no card required.`;
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: `${site.origin}/pricing` },
+        { name: "twitter:card", content: "summary" },
+      ],
+      links: [{ rel: "canonical", href: `${site.origin}/pricing` }],
+    };
+  },
   component: PricingPage,
 });
 
@@ -55,6 +57,7 @@ const money = (value: number | null, currency: "PKR" | "USD") =>
       }).format(value);
 
 function PricingPage() {
+  const site = Route.useLoaderData();
   const [yearly, setYearly] = useState(false);
   const [currency, setCurrency] = useState<"PKR" | "USD">("PKR");
 
@@ -89,10 +92,14 @@ function PricingPage() {
       <header className="hairline">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
           <Link to="/" className="flex items-center gap-2">
-            <div className="grid h-8 w-8 place-items-center rounded-sm bg-primary text-primary-foreground">
-              <GraduationCap className="h-4 w-4" />
-            </div>
-            <span className="font-serif text-lg font-semibold tracking-tight">EduCore</span>
+            {site.logoUrl ? (
+              <img src={site.logoUrl} alt={`${site.name} logo`} className="h-8 w-8 rounded-sm object-contain" />
+            ) : (
+              <div className="grid h-8 w-8 place-items-center rounded-sm bg-primary text-primary-foreground">
+                <GraduationCap className="h-4 w-4" />
+              </div>
+            )}
+            <span className="font-serif text-lg font-semibold tracking-tight">{site.name}</span>
           </Link>
           <div className="flex items-center gap-2">
             <Link to="/auth">
