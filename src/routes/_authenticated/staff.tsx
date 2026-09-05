@@ -61,12 +61,12 @@ function StaffPage() {
     queryFn: async () => (await supabase.from("staff").select("*").order("created_at", { ascending: false })).data as Staff[] | null,
   });
   const campusMap = new Map(campuses?.map((c) => [c.id, c.name]));
+  const staffLimit = useLimitStatus("staff");
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const cap = ent.limit("staff_limit");
-    if (cap !== null && (staff?.length ?? 0) >= cap) {
-      return toast.error(limitMessage("staff members", cap, ent.planName));
+    if (staffLimit.reached && staffLimit.cap !== null) {
+      return toast.error(limitMessage("staff members", staffLimit.cap, ent.planName));
     }
     const fd = new FormData(e.currentTarget);
     const code = "STF-" + Date.now().toString(36).toUpperCase();

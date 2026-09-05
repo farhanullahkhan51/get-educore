@@ -150,6 +150,7 @@ function StudentsPage() {
     toast.success(`Student ${code} registered`);
     setOpen(false);
     qc.invalidateQueries({ queryKey: ["students"] });
+    qc.invalidateQueries({ queryKey: ["plan-usage"] });
   }
 
   async function handleUpdate(e: React.FormEvent<HTMLFormElement>) {
