@@ -1,32 +1,32 @@
-# What to build next
+# Finish the white-label experience
 
-Security hardening is done. Two things are still open from the agreed order, plus a set of accuracy fixes the audit turned up. Suggested order below.
+Goal: an institution's public pages look, read and get found as theirs — not EduCore's.
 
-## 1. Finish the white-label experience
+## 1. Public pages carry the institution's identity
 
-- The public pages (home, pricing, enquiry, signup) have no per-page title or description at all right now, so search results and shared links look generic. Give each one proper titles/descriptions built from the institution's own name and logo when the visitor arrives on that institution's address.
-- Add the two files search engines look for (a site map and a crawl file) so each institution's public pages can be indexed under their own address.
-- Custom domains: institutions can enter one, but nothing checks it. Add a "Verify domain" button that checks the DNS record, shows the exact record to add, and marks the domain verified/pending/failed. Once verified, that address serves the institution's branding.
-- Replace the remaining "EduCore" wording on public pages and outgoing emails with the institution's own name.
+- Home, pricing, enquiry and signup currently have no page title or description of their own, so shared links and search results look generic. Give each one a title and description built from the institution resolved by the web address the visitor came in on, falling back to EduCore on the platform's own address.
+- Show the institution's logo, name and colours on those public pages, the same way the signed-in area already does.
+- Replace remaining hard-coded "EduCore" wording in public page copy and outgoing emails with the institution's name.
 
-## 2. Correct the numbers shown across modules
+## 2. Be findable
 
-- Dashboard, Fees and plan-usage figures are counted from rows fetched into the browser, which stops at 1,000 rows — totals silently under-report for larger institutions. Switch these to database-side counts and sums.
-- Fees summary currently uses only the most recent 500 challans; billed / collected / outstanding / defaulters will be wrong for a busy campus.
-- Money on the Dashboard shows raw numbers; format it with the institution's currency like the Fees page.
-- Lists that are intentionally capped should say "showing first N".
+- Add the two files search engines look for: a site map listing the public pages, and a crawl-permission file.
+- Add a canonical link on each public page pointing at itself on the address the visitor used.
 
-## 3. Communications module
+## 3. Custom domains that actually work
 
-Guardian contacts, message templates with placeholders, send by class/section/individual, email first with SMS as a pluggable provider, plus history and delivery status. Reachable from the sidebar and from the students and fee-challan lists, gated by plan.
+- Institutions can already type a domain, but nothing checks it. Add a "Verify domain" action that looks up the DNS record, shows the exact record to add, and marks the domain pending, verified or failed.
+- Once verified, that address serves the institution's branding, and it wins over the slug address when both match.
+- Show the DNS instructions and current status in Platform Admin and in the institution's own settings.
 
 ## Technical notes
 
-- SEO: per-route `head()` on `/`, `/pricing`, `/inquire`, `/signup` sourced from the resolved tenant; new `/sitemap.xml` and `/robots.txt` server routes; canonical tags from the resolved public origin.
-- Domain verification: server function doing a DNS lookup, writing `custom_domain_status` on `tenants`; `resolve_tenant_by_host` prefers a verified custom domain.
-- Counts: replace client-side `.length` aggregation with `count: 'exact', head: true` queries and SQL aggregates (a `dashboard_stats` RPC where several sums are needed in one round trip).
-- Communications: new `guardians`, `message_templates`, `messages`, `message_batches` tables with RLS + GRANTs, sending through the existing Resend sender, entitlement key `communications`.
+- Per-route `head()` on `/`, `/pricing`, `/inquire`, `/signup`, sourced from a server-side host resolution (server fn wrapping `resolve_tenant_by_host` plus request origin) so metadata is correct on first render, not after hydration.
+- Canonical in `links` on leaf routes only; `og:type` and `twitter:card` set; no `og:image` unless a real absolute image exists.
+- `src/routes/sitemap[.]xml.ts` server route generating URLs from the resolved host; `public/robots.txt` with `Allow: /`.
+- Domain verification: server function doing a DNS TXT/CNAME lookup, writing `custom_domain_status` (enum already exists on `tenants`); `resolve_tenant_by_host` prioritises a verified custom domain.
+- No new tables. Platform Admin gains a verify button + status badge next to the existing `custom_domain_status` display.
 
-## Note
+## Not in this step
 
-Billing emails still need a verified sender domain in Resend before reminders actually deliver — currently the sender domain is rejected.
+Number-accuracy fixes (dashboard/fees totals) and the Communications module stay queued for after this.
