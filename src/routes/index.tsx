@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { GraduationCap, ShieldCheck, LineChart, Users } from "lucide-react";
 import { useTenant } from "@/lib/tenant-context";
+import { getPublicSite } from "@/lib/public-site.functions";
 
 export const Route = createFileRoute("/")({
   beforeLoad: async () => {
