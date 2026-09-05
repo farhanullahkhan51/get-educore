@@ -48,6 +48,7 @@ const slugify = (value: string) =>
     .slice(0, 31);
 
 function SignupPage() {
+  const site = Route.useLoaderData();
   const navigate = useNavigate();
   const { plan: planFromUrl } = Route.useSearch();
   const checkSlug = useServerFn(checkWorkspaceSlug);
