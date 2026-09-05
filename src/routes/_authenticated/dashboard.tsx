@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { format, subMonths, startOfMonth } from "date-fns";
 import { useEntitlements } from "@/lib/entitlements";
+import { usePlanUsage } from "@/lib/plan-usage";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -88,6 +89,7 @@ function Dashboard() {
   const isSuper = user?.roles.includes("super_admin") ?? false;
   const [campus, setCampus] = useState<string>("all");
   const ent = useEntitlements();
+  const { data: planUsage } = usePlanUsage();
 
   const { data: campuses } = useQuery({
     queryKey: ["insights-campuses"],
