@@ -126,7 +126,10 @@ function ImportExportPage() {
             academicSystem={tenant?.academic_system ?? "both"}
             classes={classes ?? []}
             sections={sections ?? []}
-            onDone={() => qc.invalidateQueries({ queryKey: ["students"] })}
+            onDone={() => {
+              qc.invalidateQueries({ queryKey: ["students"] });
+              qc.invalidateQueries({ queryKey: ["plan-usage"] });
+            }}
           />
         </TabsContent>
         <TabsContent value="staff">
@@ -134,7 +137,10 @@ function ImportExportPage() {
             campusId={activeCampus}
             tenantId={tenant?.id ?? ""}
             academicSystem={tenant?.academic_system ?? "both"}
-            onDone={() => qc.invalidateQueries({ queryKey: ["staff"] })}
+            onDone={() => {
+              qc.invalidateQueries({ queryKey: ["staff"] });
+              qc.invalidateQueries({ queryKey: ["plan-usage"] });
+            }}
           />
         </TabsContent>
         <TabsContent value="marks">
