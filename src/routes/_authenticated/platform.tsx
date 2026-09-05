@@ -98,6 +98,9 @@ function TenantsTab() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Tenant | null>(null);
   const [settingsFor, setSettingsFor] = useState<Tenant | null>(null);
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
+  const [domainCheck, setDomainCheck] = useState<DomainCheck | null>(null);
+  const verifyDomain = useServerFn(verifyCustomDomain);
 
   const { data: tenants } = useQuery({
     queryKey: ["platform.tenants"],
