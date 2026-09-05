@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Plus, Upload, FileText, Pencil, Wallet, Trash2 } from "lucide-react";
 import { useEntitlements, limitMessage } from "@/lib/entitlements";
+import { useLimitStatus, LimitNotice } from "@/lib/plan-usage";
 
 export const Route = createFileRoute("/_authenticated/staff")({
   component: StaffPage,

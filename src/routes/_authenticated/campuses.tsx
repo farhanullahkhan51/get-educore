@@ -16,6 +16,7 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { generateCode } from "@/lib/generate-code";
 import { useEntitlements, limitMessage } from "@/lib/entitlements";
+import { useLimitStatus, LimitNotice } from "@/lib/plan-usage";
 
 export const Route = createFileRoute("/_authenticated/campuses")({
   component: CampusesPage,
