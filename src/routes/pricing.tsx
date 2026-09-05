@@ -91,10 +91,14 @@ function PricingPage() {
       <header className="hairline">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
           <Link to="/" className="flex items-center gap-2">
-            <div className="grid h-8 w-8 place-items-center rounded-sm bg-primary text-primary-foreground">
-              <GraduationCap className="h-4 w-4" />
-            </div>
-            <span className="font-serif text-lg font-semibold tracking-tight">EduCore</span>
+            {site.logoUrl ? (
+              <img src={site.logoUrl} alt={`${site.name} logo`} className="h-8 w-8 rounded-sm object-contain" />
+            ) : (
+              <div className="grid h-8 w-8 place-items-center rounded-sm bg-primary text-primary-foreground">
+                <GraduationCap className="h-4 w-4" />
+              </div>
+            )}
+            <span className="font-serif text-lg font-semibold tracking-tight">{site.name}</span>
           </Link>
           <div className="flex items-center gap-2">
             <Link to="/auth">
