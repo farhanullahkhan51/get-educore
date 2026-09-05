@@ -17,6 +17,7 @@ import { LayoutMenu } from "@/components/layout/layout-menu";
 import { useModuleLayout } from "@/lib/ui-prefs";
 import { useArranged, byText, densityCell } from "@/lib/ui-arrange";
 import { useEntitlements, limitMessage } from "@/lib/entitlements";
+import { useLimitStatus, LimitNotice } from "@/lib/plan-usage";
 
 
 export const Route = createFileRoute("/_authenticated/students")({
@@ -74,6 +75,7 @@ function StudentsPage() {
     queryKey: ["students"],
     queryFn: async () => (await supabase.from("students").select("*").order("created_at", { ascending: false })).data as Student[] | null,
   });
+  const studentLimit = useLimitStatus("students");
 
   const campusMap = new Map(campuses?.map((c) => [c.id, c.name]));
   const classMap = new Map(classes?.map((c) => [c.id, c.name]));
