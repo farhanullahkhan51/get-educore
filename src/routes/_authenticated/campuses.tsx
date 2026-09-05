@@ -51,9 +51,8 @@ function CampusesPage() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const cap = ent.limit("campus_limit");
-    if (!editing && cap !== null && (campuses?.length ?? 0) >= cap) {
-      return toast.error(limitMessage("campuses", cap, ent.planName));
+    if (!editing && campusLimit.reached && campusLimit.cap !== null) {
+      return toast.error(limitMessage("campuses", campusLimit.cap, ent.planName));
     }
     const fd = new FormData(e.currentTarget);
     const name = String(fd.get("name"));
