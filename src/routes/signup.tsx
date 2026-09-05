@@ -16,23 +16,24 @@ export const Route = createFileRoute("/signup")({
   validateSearch: (search: Record<string, unknown>) => ({
     plan: typeof search["plan"] === "string" ? (search["plan"] as string) : undefined,
   }),
-  head: () => ({
-    meta: [
-      { title: "Start your 20-day free trial — EduCore" },
-      {
-        name: "description",
-        content:
-          "Create your institution's academic ERP workspace in minutes. 20-day free trial, no card required, Board and Cambridge ready.",
-      },
-      { property: "og:title", content: "Start your 20-day free trial — EduCore" },
-      {
-        property: "og:description",
-        content: "Set up admissions, fees, attendance, results and certificates for your institution.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
+  loader: () => getPublicSite(),
+  head: ({ loaderData }) => {
+    const site = loaderData ?? { name: "EduCore", origin: "https://get-educore.lovable.app" };
+    const title = `Start your 20-day free trial — ${site.name}`;
+    const description = `Create your institution's ${site.name} workspace in minutes. 20-day free trial, no card required, Board and Cambridge ready.`;
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: `${site.origin}/signup` },
+        { name: "twitter:card", content: "summary" },
+      ],
+      links: [{ rel: "canonical", href: `${site.origin}/signup` }],
+    };
+  },
   component: SignupPage,
 });
 
