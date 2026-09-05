@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check, GraduationCap, Minus } from "lucide-react";
 import { FEATURES } from "@/lib/entitlements";
+import { getPublicSite } from "@/lib/public-site.functions";
 
 export const Route = createFileRoute("/pricing")({
   loader: () => getPublicSite(),
