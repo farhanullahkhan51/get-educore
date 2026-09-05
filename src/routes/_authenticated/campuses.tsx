@@ -148,6 +148,7 @@ function CampusesPage() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         )}
       />
 
