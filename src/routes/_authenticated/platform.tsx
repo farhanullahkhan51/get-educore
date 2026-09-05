@@ -224,7 +224,18 @@ function TenantsTab() {
                     <TableCell className="text-xs">
                       {t.custom_domain ?? <span className="opacity-50">—</span>}
                       {t.custom_domain && (
-                        <Badge variant="outline" className="ml-2">{t.custom_domain_status}</Badge>
+                        <>
+                          <Badge variant="outline" className="ml-2">{t.custom_domain_status}</Badge>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="ml-1 h-6 px-2 text-xs"
+                            disabled={verifyingId === t.id}
+                            onClick={() => runVerify(t.id)}
+                          >
+                            {verifyingId === t.id ? "Checking…" : "Verify"}
+                          </Button>
+                        </>
                       )}
                     </TableCell>
                     <TableCell>{planName(t.plan_tier_id)}</TableCell>
