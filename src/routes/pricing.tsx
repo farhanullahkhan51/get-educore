@@ -57,6 +57,7 @@ const money = (value: number | null, currency: "PKR" | "USD") =>
       }).format(value);
 
 function PricingPage() {
+  const site = Route.useLoaderData();
   const [yearly, setYearly] = useState(false);
   const [currency, setCurrency] = useState<"PKR" | "USD">("PKR");
 
