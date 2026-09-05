@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { CheckCircle2, GraduationCap, Loader2 } from "lucide-react";
+import { getPublicSite } from "@/lib/public-site.functions";
 
 export const Route = createFileRoute("/signup")({
   validateSearch: (search: Record<string, unknown>) => ({
