@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as InquireRouteImport } from './routes/inquire'
@@ -43,6 +44,11 @@ import { Route as AuthenticatedAssistantIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedAssistantThreadIdRouteImport } from './routes/_authenticated/assistant.$threadId'
 import { Route as ApiPublicBillingRemindersRouteImport } from './routes/api/public/billing/reminders'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -220,6 +226,7 @@ export interface FileRoutesByFullPath {
   '/inquire': typeof InquireRoute
   '/pricing': typeof PricingRoute
   '/signup': typeof SignupRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/academics': typeof AuthenticatedAcademicsRoute
   '/admissions': typeof AuthenticatedAdmissionsRoute
   '/billing': typeof AuthenticatedBillingRoute
@@ -254,6 +261,7 @@ export interface FileRoutesByTo {
   '/inquire': typeof InquireRoute
   '/pricing': typeof PricingRoute
   '/signup': typeof SignupRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/academics': typeof AuthenticatedAcademicsRoute
   '/admissions': typeof AuthenticatedAdmissionsRoute
   '/billing': typeof AuthenticatedBillingRoute
@@ -290,6 +298,7 @@ export interface FileRoutesById {
   '/inquire': typeof InquireRoute
   '/pricing': typeof PricingRoute
   '/signup': typeof SignupRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/academics': typeof AuthenticatedAcademicsRoute
   '/_authenticated/admissions': typeof AuthenticatedAdmissionsRoute
   '/_authenticated/billing': typeof AuthenticatedBillingRoute
@@ -326,6 +335,7 @@ export interface FileRouteTypes {
     | '/inquire'
     | '/pricing'
     | '/signup'
+    | '/sitemap.xml'
     | '/academics'
     | '/admissions'
     | '/billing'
@@ -360,6 +370,7 @@ export interface FileRouteTypes {
     | '/inquire'
     | '/pricing'
     | '/signup'
+    | '/sitemap.xml'
     | '/academics'
     | '/admissions'
     | '/billing'
@@ -395,6 +406,7 @@ export interface FileRouteTypes {
     | '/inquire'
     | '/pricing'
     | '/signup'
+    | '/sitemap.xml'
     | '/_authenticated/academics'
     | '/_authenticated/admissions'
     | '/_authenticated/billing'
@@ -431,6 +443,7 @@ export interface RootRouteChildren {
   InquireRoute: typeof InquireRoute
   PricingRoute: typeof PricingRoute
   SignupRoute: typeof SignupRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiTranscribeRoute: typeof ApiTranscribeRoute
   ApiPublicBillingRemindersRoute: typeof ApiPublicBillingRemindersRoute
@@ -438,6 +451,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -736,6 +756,7 @@ const rootRouteChildren: RootRouteChildren = {
   InquireRoute: InquireRoute,
   PricingRoute: PricingRoute,
   SignupRoute: SignupRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiChatRoute: ApiChatRoute,
   ApiTranscribeRoute: ApiTranscribeRoute,
   ApiPublicBillingRemindersRoute: ApiPublicBillingRemindersRoute,
