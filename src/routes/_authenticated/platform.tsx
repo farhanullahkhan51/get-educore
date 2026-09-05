@@ -21,6 +21,8 @@ import { AiUsageTab } from "@/components/platform/ai-usage-tab";
 import { BillingTab } from "@/components/platform/billing-tab";
 import { FEATURES } from "@/lib/entitlements";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useServerFn } from "@tanstack/react-start";
+import { verifyCustomDomain, type DomainCheck } from "@/lib/domains.functions";
 
 
 
