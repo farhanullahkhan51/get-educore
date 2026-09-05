@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { format, subMonths, startOfMonth } from "date-fns";
 import { useEntitlements } from "@/lib/entitlements";
+import { usePlanUsage } from "@/lib/plan-usage";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -88,6 +89,7 @@ function Dashboard() {
   const isSuper = user?.roles.includes("super_admin") ?? false;
   const [campus, setCampus] = useState<string>("all");
   const ent = useEntitlements();
+  const { data: planUsage } = usePlanUsage();
 
   const { data: campuses } = useQuery({
     queryKey: ["insights-campuses"],
@@ -276,9 +278,21 @@ function Dashboard() {
                 {ent.academicSystem === "both" ? "Board & Cambridge" : ent.academicSystem === "board" ? "BISE Board" : "Cambridge"}
               </div>
             </div>
-            <PlanUsage label="Students" used={metrics.studentTotal} cap={ent.limit("student_limit")} />
-            <PlanUsage label="Staff" used={data?.staff.length ?? 0} cap={ent.limit("staff_limit")} />
-            <PlanUsage label="Campuses" used={campuses?.length ?? 0} cap={ent.limit("campus_limit")} />
+            <PlanUsage
+              label="Students"
+              used={planUsage?.students_used ?? metrics.studentTotal}
+              cap={planUsage?.students_cap ?? ent.limit("student_limit")}
+            />
+            <PlanUsage
+              label="Staff"
+              used={planUsage?.staff_used ?? data?.staff.length ?? 0}
+              cap={planUsage?.staff_cap ?? ent.limit("staff_limit")}
+            />
+            <PlanUsage
+              label="Campuses"
+              used={planUsage?.campuses_used ?? campuses?.length ?? 0}
+              cap={planUsage?.campuses_cap ?? ent.limit("campus_limit")}
+            />
           </CardContent>
         </Card>
       ) : null}

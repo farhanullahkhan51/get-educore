@@ -3187,6 +3187,17 @@ export type Database = {
           trial_ends_at: string
         }[]
       }
+      my_plan_usage: {
+        Args: never
+        Returns: {
+          campuses_cap: number
+          campuses_used: number
+          staff_cap: number
+          staff_used: number
+          students_cap: number
+          students_used: number
+        }[]
+      }
       resolve_tenant_by_host: {
         Args: { _host: string }
         Returns: {

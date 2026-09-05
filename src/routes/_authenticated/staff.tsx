@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Plus, Upload, FileText, Pencil, Wallet, Trash2 } from "lucide-react";
 import { useEntitlements, limitMessage } from "@/lib/entitlements";
+import { useLimitStatus, LimitNotice } from "@/lib/plan-usage";
 
 export const Route = createFileRoute("/_authenticated/staff")({
   component: StaffPage,
@@ -61,12 +62,12 @@ function StaffPage() {
     queryFn: async () => (await supabase.from("staff").select("*").order("created_at", { ascending: false })).data as Staff[] | null,
   });
   const campusMap = new Map(campuses?.map((c) => [c.id, c.name]));
+  const staffLimit = useLimitStatus("staff");
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const cap = ent.limit("staff_limit");
-    if (cap !== null && (staff?.length ?? 0) >= cap) {
-      return toast.error(limitMessage("staff members", cap, ent.planName));
+    if (staffLimit.reached && staffLimit.cap !== null) {
+      return toast.error(limitMessage("staff members", staffLimit.cap, ent.planName));
     }
     const fd = new FormData(e.currentTarget);
     const code = "STF-" + Date.now().toString(36).toUpperCase();
@@ -87,6 +88,7 @@ function StaffPage() {
     toast.success(`Staff ${code} added`);
     setOpen(false);
     qc.invalidateQueries({ queryKey: ["staff"] });
+    qc.invalidateQueries({ queryKey: ["plan-usage"] });
   }
 
   async function handleUpdate(e: React.FormEvent<HTMLFormElement>) {
@@ -158,9 +160,14 @@ function StaffPage() {
         description="Manage teaching and administrative staff. Portal logins are granted via Users & Roles."
         actions={
           <div className="flex items-center gap-2">
+          {staffLimit.reached && staffLimit.cap !== null ? (
+            <LimitNotice cap={staffLimit.cap} label="staff members" />
+          ) : null}
           <LayoutMenu module="staff" />
           <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" /> New staff</Button></DialogTrigger>
+            <DialogTrigger asChild>
+              <Button disabled={staffLimit.reached}><Plus className="mr-1 h-4 w-4" /> New staff</Button>
+            </DialogTrigger>
 
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle className="font-serif">Add staff member</DialogTitle></DialogHeader>

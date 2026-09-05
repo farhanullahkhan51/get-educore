@@ -16,6 +16,7 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { generateCode } from "@/lib/generate-code";
 import { useEntitlements, limitMessage } from "@/lib/entitlements";
+import { useLimitStatus, LimitNotice } from "@/lib/plan-usage";
 
 export const Route = createFileRoute("/_authenticated/campuses")({
   component: CampusesPage,
@@ -47,12 +48,12 @@ function CampusesPage() {
       return data as Campus[];
     },
   });
+  const campusLimit = useLimitStatus("campuses");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const cap = ent.limit("campus_limit");
-    if (!editing && cap !== null && (campuses?.length ?? 0) >= cap) {
-      return toast.error(limitMessage("campuses", cap, ent.planName));
+    if (!editing && campusLimit.reached && campusLimit.cap !== null) {
+      return toast.error(limitMessage("campuses", campusLimit.cap, ent.planName));
     }
     const fd = new FormData(e.currentTarget);
     const name = String(fd.get("name"));
@@ -74,6 +75,7 @@ function CampusesPage() {
     setOpen(false);
     setEditing(null);
     qc.invalidateQueries({ queryKey: ["campuses"] });
+    qc.invalidateQueries({ queryKey: ["plan-usage"] });
   }
 
   async function handleDelete(id: string) {
@@ -82,6 +84,7 @@ function CampusesPage() {
     if (error) return toast.error(error.message);
     toast.success("Campus deleted");
     qc.invalidateQueries({ queryKey: ["campuses"] });
+    qc.invalidateQueries({ queryKey: ["plan-usage"] });
   }
 
   return (
@@ -91,9 +94,13 @@ function CampusesPage() {
         title="Campuses"
         description="Each campus operates under one academic system: Pakistani Board (BISE), Cambridge (O/A-Level), or both."
         actions={isSuper && (
+          <div className="flex items-center gap-2">
+          {campusLimit.reached && campusLimit.cap !== null ? (
+            <LimitNotice cap={campusLimit.cap} label="campuses" />
+          ) : null}
           <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
             <DialogTrigger asChild>
-              <Button><Plus className="mr-1 h-4 w-4" /> New campus</Button>
+              <Button disabled={campusLimit.reached}><Plus className="mr-1 h-4 w-4" /> New campus</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
@@ -141,6 +148,7 @@ function CampusesPage() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         )}
       />
 
