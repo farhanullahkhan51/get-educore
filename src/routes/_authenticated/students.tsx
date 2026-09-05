@@ -124,9 +124,8 @@ function StudentsPage() {
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const cap = ent.limit("student_limit");
-    if (cap !== null && (students?.length ?? 0) >= cap) {
-      return toast.error(limitMessage("students", cap, ent.planName));
+    if (studentLimit.reached && studentLimit.cap !== null) {
+      return toast.error(limitMessage("students", studentLimit.cap, ent.planName));
     }
     const fd = new FormData(e.currentTarget);
     const code = "STU-" + Date.now().toString(36).toUpperCase();
@@ -201,9 +200,14 @@ function StudentsPage() {
         description="Register students, assign them to classes and sections, and manage their documents."
         actions={
           <div className="flex items-center gap-2">
+          {studentLimit.reached && studentLimit.cap !== null ? (
+            <LimitNotice cap={studentLimit.cap} label="students" />
+          ) : null}
           <LayoutMenu module="students" />
           <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" /> New student</Button></DialogTrigger>
+            <DialogTrigger asChild>
+              <Button disabled={studentLimit.reached}><Plus className="mr-1 h-4 w-4" /> New student</Button>
+            </DialogTrigger>
 
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle className="font-serif">Register student</DialogTitle></DialogHeader>
