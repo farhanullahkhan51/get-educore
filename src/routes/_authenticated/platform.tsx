@@ -294,6 +294,38 @@ function TenantsTab() {
         </CardContent>
       </Card>
 
+      <Dialog open={!!domainCheck} onOpenChange={(o) => !o && setDomainCheck(null)}>
+        <DialogContent className="max-w-lg w-[95vw]">
+          <DialogHeader>
+            <DialogTitle>Domain setup — {domainCheck?.domain}</DialogTitle>
+          </DialogHeader>
+          {domainCheck && (
+            <div className="space-y-3 text-sm">
+              <p>
+                Status:{" "}
+                <Badge variant={domainCheck.status === "verified" ? "default" : "secondary"}>
+                  {domainCheck.status}
+                </Badge>
+              </p>
+              <p className="text-muted-foreground">{domainCheck.message}</p>
+              <div className="rounded-md border p-3 space-y-1 text-xs">
+                <div><span className="text-muted-foreground">Type:</span> <code>{domainCheck.recordType}</code></div>
+                <div><span className="text-muted-foreground">Name:</span> <code>{domainCheck.recordName}</code></div>
+                <div className="break-all"><span className="text-muted-foreground">Value:</span> <code>{domainCheck.recordValue}</code></div>
+              </div>
+              {domainCheck.found.length > 0 && (
+                <div className="text-xs text-muted-foreground break-all">
+                  Currently published: {domainCheck.found.join(", ")}
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDomainCheck(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-lg w-[95vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
