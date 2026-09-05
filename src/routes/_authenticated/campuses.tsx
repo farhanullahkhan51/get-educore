@@ -48,6 +48,7 @@ function CampusesPage() {
       return data as Campus[];
     },
   });
+  const campusLimit = useLimitStatus("campuses");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
