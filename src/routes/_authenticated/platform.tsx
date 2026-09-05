@@ -194,6 +194,21 @@ function TenantsTab() {
     return plans?.find((p) => p.id === id)?.name ?? "—";
   }
 
+  async function runVerify(tenantId: string) {
+    setVerifyingId(tenantId);
+    try {
+      const result = await verifyDomain({ data: { tenantId } });
+      setDomainCheck(result);
+      if (result.status === "verified") toast.success(result.message);
+      else toast.message(result.message);
+      qc.invalidateQueries({ queryKey: ["platform.tenants"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not check the domain");
+    } finally {
+      setVerifyingId(null);
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
