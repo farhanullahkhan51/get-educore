@@ -1,17 +1,32 @@
-# Fix the sign-in page flicker warning
+# What to build next
 
-## What's happening
+Security hardening is done. Two things are still open from the agreed order, plus a set of accuracy fixes the audit turned up. Suggested order below.
 
-The table list in the Cloud panel is a viewer glitch, not your data — the backend still holds all 48 tables, 2 institutions and 158 students. Reopening the panel or the project tab restores it; there is no code change needed for that.
+## 1. Finish the white-label experience
 
-Separately, the sign-in page is throwing a page-mismatch error in the preview. The branding provider reads a saved "preview branding" value out of browser storage while the very first version of the page is still being built on the server, where that storage does not exist. The two versions disagree, so the whole sign-in screen is thrown away and rebuilt — which shows up as a flash and a console error.
+- The public pages (home, pricing, enquiry, signup) have no per-page title or description at all right now, so search results and shared links look generic. Give each one proper titles/descriptions built from the institution's own name and logo when the visitor arrives on that institution's address.
+- Add the two files search engines look for (a site map and a crawl file) so each institution's public pages can be indexed under their own address.
+- Custom domains: institutions can enter one, but nothing checks it. Add a "Verify domain" button that checks the DNS record, shows the exact record to add, and marks the domain verified/pending/failed. Once verified, that address serves the institution's branding.
+- Replace the remaining "EduCore" wording on public pages and outgoing emails with the institution's own name.
 
-## The fix
+## 2. Correct the numbers shown across modules
 
-- Start the branding preview state empty on first render, and load the saved preview value immediately afterwards, once the page is running in the browser.
-- Leave every other behaviour the same: preview branding still applies, still persists per tab, and still clears when reset.
-- Confirm the sign-in page loads with no mismatch error and the tenant logo/name still appear.
+- Dashboard, Fees and plan-usage figures are counted from rows fetched into the browser, which stops at 1,000 rows — totals silently under-report for larger institutions. Switch these to database-side counts and sums.
+- Fees summary currently uses only the most recent 500 challans; billed / collected / outstanding / defaulters will be wrong for a busy campus.
+- Money on the Dashboard shows raw numbers; format it with the institution's currency like the Fees page.
+- Lists that are intentionally capped should say "showing first N".
 
-## Technical detail
+## 3. Communications module
 
-In `src/lib/tenant-context.tsx`, `useState(() => readStoredPreview())` reads `sessionStorage` in the initializer, which is server/client divergent. Change the initial value to `null` and hydrate it in a `useEffect` on mount. No change to `setPreview`, the query, or consumers.
+Guardian contacts, message templates with placeholders, send by class/section/individual, email first with SMS as a pluggable provider, plus history and delivery status. Reachable from the sidebar and from the students and fee-challan lists, gated by plan.
+
+## Technical notes
+
+- SEO: per-route `head()` on `/`, `/pricing`, `/inquire`, `/signup` sourced from the resolved tenant; new `/sitemap.xml` and `/robots.txt` server routes; canonical tags from the resolved public origin.
+- Domain verification: server function doing a DNS lookup, writing `custom_domain_status` on `tenants`; `resolve_tenant_by_host` prefers a verified custom domain.
+- Counts: replace client-side `.length` aggregation with `count: 'exact', head: true` queries and SQL aggregates (a `dashboard_stats` RPC where several sums are needed in one round trip).
+- Communications: new `guardians`, `message_templates`, `messages`, `message_batches` tables with RLS + GRANTs, sending through the existing Resend sender, entitlement key `communications`.
+
+## Note
+
+Billing emails still need a verified sender domain in Resend before reminders actually deliver — currently the sender domain is rejected.
