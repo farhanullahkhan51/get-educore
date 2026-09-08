@@ -417,63 +417,13 @@ export function buildAssistantTools(ctx: AssistantContext) {
           ),
       }),
       execute: async ({ month }) => {
-        const { data, error } = await supabase
-          .from("fee_challans")
-          .select("gross_amount, discount_amount, fine_amount, paid_amount, status, due_date, period_label")
-          .limit(5000);
+        if (month.trim()) return { error: "Monthly fee summaries are not available yet. Ask for the all-time fee summary." };
+        const { data, error } = await supabase.rpc("fee_totals", { _campus: undefined });
         if (error) return { error: error.message };
-
-        const monthKey = (r: { due_date: string | null; period_label: string | null }) => {
-          const fromLabel = (r.period_label ?? "").match(/(\d{4})[-/](\d{1,2})/);
-          if (fromLabel) return `${fromLabel[1]}-${fromLabel[2].padStart(2, "0")}`;
-          return r.due_date ? r.due_date.slice(0, 7) : "unknown";
-        };
-        const wanted = month.trim().replace(/\//g, "-");
-        const normalizedWanted = /^\d{4}-\d{1,2}$/.test(wanted)
-          ? `${wanted.slice(0, 4)}-${wanted.slice(5).padStart(2, "0")}`
-          : "";
-
-        const all = data ?? [];
-        const rows = normalizedWanted ? all.filter((r) => monthKey(r) === normalizedWanted) : all;
-
-        let billed = 0;
-        let collected = 0;
-        const byStatus: Record<string, number> = {};
-        const byMonth: Record<string, { billed: number; collected: number; challans: number }> = {};
-        for (const r of rows) {
-          const net = Number(r.gross_amount ?? 0) - Number(r.discount_amount ?? 0) + Number(r.fine_amount ?? 0);
-          const paid = Number(r.paid_amount ?? 0);
-          billed += net;
-          collected += paid;
-          byStatus[r.status] = (byStatus[r.status] ?? 0) + 1;
-          const key = monthKey(r);
-          const bucket = (byMonth[key] ??= { billed: 0, collected: 0, challans: 0 });
-          bucket.billed += net;
-          bucket.collected += paid;
-          bucket.challans += 1;
-        }
-        return {
-          month: normalizedWanted || "all",
-          challans: rows.length,
-          billed: Math.round(billed),
-          collected: Math.round(collected),
-          outstanding: Math.round(billed - collected),
-          collection_rate_percent: billed ? Math.round((collected / billed) * 100) : 0,
-          challans_by_status: byStatus,
-          by_month: Object.fromEntries(
-            Object.entries(byMonth)
-              .sort(([a], [b]) => a.localeCompare(b))
-              .map(([k, v]) => [
-                k,
-                {
-                  challans: v.challans,
-                  billed: Math.round(v.billed),
-                  collected: Math.round(v.collected),
-                  outstanding: Math.round(v.billed - v.collected),
-                },
-              ]),
-          ),
-        };
+        const summary = (data ?? {}) as unknown as Record<string, number>;
+        const billed = Number(summary.billed ?? 0);
+        const collected = Number(summary.collected ?? 0);
+        return { ...summary, month: "all", collection_rate_percent: billed ? Math.round((collected / billed) * 100) : 0 };
       },
     }),
 
@@ -482,23 +432,9 @@ export function buildAssistantTools(ctx: AssistantContext) {
       inputSchema: z.object({ days: z.number().int().describe("How many days back to look, e.g. 30.") }),
       execute: async ({ days }) => {
         const span = Math.min(Math.max(Math.round(days) || 30, 1), 365);
-        const since = new Date(Date.now() - span * 86400000).toISOString().slice(0, 10);
-        const { data, error } = await supabase
-          .from("attendance_records")
-          .select("status, date")
-          .gte("date", since)
-          .limit(10000);
+        const { data, error } = await supabase.rpc("ai_reporting_summary", { _kind: "attendance", _days: span });
         if (error) return { error: error.message };
-        const rows = data ?? [];
-        const byStatus: Record<string, number> = {};
-        for (const r of rows) byStatus[r.status] = (byStatus[r.status] ?? 0) + 1;
-        const present = (byStatus["present"] ?? 0) + (byStatus["late"] ?? 0);
-        return {
-          days: span,
-          records: rows.length,
-          by_status: byStatus,
-          attendance_rate_percent: rows.length ? Math.round((present / rows.length) * 100) : 0,
-        };
+        return data ?? {};
       },
     }),
 
@@ -506,21 +442,9 @@ export function buildAssistantTools(ctx: AssistantContext) {
       description: "Admissions funnel: inquiry counts by status and recent inquiries.",
       inputSchema: z.object({}),
       execute: async () => {
-        const { data, error } = await supabase
-          .from("inquiries")
-          .select("id, student_name, grade_applying_for, status, source, created_at, converted_student_id")
-          .order("created_at", { ascending: false })
-          .limit(500);
+        const { data, error } = await supabase.rpc("ai_reporting_summary", { _kind: "admissions", _days: 30 });
         if (error) return { error: error.message };
-        const rows = data ?? [];
-        const byStatus: Record<string, number> = {};
-        for (const r of rows) byStatus[r.status] = (byStatus[r.status] ?? 0) + 1;
-        return {
-          total_inquiries: rows.length,
-          by_status: byStatus,
-          converted: rows.filter((r) => r.converted_student_id).length,
-          recent: rows.slice(0, 10),
-        };
+        return data ?? {};
       },
     }),
 
@@ -528,27 +452,9 @@ export function buildAssistantTools(ctx: AssistantContext) {
       description: "Report card / results summary: counts by status and average overall percentage (marks).",
       inputSchema: z.object({}),
       execute: async () => {
-        const { data, error } = await supabase
-          .from("report_cards")
-          .select("status, overall_percent, term, academic_year")
-          .limit(2000);
+        const { data, error } = await supabase.rpc("ai_reporting_summary", { _kind: "results", _days: 30 });
         if (error) return { error: error.message };
-        const rows = data ?? [];
-        const byStatus: Record<string, number> = {};
-        let sum = 0;
-        let n = 0;
-        for (const r of rows) {
-          byStatus[r.status] = (byStatus[r.status] ?? 0) + 1;
-          if (r.overall_percent != null) {
-            sum += Number(r.overall_percent);
-            n += 1;
-          }
-        }
-        return {
-          report_cards: rows.length,
-          by_status: byStatus,
-          average_marks_percent: n ? Math.round((sum / n) * 10) / 10 : null,
-        };
+        return data ?? {};
       },
     }),
 
