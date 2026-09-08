@@ -27,9 +27,9 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
   head: () => ({
     meta: [
-      { title: "Dashboard · EduCore Institution Overview" },
+      { title: "Dashboard · Institution Overview" },
       { name: "description", content: "Welcome dashboard with cross-campus KPIs for enrollment, attendance, fee collection, admissions and academic performance." },
-      { property: "og:title", content: "Dashboard · EduCore Institution Overview" },
+      { property: "og:title", content: "Dashboard · Institution Overview" },
       { property: "og:description", content: "Welcome dashboard with cross-campus KPIs for enrollment, attendance, fee collection, admissions and academic performance." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -195,11 +195,29 @@ function Dashboard() {
 
   if (user?.primaryRole === "student") return <Navigate to="/portal" replace />;
 
+  // Signed in, but nobody has given this person a role yet: explain instead of
+  // showing a screen full of zeros.
+  if (user && user.roles.length === 0) {
+    return (
+      <>
+        <PageHeader
+          eyebrow="Account pending"
+          title="Welcome"
+          description="Your account is not linked to an institution yet."
+        />
+        <div className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">
+          Ask your institution's administrator to add you under Users &amp; Roles. Once a role and
+          campus are assigned, your dashboard and modules will appear here.
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <PageHeader
         eyebrow={`Signed in as ${roleLabel(user?.primaryRole ?? null)}`}
-        title={`Welcome, ${user?.fullName ?? user?.email ?? ""}`}
+        title={user?.fullName || user?.email ? `Welcome, ${user?.fullName ?? user?.email}` : "Welcome"}
         description="Institution-wide totals, with attendance and admissions trends covering the last six months."
       />
 

@@ -11,13 +11,13 @@ import { createThread, listThreads } from "@/lib/ai-threads";
 export const Route = createFileRoute("/_authenticated/assistant/")({
   head: () => ({
     meta: [
-      { title: "AI Assistant | EduCore ERP" },
+      { title: "AI Assistant | Academic ERP" },
       {
         name: "description",
         content:
-          "Start a conversation with the EduCore AI Assistant to explore enrollment, fees, attendance and admissions data.",
+          "Start a conversation with the AI Assistant to explore enrollment, fees, attendance and admissions data.",
       },
-      { property: "og:title", content: "AI Assistant | EduCore ERP" },
+      { property: "og:title", content: "AI Assistant | Academic ERP" },
       {
         property: "og:description",
         content: "Conversational analytics over your live school and college records.",

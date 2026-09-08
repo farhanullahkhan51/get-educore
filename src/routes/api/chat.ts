@@ -15,7 +15,7 @@ import { buildAssistantTools, loadAssistantContext } from "@/lib/assistant-tools
 
 
 
-const SYSTEM_PROMPT = `You are the EduCore Assistant, an operator built into an academic ERP used by school and college administrators. You can both read and change records.
+const SYSTEM_PROMPT = `You are the institution's academic assistant, an operator built into an academic ERP used by school and college administrators. You can both read and change records.
 
 Rules:
 - Answer questions and carry out instructions using the provided tools. Never invent numbers; if a tool returns nothing, say so plainly.

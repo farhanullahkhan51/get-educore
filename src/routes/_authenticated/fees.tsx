@@ -3,6 +3,7 @@ import { getActiveTenantName } from "@/lib/tenant-context";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllRows } from "@/lib/fetch-all";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -388,21 +389,22 @@ function ChallansTab({
 
   const { data: challans, isLoading } = useQuery({
     queryKey: ["fee_challans"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("fee_challans")
-        .select("*")
-        .order("due_date", { ascending: false })
-        .limit(500);
-      if (error) throw error;
-      return data as Challan[];
-    },
+    queryFn: async () =>
+      (await fetchAllRows<Challan>((from, to) =>
+        supabase.from("fee_challans").select("*").order("due_date", { ascending: false }).range(from, to) as any,
+      )) as Challan[],
   });
 
   const { data: students } = useQuery({
     queryKey: ["students-min"],
     queryFn: async () =>
-      (await supabase.from("students").select("id, student_code, first_name, last_name, campus_id, class_id")).data ?? [],
+      await fetchAllRows<any>((from, to) =>
+        supabase
+          .from("students")
+          .select("id, student_code, first_name, last_name, campus_id, class_id")
+          .order("first_name")
+          .range(from, to) as any,
+      ),
   });
   const { data: structures } = useQuery({
     queryKey: ["fee_structures"],
@@ -1053,7 +1055,13 @@ function ScholarshipsTab({ canManage, campuses }: {
   const { data: students } = useQuery({
     queryKey: ["students-min"],
     queryFn: async () =>
-      (await supabase.from("students").select("id, student_code, first_name, last_name, campus_id")).data ?? [],
+      await fetchAllRows<any>((from, to) =>
+        supabase
+          .from("students")
+          .select("id, student_code, first_name, last_name, campus_id")
+          .order("first_name")
+          .range(from, to) as any,
+      ),
   });
 
   const studentMap = useMemo(() => {
@@ -1241,7 +1249,9 @@ function BankTab({ canManage, campuses }: {
   const { data: txns, isLoading } = useQuery({
     queryKey: ["bank_transactions"],
     queryFn: async () =>
-      (await supabase.from("bank_transactions").select("*").order("txn_date", { ascending: false }).limit(500)).data as BankTxn[] ?? [],
+      (await fetchAllRows<BankTxn>((from, to) =>
+        supabase.from("bank_transactions").select("*").order("txn_date", { ascending: false }).range(from, to) as any,
+      )) as BankTxn[],
   });
 
   const filteredTxns = (txns ?? []).filter((t) => !campusId || t.campus_id === campusId);

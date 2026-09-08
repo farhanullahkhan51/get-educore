@@ -32,9 +32,9 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/timetable")({
   head: () => ({
     meta: [
-      { title: "Timetable & Scheduling — EduCore" },
+      { title: "Timetable & Scheduling" },
       { name: "description", content: "Weekly class and teacher timetables with clash detection." },
-      { property: "og:title", content: "Timetable & Scheduling — EduCore" },
+      { property: "og:title", content: "Timetable & Scheduling" },
       { property: "og:description", content: "Weekly class and teacher timetables with clash detection." },
     ],
   }),

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllRows } from "@/lib/fetch-all";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -118,8 +119,14 @@ function CertificatesPage() {
   });
   const { data: students } = useQuery({
     queryKey: ["students-for-cert"],
-    queryFn: async () => (await supabase.from("students")
-      .select("id,first_name,last_name,student_code,campus_id,grade,date_of_birth,guardian_name").order("first_name")).data ?? [],
+    queryFn: async () =>
+      await fetchAllRows<any>((from, to) =>
+        supabase
+          .from("students")
+          .select("id,first_name,last_name,student_code,campus_id,grade,date_of_birth,guardian_name")
+          .order("first_name")
+          .range(from, to) as any,
+      ),
   });
   const { data: staff } = useQuery({
     queryKey: ["staff-for-cert"],
@@ -128,8 +135,10 @@ function CertificatesPage() {
   });
   const { data: certificates, refetch } = useQuery({
     queryKey: ["certificates"],
-    queryFn: async () => (await supabase.from("certificates")
-      .select("*").order("created_at", { ascending: false })).data as Certificate[] ?? [],
+    queryFn: async () =>
+      (await fetchAllRows<Certificate>((from, to) =>
+        supabase.from("certificates").select("*").order("created_at", { ascending: false }).range(from, to) as any,
+      )) as Certificate[],
   });
 
   const isStudentCert = STUDENT_TYPES.includes(type);
