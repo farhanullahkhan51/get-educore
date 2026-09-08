@@ -91,6 +91,7 @@ type DashboardAgg = {
   active_staff?: number;
   billed?: number;
   collected?: number;
+  outstanding?: number;
   overdue?: number;
   attendance_marked?: number;
   attendance_present?: number;
@@ -157,7 +158,7 @@ function Dashboard() {
       studentTotal: num(a.student_total),
       billed,
       collected,
-      outstanding: Math.max(billed - collected, 0),
+      outstanding: num(a.outstanding),
       collectionRate: billed > 0 ? (collected / billed) * 100 : 0,
       overdue: num(a.overdue),
       attendanceRate: marked > 0 ? (num(a.attendance_present) / marked) * 100 : 0,
@@ -199,7 +200,7 @@ function Dashboard() {
       <PageHeader
         eyebrow={`Signed in as ${roleLabel(user?.primaryRole ?? null)}`}
         title={`Welcome, ${user?.fullName ?? user?.email ?? ""}`}
-        description="Institution-wide performance across enrollment, attendance, finance and admissions for the last six months."
+        description="Institution-wide totals, with attendance and admissions trends covering the last six months."
       />
 
       {isSuper ? (
@@ -285,7 +286,7 @@ function Dashboard() {
                 <Kpi
                   label={block.label}
                   value={isLoading ? "—" : `${metrics.collectionRate.toFixed(1)}%`}
-                  sub={`${CURRENCY(metrics.collected)} of ${CURRENCY(metrics.billed)}`}
+                  sub={`${CURRENCY(metrics.collected)} of ${CURRENCY(metrics.billed)} · all time`}
                   icon={Wallet}
                   to="/fees"
                 />
@@ -305,7 +306,7 @@ function Dashboard() {
                 <Kpi
                   label={block.label}
                   value={isLoading ? "—" : CURRENCY(metrics.outstanding)}
-                  sub={`${metrics.overdue} challans overdue`}
+                  sub={`${metrics.overdue} challans overdue · all time`}
                   icon={AlertTriangle}
                   to="/fees"
                   tone={metrics.outstanding > 0 ? "warn" : "default"}
@@ -326,7 +327,7 @@ function Dashboard() {
                 <Kpi
                   label={block.label}
                   value={isLoading ? "—" : CURRENCY(metrics.collected)}
-                  sub="Received against issued challans"
+                  sub="Received against issued challans · all time"
                   icon={TrendingUp}
                   to="/fees"
                 />
