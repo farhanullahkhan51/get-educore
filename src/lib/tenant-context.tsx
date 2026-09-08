@@ -199,6 +199,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       }
       link.href = tenant.favicon_url;
     }
+
+    return () => observer?.disconnect();
   }, [tenant]);
 
 
