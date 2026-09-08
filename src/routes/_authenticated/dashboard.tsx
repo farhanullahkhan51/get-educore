@@ -199,7 +199,7 @@ function Dashboard() {
     <>
       <PageHeader
         eyebrow={`Signed in as ${roleLabel(user?.primaryRole ?? null)}`}
-        title={`Welcome, ${user?.fullName ?? user?.email ?? ""}`}
+        title={user?.fullName || user?.email ? `Welcome, ${user?.fullName ?? user?.email}` : "Welcome"}
         description="Institution-wide totals, with attendance and admissions trends covering the last six months."
       />
 
