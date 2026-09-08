@@ -3138,6 +3138,11 @@ export type Database = {
         Args: { _campus_id: string; _user_id: string }
         Returns: boolean
       }
+      dashboard_metrics: {
+        Args: { _campus?: string; _since?: string }
+        Returns: Json
+      }
+      fee_totals: { Args: { _campus?: string }; Returns: Json }
       get_public_campuses: {
         Args: { _tenant_id: string }
         Returns: {
