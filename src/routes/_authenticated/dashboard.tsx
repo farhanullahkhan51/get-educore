@@ -84,7 +84,30 @@ function Kpi({
   );
 }
 
+type DashboardAgg = {
+  student_total?: number;
+  active_students?: number;
+  staff_total?: number;
+  active_staff?: number;
+  billed?: number;
+  collected?: number;
+  overdue?: number;
+  attendance_marked?: number;
+  attendance_present?: number;
+  inquiry_total?: number;
+  inquiry_converted?: number;
+  revenue_series?: Array<{ month: string; billed: number; collected: number }>;
+  attendance_series?: Array<{ month: string; rate: number }>;
+  funnel?: Array<{ stage: string; count: number }>;
+  by_program?: Array<{ name: string; value: number }>;
+  per_campus?: Array<{
+    id: string; name: string; code: string;
+    students: number; staff: number; outstanding: number; collection: number; attendance: number;
+  }>;
+};
+
 function Dashboard() {
+
   const { data: user } = useCurrentUser();
   const isSuper = user?.roles.includes("super_admin") ?? false;
   const [campus, setCampus] = useState<string>("all");
@@ -105,138 +128,69 @@ function Dashboard() {
 
   const since = useMemo(() => startOfMonth(subMonths(new Date(), 5)), []);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["insights", scopedCampus, since.toISOString()],
-    queryFn: async () => {
-      const scope = <T,>(q: T): T => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return scopedCampus ? ((q as any).eq("campus_id", scopedCampus) as T) : q;
-      };
-
-      const [students, staff, challans, attendance, inquiries] = await Promise.all([
-        scope(supabase.from("students").select("id,status,campus_id,program_id,academic_system,gender")),
-        scope(supabase.from("staff").select("id,status,campus_id")),
-        scope(supabase.from("fee_challans").select("id,campus_id,status,gross_amount,discount_amount,fine_amount,paid_amount,issue_date,due_date")),
-        scope(supabase.from("attendance_records").select("id,campus_id,status,date").gte("date", format(since, "yyyy-MM-dd"))),
-        scope(supabase.from("inquiries").select("id,campus_id,status,created_at").gte("created_at", since.toISOString())),
-      ]);
-
-      const err = students.error || staff.error || challans.error || attendance.error || inquiries.error;
-      if (err) throw err;
-
-      return {
-        students: students.data ?? [],
-        staff: staff.data ?? [],
-        challans: challans.data ?? [],
-        attendance: attendance.data ?? [],
-        inquiries: inquiries.data ?? [],
-      };
-    },
-    enabled: !!user,
-  });
-
-  const { data: programs } = useQuery({
-    queryKey: ["insights-programs"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("programs").select("id,name,campus_id");
+  const { data: agg, isLoading } = useQuery({
+    queryKey: ["dashboard-metrics", scopedCampus, format(since, "yyyy-MM-dd")],
+    queryFn: async (): Promise<DashboardAgg> => {
+      const { data, error } = await supabase.rpc("dashboard_metrics", {
+        _campus: scopedCampus ?? undefined,
+        _since: format(since, "yyyy-MM-dd"),
+      });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? {}) as unknown as DashboardAgg;
     },
     enabled: !!user,
   });
 
   const metrics = useMemo(() => {
-    const students = data?.students ?? [];
-    const staff = data?.staff ?? [];
-    const challans = data?.challans ?? [];
-    const attendance = data?.attendance ?? [];
-    const inquiries = data?.inquiries ?? [];
+    const a = agg ?? ({} as DashboardAgg);
+    const num = (v: unknown) => Number(v ?? 0);
 
-    const activeStudents = students.filter((s) => (s.status ?? "active") === "active").length;
-    const activeStaff = staff.filter((s) => (s.status ?? "active") === "active").length;
+    const billed = num(a.billed);
+    const collected = num(a.collected);
+    const marked = num(a.attendance_marked);
+    const inquiryTotal = num(a.inquiry_total);
+    const label = (m: string) => format(new Date(`${m}-01T00:00:00`), "MMM");
 
-    const billed = challans.reduce(
-      (a, c) => a + Number(c.gross_amount ?? 0) - Number(c.discount_amount ?? 0) + Number(c.fine_amount ?? 0),
-      0,
-    );
-    const collected = challans.reduce((a, c) => a + Number(c.paid_amount ?? 0), 0);
-    const outstanding = Math.max(billed - collected, 0);
-    const collectionRate = billed > 0 ? (collected / billed) * 100 : 0;
-    const overdue = challans.filter((c) => c.status === "overdue").length;
-
-    const present = attendance.filter((a) => a.status === "present" || a.status === "late").length;
-    const attendanceRate = attendance.length > 0 ? (present / attendance.length) * 100 : 0;
-
-    const months = Array.from({ length: 6 }, (_, i) => startOfMonth(subMonths(new Date(), 5 - i)));
-    const monthKey = (d: string | Date) => format(new Date(d), "yyyy-MM");
-
-    const revenueSeries = months.map((m) => {
-      const key = format(m, "yyyy-MM");
-      const rows = challans.filter((c) => c.issue_date && monthKey(c.issue_date) === key);
-      const b = rows.reduce(
-        (a, c) => a + Number(c.gross_amount ?? 0) - Number(c.discount_amount ?? 0) + Number(c.fine_amount ?? 0),
-        0,
-      );
-      const p = rows.reduce((a, c) => a + Number(c.paid_amount ?? 0), 0);
-      return { month: format(m, "MMM"), Billed: Math.round(b), Collected: Math.round(p) };
-    });
-
-    const attendanceSeries = months.map((m) => {
-      const key = format(m, "yyyy-MM");
-      const rows = attendance.filter((a) => monthKey(a.date) === key);
-      const pr = rows.filter((a) => a.status === "present" || a.status === "late").length;
-      return {
-        month: format(m, "MMM"),
-        Attendance: rows.length ? Math.round((pr / rows.length) * 1000) / 10 : 0,
-      };
-    });
-
-    const funnelOrder = ["new", "contacted", "visited", "converted", "lost"] as const;
-    const funnel = funnelOrder.map((s) => ({
-      stage: s.charAt(0).toUpperCase() + s.slice(1),
-      count: inquiries.filter((i) => i.status === s).length,
-    }));
-    const conversionRate =
-      inquiries.length > 0
-        ? (inquiries.filter((i) => i.status === "converted").length / inquiries.length) * 100
-        : 0;
-
-    const byProgram = (programs ?? [])
-      .map((p) => ({ name: p.name, value: students.filter((s) => s.program_id === p.id).length }))
-      .filter((r) => r.value > 0)
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 6);
-
-    const perCampus = (campuses ?? []).map((c) => {
-      const cs = students.filter((s) => s.campus_id === c.id);
-      const cc = challans.filter((x) => x.campus_id === c.id);
-      const ca = attendance.filter((x) => x.campus_id === c.id);
-      const cb = cc.reduce(
-        (a, x) => a + Number(x.gross_amount ?? 0) - Number(x.discount_amount ?? 0) + Number(x.fine_amount ?? 0),
-        0,
-      );
-      const cp = cc.reduce((a, x) => a + Number(x.paid_amount ?? 0), 0);
-      const cpr = ca.filter((x) => x.status === "present" || x.status === "late").length;
-      return {
+    return {
+      activeStudents: num(a.active_students),
+      activeStaff: num(a.active_staff),
+      studentTotal: num(a.student_total),
+      billed,
+      collected,
+      outstanding: Math.max(billed - collected, 0),
+      collectionRate: billed > 0 ? (collected / billed) * 100 : 0,
+      overdue: num(a.overdue),
+      attendanceRate: marked > 0 ? (num(a.attendance_present) / marked) * 100 : 0,
+      revenueSeries: (a.revenue_series ?? []).map((r) => ({
+        month: label(r.month),
+        Billed: Math.round(num(r.billed)),
+        Collected: Math.round(num(r.collected)),
+      })),
+      attendanceSeries: (a.attendance_series ?? []).map((r) => ({
+        month: label(r.month),
+        Attendance: num(r.rate),
+      })),
+      funnel: (a.funnel ?? []).map((f) => ({
+        stage: f.stage.charAt(0).toUpperCase() + f.stage.slice(1),
+        count: num(f.count),
+      })),
+      conversionRate: inquiryTotal > 0 ? (num(a.inquiry_converted) / inquiryTotal) * 100 : 0,
+      byProgram: (a.by_program ?? []).map((p) => ({ name: p.name, value: num(p.value) })),
+      perCampus: (a.per_campus ?? []).map((c) => ({
         id: c.id,
         name: c.name,
         code: c.code,
-        students: cs.length,
-        staff: staff.filter((s) => s.campus_id === c.id).length,
-        outstanding: Math.max(cb - cp, 0),
-        collection: cb > 0 ? (cp / cb) * 100 : 0,
-        attendance: ca.length ? (cpr / ca.length) * 100 : 0,
-      };
-    });
-
-    return {
-      activeStudents, activeStaff, billed, collected, outstanding, collectionRate, overdue,
-      attendanceRate, revenueSeries, attendanceSeries, funnel, conversionRate, byProgram,
-      perCampus: scopedCampus ? perCampus.filter((c) => c.id === scopedCampus) : perCampus,
-      studentTotal: students.length,
-      inquiryTotal: inquiries.length,
+        students: num(c.students),
+        staff: num(c.staff),
+        outstanding: num(c.outstanding),
+        collection: num(c.collection),
+        attendance: num(c.attendance),
+      })),
+      inquiryTotal,
     };
-  }, [data, programs, campuses, scopedCampus]);
+  }, [agg]);
+
+
 
   if (user?.primaryRole === "student") return <Navigate to="/portal" replace />;
 
@@ -285,7 +239,7 @@ function Dashboard() {
             />
             <PlanUsage
               label="Staff"
-              used={planUsage?.staff_used ?? data?.staff.length ?? 0}
+              used={planUsage?.staff_used ?? (agg?.staff_total ?? 0)}
               cap={planUsage?.staff_cap ?? ent.limit("staff_limit")}
             />
             <PlanUsage
