@@ -79,12 +79,13 @@ function ClassesPage() {
   const { data: students } = useQuery({
     queryKey: ["class-students"],
     queryFn: async () =>
-      (
-        await supabase
+      (await fetchAllRows<StudentRow>((from, to) =>
+        supabase
           .from("students")
           .select("id, student_code, first_name, last_name, class_id, section_id, status, guardian_name")
           .order("first_name")
-      ).data as StudentRow[] | null,
+          .range(from, to) as any,
+      )) as StudentRow[],
   });
 
   const campusMap = new Map(campuses?.map((c) => [c.id, c.name]));
@@ -377,7 +378,24 @@ function ClassesPage() {
                             </TableCell>
                           )}
                           {showCol("room") && <TableCell className={cellCls}>{s.room ?? "—"}</TableCell>}
-                          {showCol("capacity") && <TableCell className={cellCls}>{s.capacity}</TableCell>}
+                          {showCol("capacity") && (() => {
+                            const seated = (students ?? []).filter(
+                              (st) => st.section_id === s.id && (st.status ?? "active") === "active",
+                            ).length;
+                            const over = s.capacity != null && seated > s.capacity;
+                            return (
+                              <TableCell className={cellCls}>
+                                <span className={over ? "font-semibold text-destructive" : ""}>
+                                  {seated}/{s.capacity ?? "—"}
+                                </span>
+                                {over && (
+                                  <span className="ml-2 rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive">
+                                    Over capacity
+                                  </span>
+                                )}
+                              </TableCell>
+                            );
+                          })()}
 
 
                           <TableCell className="text-right">
