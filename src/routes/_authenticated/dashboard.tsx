@@ -195,6 +195,24 @@ function Dashboard() {
 
   if (user?.primaryRole === "student") return <Navigate to="/portal" replace />;
 
+  // Signed in, but nobody has given this person a role yet: explain instead of
+  // showing a screen full of zeros.
+  if (user && user.roles.length === 0) {
+    return (
+      <>
+        <PageHeader
+          eyebrow="Account pending"
+          title="Welcome"
+          description="Your account is not linked to an institution yet."
+        />
+        <div className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">
+          Ask your institution's administrator to add you under Users &amp; Roles. Once a role and
+          campus are assigned, your dashboard and modules will appear here.
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <PageHeader
