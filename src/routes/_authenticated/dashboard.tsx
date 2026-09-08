@@ -239,7 +239,7 @@ function Dashboard() {
             />
             <PlanUsage
               label="Staff"
-              used={planUsage?.staff_used ?? data?.staff.length ?? 0}
+              used={planUsage?.staff_used ?? (agg?.staff_total ?? 0)}
               cap={planUsage?.staff_cap ?? ent.limit("staff_limit")}
             />
             <PlanUsage
