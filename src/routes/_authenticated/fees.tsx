@@ -427,17 +427,29 @@ function ChallansTab({
     return true;
   });
 
-  const kpi = useMemo(() => {
-    const now = new Date().toISOString().slice(0, 10);
-    let totalDue = 0, totalCollected = 0, defaulters = 0;
-    (challans ?? []).forEach((c) => {
-      const net = Number(c.gross_amount) - Number(c.discount_amount) + Number(c.fine_amount);
-      totalDue += net;
-      totalCollected += Number(c.paid_amount);
-      if (c.status !== "paid" && c.status !== "waived" && c.due_date < now) defaulters += 1;
-    });
-    return { totalDue, totalCollected, outstanding: totalDue - totalCollected, defaulters };
-  }, [challans]);
+  const { data: totals } = useQuery({
+    queryKey: ["fee-totals", campusFilter],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("fee_totals", {
+        _campus: campusFilter === "all" ? undefined : campusFilter,
+      });
+      if (error) throw error;
+      return (data ?? {}) as unknown as {
+        billed?: number; collected?: number; outstanding?: number; defaulters?: number;
+      };
+    },
+  });
+
+  const kpi = useMemo(
+    () => ({
+      totalDue: Number(totals?.billed ?? 0),
+      totalCollected: Number(totals?.collected ?? 0),
+      outstanding: Number(totals?.outstanding ?? 0),
+      defaulters: Number(totals?.defaulters ?? 0),
+    }),
+    [totals],
+  );
+
 
   async function markPaid(c: Challan, amount: number, ref: string) {
     const net = Number(c.gross_amount) - Number(c.discount_amount) + Number(c.fine_amount);
