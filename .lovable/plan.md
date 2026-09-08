@@ -10,6 +10,7 @@ Make every important figure consistent with the underlying records, correct the 
 - One section currently exceeds its configured capacity.
 - Student, staff, class-roster, and admissions screens calculate visible counts from unpaginated browser queries; these silently become incomplete after the backend's row cap.
 - The finance challan list stops at 500 rows, so its visible rows can disagree with exact totals.
+- The dashboard description says every figure covers six months, but finance totals are all-time while attendance and admissions are six-month figures.
 
 ## Implementation
 
@@ -26,6 +27,7 @@ Make every important figure consistent with the underlying records, correct the 
 - Apply the same positive-balance rule in the student portal and Board/Cambridge document-clearance checks.
 - Make AI finance summaries use exact database aggregates rather than capped record downloads.
 - Invalidate dashboard, finance, and student-facing totals after payments, edits, generation, deletion, and bank matching.
+- Label all-time financial KPIs separately from six-month trends so the headline figures and charts are not presented as the same period.
 
 ### 3. Remove truncation from totals and operational lists
 - Add exact, campus-aware admissions aggregates for New, Active, Converted, and conversion rate.
@@ -43,7 +45,11 @@ Make every important figure consistent with the underlying records, correct the 
 - Prevent future section assignments beyond capacity in both normal forms and bulk/track-switch paths.
 - Keep class and section counts exact and show an actionable capacity error.
 
-### 6. Verify all reporting paths
+### 6. Harden tenant scope helpers
+- Make campus-access and institution-admin checks tenant-aware internally, removing reliance on every future caller remembering a separate tenant condition.
+- Recheck all reporting functions after the hardening so platform oversight remains available without permitting cross-institution data leakage.
+
+### 7. Verify all reporting paths
 - Compare database truth with Dashboard, Finance, Admissions, Classes, Student Portal, Academics, Results, Board, Cambridge, and AI summaries.
 - Test campus-scoped and institution-wide views separately.
 - Confirm the known baseline: 2 overdue challans, PKR 56,000 billed, PKR 20,000 collected, and PKR 36,000 outstanding.
