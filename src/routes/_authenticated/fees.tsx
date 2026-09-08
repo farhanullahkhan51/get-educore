@@ -1055,7 +1055,13 @@ function ScholarshipsTab({ canManage, campuses }: {
   const { data: students } = useQuery({
     queryKey: ["students-min"],
     queryFn: async () =>
-      (await supabase.from("students").select("id, student_code, first_name, last_name, campus_id")).data ?? [],
+      await fetchAllRows<any>((from, to) =>
+        supabase
+          .from("students")
+          .select("id, student_code, first_name, last_name, campus_id")
+          .order("first_name")
+          .range(from, to) as any,
+      ),
   });
 
   const studentMap = useMemo(() => {

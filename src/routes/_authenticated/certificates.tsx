@@ -135,8 +135,10 @@ function CertificatesPage() {
   });
   const { data: certificates, refetch } = useQuery({
     queryKey: ["certificates"],
-    queryFn: async () => (await supabase.from("certificates")
-      .select("*").order("created_at", { ascending: false })).data as Certificate[] ?? [],
+    queryFn: async () =>
+      (await fetchAllRows<Certificate>((from, to) =>
+        supabase.from("certificates").select("*").order("created_at", { ascending: false }).range(from, to) as any,
+      )) as Certificate[],
   });
 
   const isStudentCert = STUDENT_TYPES.includes(type);
