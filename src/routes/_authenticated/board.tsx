@@ -358,14 +358,17 @@ function RollSlipTab() {
     queryKey: ["campuses-for-rollslip"],
     queryFn: async () => (await supabase.from("campuses").select("id,name")).data ?? [],
   });
-  // Students with any unpaid / partial / overdue challan — filtered OUT of the dropdown.
+  // Students with any positive outstanding balance are filtered out.
   const { data: outstandingSet } = useQuery({
     queryKey: ["students_outstanding_set"],
     queryFn: async () => {
-      const { data } = await supabase.from("fee_challans")
-        .select("student_id, status").in("status", ["unpaid", "partial", "overdue"]);
-      return new Set<string>((data ?? []).map((c: any) => c.student_id));
+      const checks = await Promise.all((regs ?? []).map(async (r: any) => {
+        const { data } = await supabase.rpc("student_has_outstanding_challans", { _student_id: r.student_id });
+        return data ? r.student_id as string : null;
+      }));
+      return new Set<string>(checks.filter((id): id is string => id !== null));
     },
+    enabled: !!regs,
   });
 
   const eligible = (regs ?? []).filter((r: any) => !outstandingSet?.has(r.student_id));

@@ -106,6 +106,17 @@ function AdmissionsPage() {
     },
   });
 
+  const { data: totals } = useQuery({
+    queryKey: ["admissions-totals", campusFilter],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admissions_totals", {
+        _campus: campusFilter === "all" ? undefined : campusFilter,
+      });
+      if (error) throw error;
+      return (data ?? {}) as unknown as { new?: number; active?: number; converted?: number; lost?: number };
+    },
+  });
+
   const campusMap = useMemo(() => new Map(campuses?.map((c) => [c.id, c.name])), [campuses]);
 
   const filtered = useMemo(() => {
@@ -137,12 +148,13 @@ function AdmissionsPage() {
     qc.invalidateQueries({ queryKey: ["inquiries"] });
   }
 
-  const totalNew = grouped.new.length;
-  const totalActive = grouped.new.length + grouped.contacted.length + grouped.visited.length;
+  const totalNew = Number(totals?.new ?? 0);
+  const totalActive = Number(totals?.active ?? 0);
   const conversionRate = (() => {
-    const decided = grouped.converted.length + grouped.lost.length;
+    const converted = Number(totals?.converted ?? 0);
+    const decided = converted + Number(totals?.lost ?? 0);
     if (decided === 0) return null;
-    return Math.round((grouped.converted.length / decided) * 100);
+    return Math.round((converted / decided) * 100);
   })();
 
   return (
@@ -161,7 +173,7 @@ function AdmissionsPage() {
       <div className="mb-6 grid gap-4 md:grid-cols-4">
         <StatCard label="New" value={totalNew} hint="Awaiting first contact" />
         <StatCard label="Active pipeline" value={totalActive} hint="Not yet decided" />
-        <StatCard label="Converted" value={grouped.converted.length} hint="Became students" />
+        <StatCard label="Converted" value={Number(totals?.converted ?? 0)} hint="Became students" />
         <StatCard label="Conversion rate" value={conversionRate === null ? "—" : `${conversionRate}%`} hint="Converted ÷ decided" />
       </div>
 

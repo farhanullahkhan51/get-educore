@@ -3133,6 +3133,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admissions_totals: { Args: { _campus?: string }; Returns: Json }
+      ai_reporting_summary: {
+        Args: { _days?: number; _kind: string }
+        Returns: Json
+      }
       campus_of_uid_text: { Args: { _uid_text: string }; Returns: string }
       can_manage_fees: {
         Args: { _campus_id: string; _user_id: string }

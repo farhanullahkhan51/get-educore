@@ -132,11 +132,12 @@ function StudentPortalPage() {
 
   const feeStats = useMemo(() => {
     const list = challans ?? [];
-    const outstanding = list
-      .filter((c) => c.status !== "paid")
-      .reduce((sum, c) =>
-        sum + (Number(c.gross_amount) - Number(c.discount_amount ?? 0) + Number(c.fine_amount ?? 0) - Number(c.paid_amount ?? 0)), 0);
-    const unpaid = list.filter((c) => c.status !== "paid").length;
+    const balances = list.map((c) => ({
+      challan: c,
+      balance: Math.max(Number(c.gross_amount) - Number(c.discount_amount ?? 0) + Number(c.fine_amount ?? 0) - Number(c.paid_amount ?? 0), 0),
+    }));
+    const outstanding = balances.reduce((sum, item) => item.challan.status === "waived" ? sum : sum + item.balance, 0);
+    const unpaid = balances.filter((item) => item.challan.status !== "waived" && item.balance > 0).length;
     return { outstanding, unpaid };
   }, [challans]);
 
@@ -271,7 +272,9 @@ function StudentPortalPage() {
                     <TableRow><TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">No fee challans yet.</TableCell></TableRow>
                   )}
                   {(challans ?? []).map((c) => {
-                    const payable = Number(c.gross_amount) - Number(c.discount_amount ?? 0) + Number(c.fine_amount ?? 0);
+                    const payable = Math.max(Number(c.gross_amount) - Number(c.discount_amount ?? 0) + Number(c.fine_amount ?? 0), 0);
+                    const balance = Math.max(payable - Number(c.paid_amount ?? 0), 0);
+                    const effectiveStatus = c.status !== "waived" && balance > 0 && c.due_date < new Date().toISOString().slice(0, 10) ? "overdue" : c.status;
                     return (
                       <TableRow key={c.id}>
                         <TableCell className="font-mono text-xs">{c.challan_no}</TableCell>
@@ -281,8 +284,8 @@ function StudentPortalPage() {
                         <TableCell className="text-right text-sm">{payable.toLocaleString()}</TableCell>
                         <TableCell className="text-right text-sm">{Number(c.paid_amount ?? 0).toLocaleString()}</TableCell>
                         <TableCell>
-                          <Badge variant={c.status === "paid" ? "secondary" : c.status === "overdue" ? "destructive" : "outline"}>
-                            {c.status}
+                          <Badge variant={effectiveStatus === "paid" ? "secondary" : effectiveStatus === "overdue" ? "destructive" : "outline"}>
+                            {effectiveStatus}
                           </Badge>
                         </TableCell>
                       </TableRow>

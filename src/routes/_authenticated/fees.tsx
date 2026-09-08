@@ -435,7 +435,7 @@ function ChallansTab({
       });
       if (error) throw error;
       return (data ?? {}) as unknown as {
-        billed?: number; collected?: number; outstanding?: number; defaulters?: number;
+        billed?: number; collected?: number; outstanding?: number; overdue?: number; defaulters?: number;
       };
     },
   });
@@ -545,7 +545,8 @@ function ChallansTab({
                   const s = studentMap.get(c.student_id);
                   const net = Number(c.gross_amount) - Number(c.discount_amount) + Number(c.fine_amount);
                   const now = new Date().toISOString().slice(0, 10);
-                  const isOverdue = c.status !== "paid" && c.status !== "waived" && c.due_date < now;
+                   const balance = Math.max(net - Number(c.paid_amount), 0);
+                   const isOverdue = c.status !== "waived" && balance > 0 && c.due_date < now;
                   return (
                     <TableRow key={c.id}>
                       <TableCell className="font-mono text-xs">{c.challan_no}</TableCell>
@@ -559,7 +560,7 @@ function ChallansTab({
                       </TableCell>
                       <TableCell className="text-right">{PKR.format(net)}</TableCell>
                       <TableCell className="text-right">{PKR.format(Number(c.paid_amount))}</TableCell>
-                      <TableCell>{statusBadge(isOverdue && c.status === "unpaid" ? "overdue" : c.status)}</TableCell>
+                      <TableCell>{statusBadge(isOverdue ? "overdue" : c.status)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
                           <Button size="icon" variant="ghost" title="View" onClick={() => setViewing(c)}>
