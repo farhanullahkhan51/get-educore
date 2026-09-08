@@ -84,7 +84,30 @@ function Kpi({
   );
 }
 
+type DashboardAgg = {
+  student_total?: number;
+  active_students?: number;
+  staff_total?: number;
+  active_staff?: number;
+  billed?: number;
+  collected?: number;
+  overdue?: number;
+  attendance_marked?: number;
+  attendance_present?: number;
+  inquiry_total?: number;
+  inquiry_converted?: number;
+  revenue_series?: Array<{ month: string; billed: number; collected: number }>;
+  attendance_series?: Array<{ month: string; rate: number }>;
+  funnel?: Array<{ stage: string; count: number }>;
+  by_program?: Array<{ name: string; value: number }>;
+  per_campus?: Array<{
+    id: string; name: string; code: string;
+    students: number; staff: number; outstanding: number; collection: number; attendance: number;
+  }>;
+};
+
 function Dashboard() {
+
   const { data: user } = useCurrentUser();
   const isSuper = user?.roles.includes("super_admin") ?? false;
   const [campus, setCampus] = useState<string>("all");
