@@ -474,6 +474,7 @@ function ChallansTab({
     toast.success("Payment recorded");
     setPayingFor(null);
     qc.invalidateQueries({ queryKey: ["fee_challans"] });
+    qc.invalidateQueries({ queryKey: ["fee-totals"] });
   }
 
   async function handleDelete(id: string) {
@@ -482,6 +483,7 @@ function ChallansTab({
     if (error) return toast.error(error.message);
     toast.success("Deleted");
     qc.invalidateQueries({ queryKey: ["fee_challans"] });
+    qc.invalidateQueries({ queryKey: ["fee-totals"] });
   }
 
   return (
@@ -657,6 +659,7 @@ function ChallansTab({
           onDone={() => {
             setEditing(null);
             qc.invalidateQueries({ queryKey: ["fee_challans"] });
+    qc.invalidateQueries({ queryKey: ["fee-totals"] });
           }}
         />
       )}
@@ -1433,6 +1436,7 @@ function BankTab({ canManage, campuses }: {
           onDone={() => {
             qc.invalidateQueries({ queryKey: ["bank_transactions"] });
             qc.invalidateQueries({ queryKey: ["fee_challans"] });
+    qc.invalidateQueries({ queryKey: ["fee-totals"] });
           }}
         />
       )}
