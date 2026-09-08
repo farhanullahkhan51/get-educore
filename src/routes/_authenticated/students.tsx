@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo, Fragment } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllRows } from "@/lib/fetch-all";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,7 +74,10 @@ function StudentsPage() {
   });
   const { data: students, isLoading } = useQuery({
     queryKey: ["students"],
-    queryFn: async () => (await supabase.from("students").select("*").order("created_at", { ascending: false })).data as Student[] | null,
+    queryFn: async () =>
+      (await fetchAllRows<Student>((from, to) =>
+        supabase.from("students").select("*").order("created_at", { ascending: false }).range(from, to) as any,
+      )) as Student[],
   });
   const studentLimit = useLimitStatus("students");
 

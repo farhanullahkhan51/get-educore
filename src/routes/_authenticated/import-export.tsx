@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllRows } from "@/lib/fetch-all";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,9 +34,9 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/import-export")({
   head: () => ({
     meta: [
-      { title: "Import & Export — EduCore" },
+      { title: "Import & Export" },
       { name: "description", content: "Bulk import students, staff and marks from CSV, and export data." },
-      { property: "og:title", content: "Import & Export — EduCore" },
+      { property: "og:title", content: "Import & Export" },
       { property: "og:description", content: "Bulk import students, staff and marks from CSV, and export data." },
     ],
   }),
@@ -301,8 +302,10 @@ function StudentImport({
     setBusy(true);
     const out: RowResult[] = [];
     try {
-      const { data: existing } = await supabase.from("students").select("student_code").eq("campus_id", campusId);
-      const taken = (existing ?? []).map((s) => s.student_code);
+      const existing = await fetchAllRows<{ student_code: string }>((from, to) =>
+        supabase.from("students").select("student_code").eq("campus_id", campusId).order("student_code").range(from, to) as any,
+      );
+      const taken = existing.map((s) => s.student_code);
 
       const classByName = new Map(classes.map((c) => [c.name.trim().toLowerCase(), c.id]));
       const secByKey = new Map(sections.map((s) => [`${s.class_id}:${s.name.trim().toLowerCase()}`, s.id]));
@@ -411,8 +414,10 @@ function StaffImport({
     setBusy(true);
     const out: RowResult[] = [];
     try {
-      const { data: existing } = await supabase.from("staff").select("staff_code").eq("campus_id", campusId);
-      const taken = (existing ?? []).map((s) => s.staff_code);
+      const existing = await fetchAllRows<{ staff_code: string }>((from, to) =>
+        supabase.from("staff").select("staff_code").eq("campus_id", campusId).order("staff_code").range(from, to) as any,
+      );
+      const taken = existing.map((s) => s.staff_code);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const inserts: any[] = [];
@@ -662,13 +667,14 @@ const EXPORTS: ExportDef[] = [
     label: "Students",
     description: "All students with class, section and guardian details.",
     run: async (campusId) => {
-      const { data, error } = await supabase
-        .from("students")
-        .select("student_code, first_name, last_name, gender, date_of_birth, guardian_name, guardian_phone, guardian_occupation, address, admission_date, status, classes(name), sections(name)")
-        .eq("campus_id", campusId)
-        .order("first_name");
-      if (error) throw error;
-      const rows = (data ?? []) as unknown as Record<string, unknown>[];
+      const rows = (await fetchAllRows<Record<string, unknown>>((from, to) =>
+        supabase
+          .from("students")
+          .select("student_code, first_name, last_name, gender, date_of_birth, guardian_name, guardian_phone, guardian_occupation, address, admission_date, status, classes(name), sections(name)")
+          .eq("campus_id", campusId)
+          .order("first_name")
+          .range(from, to) as any,
+      )) as Record<string, unknown>[];
       return {
         headers: ["student_code", "first_name", "last_name", "gender", "date_of_birth", "guardian_name", "guardian_phone", "guardian_occupation", "class", "section", "admission_date", "status"],
         rows: rows.map((s) => [
@@ -685,12 +691,14 @@ const EXPORTS: ExportDef[] = [
     label: "Staff",
     description: "All staff with designation, department and contact details.",
     run: async (campusId) => {
-      const { data, error } = await supabase
-        .from("staff")
-        .select("staff_code, first_name, last_name, designation, department, email, phone, qualification, date_of_joining, status")
-        .eq("campus_id", campusId)
-        .order("first_name");
-      if (error) throw error;
+      const data = (await fetchAllRows<any>((from, to) =>
+        supabase
+          .from("staff")
+          .select("staff_code, first_name, last_name, designation, department, email, phone, qualification, date_of_joining, status")
+          .eq("campus_id", campusId)
+          .order("first_name")
+          .range(from, to) as any,
+      )) as any[];
       return {
         headers: ["staff_code", "first_name", "last_name", "designation", "department", "email", "phone", "qualification", "date_of_joining", "status"],
         rows: (data ?? []).map((s) => [s.staff_code, s.first_name, s.last_name, s.designation, s.department, s.email, s.phone, s.qualification, s.date_of_joining, s.status]),
@@ -702,14 +710,14 @@ const EXPORTS: ExportDef[] = [
     label: "Attendance",
     description: "Attendance records with student names and status.",
     run: async (campusId) => {
-      const { data, error } = await supabase
-        .from("attendance_records")
-        .select("date, status, remarks, students(student_code, first_name, last_name), sections(name)")
-        .eq("campus_id", campusId)
-        .order("date", { ascending: false })
-        .limit(10000);
-      if (error) throw error;
-      const rows = (data ?? []) as unknown as Record<string, unknown>[];
+      const rows = (await fetchAllRows<Record<string, unknown>>((from, to) =>
+        supabase
+          .from("attendance_records")
+          .select("date, status, remarks, students(student_code, first_name, last_name), sections(name)")
+          .eq("campus_id", campusId)
+          .order("date", { ascending: false })
+          .range(from, to) as any,
+      )) as Record<string, unknown>[];
       return {
         headers: ["date", "student_code", "student_name", "section", "status", "remarks"],
         rows: rows.map((r) => {
@@ -727,14 +735,14 @@ const EXPORTS: ExportDef[] = [
     label: "Fee Challans",
     description: "Challans with amounts, discounts and payment status.",
     run: async (campusId) => {
-      const { data, error } = await supabase
-        .from("fee_challans")
-        .select("challan_no, category, period_label, issue_date, due_date, gross_amount, discount_amount, fine_amount, paid_amount, status, paid_on, students(student_code, first_name, last_name)")
-        .eq("campus_id", campusId)
-        .order("issue_date", { ascending: false })
-        .limit(10000);
-      if (error) throw error;
-      const rows = (data ?? []) as unknown as Record<string, unknown>[];
+      const rows = (await fetchAllRows<Record<string, unknown>>((from, to) =>
+        supabase
+          .from("fee_challans")
+          .select("challan_no, category, period_label, issue_date, due_date, gross_amount, discount_amount, fine_amount, paid_amount, status, paid_on, students(student_code, first_name, last_name)")
+          .eq("campus_id", campusId)
+          .order("issue_date", { ascending: false })
+          .range(from, to) as any,
+      )) as Record<string, unknown>[];
       return {
         headers: ["challan_no", "student_code", "student_name", "category", "period", "issue_date", "due_date", "gross", "discount", "fine", "paid", "status", "paid_on"],
         rows: rows.map((c) => {
@@ -753,13 +761,14 @@ const EXPORTS: ExportDef[] = [
     label: "Results / Marks",
     description: "Assessment scores per student, course and assessment.",
     run: async (campusId) => {
-      const { data, error } = await supabase
-        .from("assessment_scores")
-        .select("marks, is_absent, remarks, students(student_code, first_name, last_name), assessments(title, max_marks, type, courses(title))")
-        .eq("campus_id", campusId)
-        .limit(10000);
-      if (error) throw error;
-      const rows = (data ?? []) as unknown as Record<string, unknown>[];
+      const rows = (await fetchAllRows<Record<string, unknown>>((from, to) =>
+        supabase
+          .from("assessment_scores")
+          .select("marks, is_absent, remarks, students(student_code, first_name, last_name), assessments(title, max_marks, type, courses(title))")
+          .eq("campus_id", campusId)
+          .order("created_at", { ascending: false })
+          .range(from, to) as any,
+      )) as Record<string, unknown>[];
       return {
         headers: ["student_code", "student_name", "course", "assessment", "type", "marks", "max_marks", "is_absent", "remarks"],
         rows: rows.map((r) => {
@@ -778,13 +787,14 @@ const EXPORTS: ExportDef[] = [
     label: "Admissions Inquiries",
     description: "All admission inquiries with status and guardian contact.",
     run: async (campusId) => {
-      const { data, error } = await supabase
-        .from("inquiries")
-        .select("student_name, grade_applying_for, guardian_name, guardian_phone, guardian_email, source, status, created_at")
-        .eq("campus_id", campusId)
-        .order("created_at", { ascending: false })
-        .limit(10000);
-      if (error) throw error;
+      const data = (await fetchAllRows<any>((from, to) =>
+        supabase
+          .from("inquiries")
+          .select("student_name, grade_applying_for, guardian_name, guardian_phone, guardian_email, source, status, created_at")
+          .eq("campus_id", campusId)
+          .order("created_at", { ascending: false })
+          .range(from, to) as any,
+      )) as any[];
       return {
         headers: ["student_name", "grade_applying_for", "guardian_name", "guardian_phone", "guardian_email", "source", "status", "created_at"],
         rows: (data ?? []).map((q) => [

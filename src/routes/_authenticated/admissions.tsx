@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllRows } from "@/lib/fetch-all";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -100,7 +101,10 @@ function AdmissionsPage() {
   const { data: inquiries, isLoading } = useQuery({
     queryKey: ["inquiries"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("inquiries").select("*").order("created_at", { ascending: false });
+      const data = await fetchAllRows<any>((from, to) =>
+        supabase.from("inquiries").select("*").order("created_at", { ascending: false }).range(from, to) as any,
+      );
+      const error = null as { message: string } | null;
       if (error) throw error;
       return data as Inquiry[];
     },
@@ -579,7 +583,15 @@ function ConvertDialog({
   const { data: existingCodes } = useQuery({
     queryKey: ["student-codes", effectiveCampusId],
     enabled: !!effectiveCampusId,
-    queryFn: async () => (await supabase.from("students").select("student_code").eq("campus_id", effectiveCampusId)).data ?? [],
+    queryFn: async () =>
+      await fetchAllRows<{ student_code: string }>((from, to) =>
+        supabase
+          .from("students")
+          .select("student_code")
+          .eq("campus_id", effectiveCampusId)
+          .order("student_code")
+          .range(from, to) as any,
+      ),
   });
 
   if (!inquiry) return null;

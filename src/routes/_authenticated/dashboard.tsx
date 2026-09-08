@@ -27,9 +27,9 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
   head: () => ({
     meta: [
-      { title: "Dashboard · EduCore Institution Overview" },
+      { title: "Dashboard · Institution Overview" },
       { name: "description", content: "Welcome dashboard with cross-campus KPIs for enrollment, attendance, fee collection, admissions and academic performance." },
-      { property: "og:title", content: "Dashboard · EduCore Institution Overview" },
+      { property: "og:title", content: "Dashboard · Institution Overview" },
       { property: "og:description", content: "Welcome dashboard with cross-campus KPIs for enrollment, attendance, fee collection, admissions and academic performance." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

@@ -25,9 +25,9 @@ import { requestBankTransferInvoice, submitPaymentProof } from "@/lib/billing.fu
 export const Route = createFileRoute("/_authenticated/billing")({
   head: () => ({
     meta: [
-      { title: "Billing & Plan — EduCore" },
+      { title: "Billing & Plan" },
       { name: "description", content: "Manage your institution's plan, trial, invoices and payment method." },
-      { property: "og:title", content: "Billing & Plan — EduCore" },
+      { property: "og:title", content: "Billing & Plan" },
       { property: "og:description", content: "Plan, trial status, invoices and payments for your institution." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

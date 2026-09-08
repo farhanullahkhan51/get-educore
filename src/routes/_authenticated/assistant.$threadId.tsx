@@ -5,13 +5,13 @@ import { PageHeader } from "@/components/layout/page-header";
 export const Route = createFileRoute("/_authenticated/assistant/$threadId")({
   head: () => ({
     meta: [
-      { title: "AI Assistant | EduCore ERP" },
+      { title: "AI Assistant | Academic ERP" },
       {
         name: "description",
         content:
-          "Ask the EduCore AI Assistant about enrollment, fees, attendance, admissions and results using live institutional data.",
+          "Ask the AI Assistant about enrollment, fees, attendance, admissions and results using live institutional data.",
       },
-      { property: "og:title", content: "AI Assistant | EduCore ERP" },
+      { property: "og:title", content: "AI Assistant | Academic ERP" },
       {
         property: "og:description",
         content: "Conversational analytics over your live school and college records.",
