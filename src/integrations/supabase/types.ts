@@ -3134,10 +3134,9 @@ export type Database = {
     }
     Functions: {
       admissions_totals: { Args: { _campus?: string }; Returns: Json }
-      ai_reporting_summary: {
-        Args: { _days?: number; _kind: string }
-        Returns: Json
-      }
+      ai_reporting_summary:
+        | { Args: { _campus?: string; _feature: string }; Returns: Json }
+        | { Args: { _days?: number; _kind: string }; Returns: Json }
       campus_of_uid_text: { Args: { _uid_text: string }; Returns: string }
       can_manage_fees: {
         Args: { _campus_id: string; _user_id: string }
@@ -3148,6 +3147,10 @@ export type Database = {
         Returns: Json
       }
       fee_totals: { Args: { _campus?: string }; Returns: Json }
+      fee_totals_monthly: {
+        Args: { _campus?: string; _months?: number }
+        Returns: Json
+      }
       get_public_campuses: {
         Args: { _tenant_id: string }
         Returns: {
