@@ -169,8 +169,25 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     }
 
 
+    // Keep the browser tab on the institution's own name. Page navigation
+    // rewrites the title, so watch it and swap the platform name back out.
+    let observer: MutationObserver | undefined;
     if (tenant.name) {
-      document.title = `${tenant.name} — Academic ERP`;
+      const brand = tenant.name;
+      const applyBrand = () => {
+        const current = document.title;
+        if (!current || current.includes(brand)) return;
+        const next = current.includes("EduCore")
+          ? current.replace(/EduCore/g, brand)
+          : `${current} · ${brand}`;
+        if (next !== current) document.title = next;
+      };
+      applyBrand();
+      const titleEl = document.querySelector("title");
+      if (titleEl) {
+        observer = new MutationObserver(applyBrand);
+        observer.observe(titleEl, { childList: true });
+      }
     }
 
     if (tenant.favicon_url) {
