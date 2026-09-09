@@ -258,7 +258,8 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
       toast.success(existing ? "Seat updated" : "Student seated");
     } catch (e) {
       qc.setQueryData(queryKey, previousSeats);
-      toast.error(e instanceof Error ? e.message : "Could not seat student");
+      toast.error(e instanceof Error ? friendly(e.message) : "Could not seat this student");
+
     } finally {
       setBusy(false);
       setSavingSeat(null);
