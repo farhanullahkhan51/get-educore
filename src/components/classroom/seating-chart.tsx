@@ -740,7 +740,7 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
                   variant="outline"
                   className="h-8"
                   disabled={busy || !moveTarget || unseated.length === 0}
-                  onClick={() => void moveToSection(unseated.slice(0, overflow).map((s) => s.id), moveTarget)}
+                  onClick={() => void moveToSection(overflowStudents.map((s) => s.id), moveTarget)}
                 >
                   Move {Math.min(overflow, unseated.length)} unseated
                 </Button>
