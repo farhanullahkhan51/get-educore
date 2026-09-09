@@ -188,6 +188,7 @@ function StudentsPage() {
     }).eq("id", editing.id);
     if (error) return toast.error(error.message);
     toast.success("Student updated");
+    setDirty(false);
     setEditing(null);
     qc.invalidateQueries({ queryKey: ["students"] });
   }
@@ -325,6 +326,7 @@ function StudentsPage() {
           />
         </div>
         <ActiveFilterChip module="students" />
+        <UnsavedGuard when={dirty && (open || !!editing)} />
       </div>
 
       <Card className="shadow-none">
