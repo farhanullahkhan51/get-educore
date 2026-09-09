@@ -1,4 +1,4 @@
-# Students list appears empty — cause found
+# Restore student rosters and make full-class seating complete
 
 ## What is actually happening
 
@@ -15,6 +15,21 @@ Worse, the page hides its own explanation: the "No students yet" message only ap
 3. **Reset your saved setting now** so the Students page opens on all students immediately, without you having to hunt for the menu.
 4. **Same treatment on Staff and Classes**, which use the identical view machinery and can go blank the same way.
 
+## Seating issue — cause confirmed
+
+The section roster and the chair assignments are separate today. A section can therefore be full at **30 students of 30 capacity** while only some students have actually been assigned chairs. The live records confirm this: one full Grade 2 section has 9 of its 30 students seated, another has 3 of 30, and two have none seated. The students have not disappeared; their chair assignments were never completed.
+
+The current seating sidebar makes this more confusing because it includes students from every section of the same class in one "Unseated" list, rather than clearly separating the selected section's own roster from students in other sections.
+
+## Seating fix
+
+1. **Always show the selected section's complete roster.** Split the sidebar into "This section — unseated" and an optional "Other sections" area. Every student assigned to the selected section remains visible until given a chair.
+2. **Make the counts unambiguous.** Show all three facts together: `30 students assigned · 9 seated · 21 need chairs`. Never describe a section as fully seated merely because its roster has reached capacity.
+3. **Complete seating in one action.** Auto-fill assigns every unseated student belonging to this section to the remaining chairs. For a 30-of-30 section, this produces 30 occupied chairs when enough valid chairs exist.
+4. **Show a blocking exception instead of hiding anyone.** If all assigned students cannot fit because the roster exceeds chair capacity, display every unseated student plus the exact shortage and retain the existing safe choices to enlarge the room or move selected students to a sibling section of the same class.
+5. **Keep cross-section moves deliberate.** Students from other sections remain available only in a separate move area; they are never mixed into this section's auto-fill queue.
+6. **Verify every populated section.** Compare assigned, seated and unseated totals so `assigned = seated + unseated`; confirm every chair belongs to the selected section and no student occupies more than one chair.
+
 Nothing about the student records themselves changes — no data is added, removed, or edited.
 
 ## Technical details
@@ -24,3 +39,6 @@ Nothing about the student records themselves changes — no data is added, remov
 - Add an active-filter chip driven by `layout.filter`, rendered next to the search input; clearing it writes `filter: "all"` through `useModuleLayout`.
 - Apply the same empty-state and chip in `src/routes/_authenticated/staff.tsx` and the roster list in `src/routes/_authenticated/classes.tsx`.
 - One-off data correction: set the stored `students` preference for the affected user back to `filter: "all"`.
+- In `src/components/classroom/seating-chart.tsx`, derive `sectionRoster`, `sectionUnseated`, and `otherSectionStudents` separately. Auto-fill must consume only `sectionUnseated`; the primary unseated list renders all of it without slicing.
+- Keep overflow as `max(0, assigned - capacity)`, but do not use overflow to limit which unseated students are visible. Preserve same-class/campus/track checks and the one-student-one-chair database guard.
+- Validate the current live baseline after implementation: Grade 2 Blue is 30 assigned / 9 seated, Green is 30 / 3, Red and Yellow are 30 / 0; after auto-fill each should reach 30 / 30 independently without moving academic records.
