@@ -193,18 +193,27 @@ function ClassesPage() {
     e.preventDefault();
     if (!editCls) return;
     const fd = new FormData(e.currentTarget);
+    const campus_id = String(fd.get("campus_id"));
+    const academic_system = String(fd.get("academic_system")) as Klass["academic_system"];
     const { error } = await supabase.from("classes").update({
-      campus_id: String(fd.get("campus_id")),
+      campus_id,
       program_id: (fd.get("program_id") as string) || null,
       name: String(fd.get("name")),
       grade_level: String(fd.get("grade_level") || "") || null,
       academic_year: String(fd.get("academic_year") || "") || null,
-      academic_system: String(fd.get("academic_system")) as Klass["academic_system"],
+      academic_system,
     }).eq("id", editCls.id);
     if (error) return toast.error(error.message);
+    // Sections always follow their parent class's campus and examination system.
+    const { error: secErr } = await supabase
+      .from("sections")
+      .update({ campus_id, academic_system })
+      .eq("class_id", editCls.id);
+    if (secErr) return toast.error(secErr.message);
     toast.success("Class updated");
     setEditCls(null);
     qc.invalidateQueries({ queryKey: ["classes"] });
+    qc.invalidateQueries({ queryKey: ["sections"] });
   }
 
   async function updateSection(e: React.FormEvent<HTMLFormElement>) {
