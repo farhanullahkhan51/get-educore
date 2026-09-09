@@ -20,7 +20,6 @@ import { useArranged, byText, densityCell } from "@/lib/ui-arrange";
 import { useEntitlements, limitMessage } from "@/lib/entitlements";
 import { useLimitStatus, LimitNotice } from "@/lib/plan-usage";
 import { useSectionCapacity, SECTION_FULL_HINT } from "@/lib/section-capacity";
-import { MODULE_LAYOUTS } from "@/lib/ui-layout";
 import { ActiveFilterChip, FilteredEmptyState } from "@/components/layout/filter-chip";
 
 
