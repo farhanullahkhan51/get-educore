@@ -204,28 +204,27 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
     for (let i = 0; i < capacity; i++) if (!seatByIndex.has(i)) free.push(i);
     const eligible = unseated.filter((st) => !seatingError(st.id, free[0] ?? 0));
     const skipped = unseated.length - eligible.length;
-    const rows = eligible.slice(0, free.length).map((st, i) => ({
-      tenant_id: section.tenant_id,
-      campus_id: section.campus_id,
-      section_id: section.id,
-      seat_index: free[i],
-      student_id: st.id,
-    }));
-    if (rows.length === 0) return toast.info(skipped > 0 ? "No eligible students to seat" : "Nothing to seat");
+    const queue = eligible.slice(0, free.length);
+    if (queue.length === 0) return toast.info(skipped > 0 ? "No eligible students to seat" : "Nothing to seat");
     if (skipped > 0) toast.warning(`${skipped} student(s) skipped — campus, track, or status mismatch`);
     setBusy(true);
-    const { error } = await supabase.from("section_seats").insert(rows);
-    if (!error) {
-      await supabase
-        .from("students")
-        .update({ section_id: section.id, class_id: section.class_id })
-        .in("id", rows.map((r) => r.student_id));
+    let placed = 0;
+    let failed = 0;
+    for (let i = 0; i < queue.length; i++) {
+      const { error } = await supabase.rpc("set_section_seat", {
+        _section_id: section.id,
+        _seat_index: free[i],
+        _student_id: queue[i].id,
+      });
+      if (error) failed++;
+      else placed++;
     }
     setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success(`Seated ${rows.length} student${rows.length === 1 ? "" : "s"}`);
+    if (placed > 0) toast.success(`Seated ${placed} student${placed === 1 ? "" : "s"}`);
+    if (failed > 0) toast.error(`${failed} student(s) could not be seated`);
     refresh();
   }
+
 
   async function clearAll() {
     if (!confirm("Clear all seating for this section?")) return;
