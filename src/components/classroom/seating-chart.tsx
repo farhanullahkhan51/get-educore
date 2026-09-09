@@ -51,6 +51,7 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   const [pickedTeacher, setPickedTeacher] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [savingSeat, setSavingSeat] = useState<number | null>(null);
+  const [moveTarget, setMoveTarget] = useState<string>("");
 
 
   const { data: seats } = useQuery({
