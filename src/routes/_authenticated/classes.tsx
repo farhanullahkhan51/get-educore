@@ -240,16 +240,20 @@ function ClassesPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label>Campus</Label>
-                    <Select name="campus_id" required>
+                    <Select value={newCampus} onValueChange={(v) => { setNewCampus(v); setNewProgram(""); setSystemOverride(null); }}>
                       <SelectTrigger><SelectValue placeholder="Campus" /></SelectTrigger>
                       <SelectContent>{campuses?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
                     <Label>Program (optional)</Label>
-                    <Select name="program_id">
+                    <Select value={newProgram} onValueChange={(v) => { setNewProgram(v); setSystemOverride(null); }}>
                       <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                      <SelectContent>{programs?.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                      <SelectContent>
+                        {(programs ?? [])
+                          .filter((p) => !newCampus || p.campus_id === newCampus)
+                          .map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                      </SelectContent>
                     </Select>
                   </div>
                 </div>
@@ -270,7 +274,11 @@ function ClassesPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>System</Label>
-                    <Select name="academic_system" defaultValue="board">
+                    <Select
+                      value={newSystem}
+                      disabled={systemLocked}
+                      onValueChange={(v) => setSystemOverride(v as Klass["academic_system"])}
+                    >
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="board">Board</SelectItem>
@@ -278,6 +286,11 @@ function ClassesPage() {
                         <SelectItem value="both">Both</SelectItem>
                       </SelectContent>
                     </Select>
+                    <p className="text-[11px] text-muted-foreground">
+                      {systemLocked
+                        ? `Set by the ${newProgram ? "programme" : "campus"} you chose.`
+                        : "Choose which examination system this class follows."}
+                    </p>
                   </div>
                 </div>
                 <DialogFooter><Button type="submit">Create class</Button></DialogFooter>
