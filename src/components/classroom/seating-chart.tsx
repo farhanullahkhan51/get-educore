@@ -92,6 +92,30 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
     },
   });
 
+  // other sections of the same class, with their free space
+  const { data: siblings } = useQuery({
+    queryKey: ["sibling-sections", section.class_id, section.id],
+    queryFn: async () => {
+      const { data: secs, error } = await supabase
+        .from("sections")
+        .select("id, name, capacity, campus_id, academic_system")
+        .eq("class_id", section.class_id)
+        .neq("id", section.id)
+        .order("name");
+      if (error) throw error;
+      const list = secs ?? [];
+      if (list.length === 0) return [] as SiblingSection[];
+      const { data: counts } = await supabase
+        .from("students")
+        .select("id, section_id, status")
+        .in("section_id", list.map((s) => s.id));
+      return list.map((s) => ({
+        ...s,
+        used: (counts ?? []).filter((c) => c.section_id === s.id && (c.status ?? "active") === "active").length,
+      })) as SiblingSection[];
+    },
+  });
+
   // sections that already have a class teacher (used to enforce one class per teacher)
   const { data: assignedSections } = useQuery({
     queryKey: ["section-teachers"],
@@ -103,6 +127,7 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
       return (data ?? []) as Array<{ id: string; name: string; class_id: string; class_teacher_id: string }>;
     },
   });
+
 
   /** Returns a reason string when this teacher cannot take this section's desk, else null. */
   function teacherError(teacherId: string): string | null {
