@@ -320,7 +320,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         <EditModeBanner />
 
         <PullToRefresh>
-          <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8">{children}</div>
+          <div
+            id="main-content"
+            key={location.pathname}
+            className="animate-page-enter mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8"
+          >
+            {children}
+          </div>
         </PullToRefresh>
       </main>
     </div>
