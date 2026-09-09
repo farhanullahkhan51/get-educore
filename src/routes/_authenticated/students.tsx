@@ -19,6 +19,8 @@ import { useModuleLayout } from "@/lib/ui-prefs";
 import { useArranged, byText, densityCell } from "@/lib/ui-arrange";
 import { useEntitlements, limitMessage } from "@/lib/entitlements";
 import { useLimitStatus, LimitNotice } from "@/lib/plan-usage";
+import { useSectionCapacity, SECTION_FULL_HINT } from "@/lib/section-capacity";
+import { MODULE_LAYOUTS } from "@/lib/ui-layout";
 
 
 export const Route = createFileRoute("/_authenticated/students")({
@@ -282,8 +284,18 @@ function StudentsPage() {
                     <Label>Section</Label>
                     <Select name="section_id">
                       <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                      <SelectContent>{sections?.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                      <SelectContent>
+                        {sections?.map((s) => {
+                          const cap = sectionCapacity.get(s.id);
+                          return (
+                            <SelectItem key={s.id} value={s.id} disabled={!!cap?.full}>
+                              {s.name}{cap ? ` — ${sectionCapacity.label(s.id)}` : ""}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
                     </Select>
+                    <p className="text-[11px] text-muted-foreground">{SECTION_FULL_HINT}</p>
                   </div>
                 </div>
                 <DialogFooter><Button type="submit">Register student</Button></DialogFooter>
