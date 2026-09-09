@@ -19,6 +19,14 @@ export type SeatSection = {
 };
 
 type Seat = { id: string; seat_index: number; student_id: string };
+type SiblingSection = {
+  id: string;
+  name: string;
+  capacity: number | null;
+  campus_id: string;
+  academic_system: "board" | "cambridge" | "both" | null;
+  used: number;
+};
 type Student = {
   id: string;
   student_code: string;
