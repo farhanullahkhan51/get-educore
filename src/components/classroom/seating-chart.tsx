@@ -370,6 +370,18 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
     refresh();
   }
 
+  /** Enlarges this room so every student on its roster has a chair. */
+  async function growRoom() {
+    if (rosterCount <= capacity) return;
+    setBusy(true);
+    const { error } = await supabase.from("sections").update({ capacity: rosterCount }).eq("id", section.id);
+    setBusy(false);
+    if (error) return toast.error(friendly(error.message));
+    toast.success(`${section.name} now has ${rosterCount} chairs`);
+    refresh();
+  }
+
+
 
 
 
