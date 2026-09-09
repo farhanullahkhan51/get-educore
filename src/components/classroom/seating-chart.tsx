@@ -743,10 +743,10 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
                   size="sm"
                   variant="outline"
                   className="h-8"
-                  disabled={busy || !moveTarget || unseated.length === 0}
+                  disabled={busy || !moveTarget || overflowStudents.length === 0}
                   onClick={() => void moveToSection(overflowStudents.map((s) => s.id), moveTarget)}
                 >
-                  Move {Math.min(overflow, unseated.length)} unseated
+                  Move {overflowStudents.length} unseated
                 </Button>
                 <Button size="sm" variant="ghost" className="h-8" disabled={busy} onClick={growRoom}>
                   Make room fit {rosterCount}
