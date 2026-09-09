@@ -42,6 +42,7 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   const [picked, setPicked] = useState<{ type: "student" | "seat"; id: string; seatIndex?: number } | null>(null);
   const [pickedTeacher, setPickedTeacher] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [savingSeat, setSavingSeat] = useState<number | null>(null);
 
 
   const { data: seats } = useQuery({
@@ -146,10 +147,6 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
     }
     const occupant = seatByIndex.get(seatIndex);
     const alreadySeated = seatedIds.has(studentId);
-    if (occupant && occupant.student_id !== studentId && !alreadySeated) {
-      const other = studentById.get(occupant.student_id);
-      return `Seat ${seatIndex + 1} is taken${other ? ` by ${other.first_name}` : ""}. Free it first, or drag a seated student onto it to swap.`;
-    }
     if (!occupant && !alreadySeated && (seats?.length ?? 0) >= capacity) return "The classroom is full.";
     return null;
   }
@@ -162,6 +159,7 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   }
 
   async function seatStudent(studentId: string, seatIndex: number) {
+    if (busy) return;
     const existing = seatByIndex.get(seatIndex);
     if (existing && existing.student_id === studentId) {
       setPicked(null);
@@ -173,7 +171,27 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
       setPicked(null);
       return;
     }
+    const queryKey = ["section-seats", section.id] as const;
+    await qc.cancelQueries({ queryKey });
+    const previousSeats = qc.getQueryData<Seat[]>(queryKey) ?? [];
+    const current = previousSeats.find((seat) => seat.student_id === studentId);
+    const occupant = previousSeats.find((seat) => seat.seat_index === seatIndex);
+    const optimisticSeats = previousSeats
+      .filter((seat) => seat.student_id !== studentId && seat.seat_index !== seatIndex)
+      .concat(
+        current
+          ? { ...current, seat_index: seatIndex }
+          : { id: `pending-${studentId}`, seat_index: seatIndex, student_id: studentId },
+        occupant && current
+          ? [{ ...occupant, seat_index: current.seat_index }]
+          : [],
+      )
+      .flat()
+      .sort((a, b) => a.seat_index - b.seat_index);
+    qc.setQueryData<Seat[]>(queryKey, optimisticSeats);
     setBusy(true);
+    setSavingSeat(seatIndex);
+    setPicked(null);
     try {
       const { error } = await supabase.rpc("set_section_seat", {
         _section_id: section.id,
@@ -181,21 +199,32 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
         _student_id: studentId,
       });
       if (error) throw error;
-      refresh();
+      toast.success(existing ? "Seat updated" : "Student seated");
     } catch (e) {
+      qc.setQueryData(queryKey, previousSeats);
       toast.error(e instanceof Error ? e.message : "Could not seat student");
     } finally {
       setBusy(false);
-      setPicked(null);
+      setSavingSeat(null);
+      refresh();
     }
   }
 
 
   async function unseat(seat: Seat) {
+    if (busy) return;
+    const queryKey = ["section-seats", section.id] as const;
+    await qc.cancelQueries({ queryKey });
+    const previousSeats = qc.getQueryData<Seat[]>(queryKey) ?? [];
+    qc.setQueryData<Seat[]>(queryKey, previousSeats.filter((item) => item.id !== seat.id));
     setBusy(true);
     const { error } = await supabase.from("section_seats").delete().eq("id", seat.id);
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      qc.setQueryData(queryKey, previousSeats);
+      return toast.error(error.message);
+    }
+    toast.success("Student unseated");
     refresh();
   }
 
@@ -288,40 +317,37 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   const pointerRef = useRef({ x: 0, y: 0 });
   const movedRef = useRef(false);
   const rafRef = useRef<number | null>(null);
+  const dragFrameRef = useRef<number | null>(null);
+  const seatRectsRef = useRef<Array<{ index: number; rect: DOMRect }>>([]);
+  const deskRectRef = useRef<DOMRect | null>(null);
   const [drag, setDrag] = useState<{ label: string; x: number; y: number; kind: "student" | "teacher" } | null>(null);
   const [hoverSeat, setHoverSeat] = useState<number | null>(null);
   const [hoverDesk, setHoverDesk] = useState(false);
 
+  function cacheDropTargets() {
+    seatRectsRef.current = Array.from(document.querySelectorAll<HTMLElement>("[data-seat-index]"))
+      .map((element) => ({ index: Number(element.dataset.seatIndex), rect: element.getBoundingClientRect() }))
+      .filter(({ index }) => Number.isFinite(index));
+    deskRectRef.current = document.querySelector<HTMLElement>("[data-drop='desk']")?.getBoundingClientRect() ?? null;
+  }
+
   /** Rect-based hit test for the teacher's desk (3D transforms break elementFromPoint). */
   function isOverDesk(x: number, y: number): boolean {
-    const el = document.querySelector<HTMLElement>("[data-drop='desk']");
-    if (!el) return false;
-    const r = el.getBoundingClientRect();
+    const r = deskRectRef.current;
+    if (!r) return false;
     const pad = 12;
     return x >= r.left - pad && x <= r.right + pad && y >= r.top - pad && y <= r.bottom + pad;
   }
 
   function seatIndexAtPoint(x: number, y: number): number | null {
-    const direct = (document.elementFromPoint(x, y) as HTMLElement | null)?.closest<HTMLElement>("[data-seat-index]");
-    if (direct?.dataset.seatIndex !== undefined) {
-      const index = Number(direct.dataset.seatIndex);
-      if (Number.isFinite(index)) return index;
-    }
-
-    const candidates = Array.from(document.querySelectorAll<HTMLElement>("[data-seat-index]"))
-      .map((element) => {
-        const rect = element.getBoundingClientRect();
-        const contains = x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
-        const distance = Math.hypot(x - (rect.left + rect.width / 2), y - (rect.top + rect.height / 2));
-        return { element, contains, distance };
-      })
-      .filter((candidate) => candidate.contains)
-      .sort((a, b) => a.distance - b.distance);
-
-    const value = candidates[0]?.element.dataset.seatIndex;
-    if (value === undefined) return null;
-    const index = Number(value);
-    return Number.isFinite(index) ? index : null;
+    const matches = seatRectsRef.current
+      .filter(({ rect }) => x >= rect.left - 8 && x <= rect.right + 8 && y >= rect.top - 8 && y <= rect.bottom + 8)
+      .sort((a, b) => {
+        const ad = Math.hypot(x - (a.rect.left + a.rect.width / 2), y - (a.rect.top + a.rect.height / 2));
+        const bd = Math.hypot(x - (b.rect.left + b.rect.width / 2), y - (b.rect.top + b.rect.height / 2));
+        return ad - bd;
+      });
+    return matches[0]?.index ?? null;
   }
 
   function scrollableAncestor(el: Element | null, dy: number): Element | null {
@@ -361,24 +387,30 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
       const target = scrollableAncestor(document.elementFromPoint(x, y), dy);
       if (target) target.scrollTop += dy;
       else window.scrollBy(0, dy);
+      cacheDropTargets();
     }
     let dx = 0;
     if (x > w - edge) dx = Math.min(24, ((x - (w - edge)) / edge) * 24);
     else if (x < edge) dx = -Math.min(24, ((edge - x) / edge) * 24);
     if (dx !== 0) {
       const target = horizontalScrollable(document.elementFromPoint(x, y));
-      if (target) target.scrollLeft += dx;
+      if (target) {
+        target.scrollLeft += dx;
+        cacheDropTargets();
+      }
     }
     rafRef.current = requestAnimationFrame(autoScrollTick);
   }
 
 
   function startDrag(kind: "student" | "teacher", id: string, label: string, e: React.PointerEvent) {
+    if (busy) return;
     if (e.button !== undefined && e.button !== 0) return;
     dragRef.current = { kind, id, label };
     originRef.current = { x: e.clientX, y: e.clientY };
     pointerRef.current = { x: e.clientX, y: e.clientY };
     movedRef.current = false;
+    cacheDropTargets();
 
     const onMove = (ev: PointerEvent) => {
       pointerRef.current = { x: ev.clientX, y: ev.clientY };
@@ -390,10 +422,17 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
         if (rafRef.current === null) rafRef.current = requestAnimationFrame(autoScrollTick);
       }
       ev.preventDefault();
-      setDrag({ label, x: ev.clientX, y: ev.clientY, kind });
-      // Only the matching drop targets light up: chairs for students, the desk for teachers.
-      setHoverSeat(kind === "student" ? seatIndexAtPoint(ev.clientX, ev.clientY) : null);
-      setHoverDesk(kind === "teacher" ? isOverDesk(ev.clientX, ev.clientY) : false);
+      if (dragFrameRef.current === null) {
+        dragFrameRef.current = requestAnimationFrame(() => {
+          dragFrameRef.current = null;
+          const point = pointerRef.current;
+          setDrag({ label, x: point.x, y: point.y, kind });
+          const nextSeat = kind === "student" ? seatIndexAtPoint(point.x, point.y) : null;
+          setHoverSeat((current) => current === nextSeat ? current : nextSeat);
+          const nextDesk = kind === "teacher" ? isOverDesk(point.x, point.y) : false;
+          setHoverDesk((current) => current === nextDesk ? current : nextDesk);
+        });
+      }
     };
 
     const onUp = (ev: PointerEvent) => {
@@ -403,6 +442,10 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
+      }
+      if (dragFrameRef.current !== null) {
+        cancelAnimationFrame(dragFrameRef.current);
+        dragFrameRef.current = null;
       }
       const payload = dragRef.current;
       const dragged = movedRef.current;
@@ -435,6 +478,7 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
 
   useEffect(() => () => {
     if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    if (dragFrameRef.current !== null) cancelAnimationFrame(dragFrameRef.current);
   }, []);
 
   // ---- keep the whole classroom inside the panel, whatever the sidebar/window width ----
@@ -608,7 +652,6 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
               <TeacherDesk
                 name={teacher ? `${teacher.first_name} ${teacher.last_name}` : null}
                 highlight={drag ? drag.kind === "teacher" && hoverDesk : !!pickedTeacher}
-                onDrop={onDeskDrop}
                 onClick={() => { if (pickedTeacher) void assignTeacher(pickedTeacher); }}
                 onRemove={() => void assignTeacher("none")}
               />
@@ -671,9 +714,9 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
                                     student={st}
                                     active={active}
                                     hovered={hoverSeat === i}
+                                    saving={savingSeat === i}
                                     unavailable={unavailable}
                                     onClick={() => { if (!suppressClick()) onSeatClick(i); }}
-                                    onDrop={(e) => onSeatDrop(e, i)}
                                     onPointerDown={(e) => {
                                       if (seat && st) startDrag("student", seat.student_id, `${st.first_name} ${st.last_name}`, e);
                                     }}
@@ -715,13 +758,11 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
 function TeacherDesk({
   name,
   highlight,
-  onDrop,
   onClick,
   onRemove,
 }: {
   name: string | null;
   highlight?: boolean;
-  onDrop?: (e: React.DragEvent) => void;
   onClick?: () => void;
   onRemove?: () => void;
 }) {
@@ -731,9 +772,6 @@ function TeacherDesk({
         highlight ? "ring-2 ring-primary ring-offset-2" : ""
       }`}
       data-drop="desk"
-      onDragOver={(e) => e.preventDefault()}
-
-      onDrop={onDrop}
       onClick={onClick}
       title="Assign the class teacher to this desk"
     >
@@ -776,9 +814,9 @@ function ChairSeat({
   student,
   active,
   hovered,
+  saving,
   unavailable,
   onClick,
-  onDrop,
   onPointerDown,
   onRemove,
 }: {
@@ -786,17 +824,15 @@ function ChairSeat({
   student?: Student;
   active: boolean;
   hovered?: boolean;
+  saving?: boolean;
   unavailable?: boolean;
   onClick: () => void;
-  onDrop: (e: React.DragEvent) => void;
   onPointerDown: (e: React.PointerEvent) => void;
   onRemove?: () => void;
 }) {
   return (
     <div
       data-seat-index={index}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={onDrop}
       onClick={onClick}
       onPointerDown={onPointerDown}
       style={{ touchAction: "none" }}
@@ -805,11 +841,12 @@ function ChairSeat({
           ? `${student.first_name} ${student.last_name} · ${student.student_code}${student.guardian_name ? ` · ${student.guardian_name}` : ""}`
           : `Seat ${index + 1}`
       }
-      className={`group relative flex w-14 flex-col items-center rounded-md p-1 transition-transform ${
+      aria-busy={saving}
+      className={`group relative flex w-14 flex-col items-center rounded-md p-1 transition-[transform,opacity,box-shadow] ${
         unavailable ? "cursor-not-allowed opacity-40 grayscale" : "cursor-pointer hover:-translate-y-1"
       } ${active ? "ring-2 ring-primary" : ""} ${
         hovered && !unavailable ? "-translate-y-1 ring-2 ring-primary ring-offset-1" : ""
-      }`}
+      } ${saving ? "animate-pulse ring-2 ring-primary" : ""}`}
     >
 
       {/* desk top */}
