@@ -167,6 +167,10 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
     (s) => s.section_id === section.id && (s.status ?? "active") === "active",
   ).length;
   const overflow = Math.max(0, rosterCount - capacity);
+  /** unseated students who actually belong to this room — the ones with nowhere to sit */
+  const overflowStudents = unseated
+    .filter((s) => s.section_id === section.id && (s.status ?? "active") === "active")
+    .slice(0, overflow);
 
   /** Turns a database message into something staff can act on. */
   function friendly(message: string): string {
