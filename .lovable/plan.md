@@ -1,10 +1,17 @@
-# Why "could not seat students" appears, and how to fix it
+# Fix seating: "could not seat students" and the misleading 30/30 counter
 
 ## What I confirmed in the live records
 
 - One classroom, **Yellow, holds 42 students but its room size is set to 30**. Two more classrooms (Blue and one Green) are exactly at 30 of 30.
 - The seating step refuses to move a student into a classroom that is already at its stated size. That refusal is correct — but the screen only shows a generic "X student(s) could not be seated" and never says why.
 - So the message is a real limit being hit, not a broken button. Auto-fill tries to place students who belong to another classroom of the same class, the full-room rule stops them, and the count is reported with no explanation.
+
+## Why "30 / 30 seated" undercounts the class
+
+The counter is counting **chairs that are filled**, not students in the class. A room can never show more than its chair count, so once the room is full it freezes at "30 / 30" even though 42 students are actually assigned to that classroom. The extra 12 are simply invisible in that number. Nothing is lost in the records — every student is still in the class roster — the number on screen just answers a different question than the one staff are asking.
+
+Fix: show both figures side by side — "30 of 30 chairs filled · 42 students assigned" — with a clear over-capacity warning when the roster exceeds the chairs, and list the unseated students so none of them are hidden.
+
 
 ## The fix
 
