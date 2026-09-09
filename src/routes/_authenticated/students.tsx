@@ -337,7 +337,17 @@ function StudentsPage() {
             </TableRow></TableHeader>
             <TableBody>
               {isLoading && <TableRow><TableCell colSpan={colSpan} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
-              {!isLoading && filtered.length === 0 && <TableRow><TableCell colSpan={colSpan} className="py-8 text-center text-sm text-muted-foreground">{search ? "No matching students." : "No students yet."}</TableCell></TableRow>}
+              {!isLoading && shownCount === 0 && (
+                <TableRow>
+                  <TableCell colSpan={colSpan} className="py-8 text-center text-sm text-muted-foreground">
+                    {(students?.length ?? 0) === 0
+                      ? "No students yet."
+                      : filtered.length === 0
+                        ? "No matching students."
+                        : <FilteredEmptyState module="students" noun="students" />}
+                  </TableCell>
+                </TableRow>
+              )}
               {groups.map((group) => (
                 <Fragment key={group.key}>
                   {group.label && (
