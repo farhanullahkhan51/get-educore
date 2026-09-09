@@ -128,22 +128,33 @@ function ClassesPage() {
   const showCol = (c: string) => !layout.hidden.includes(c);
   const cellCls = densityCell(layout.density);
 
+  /** A new class belongs to the programme's system, or the campus's when no programme is chosen. */
+  const inheritedSystem: Klass["academic_system"] =
+    ((newProgram ? programs?.find((p) => p.id === newProgram)?.academic_system : null) ??
+      (newCampus ? campuses?.find((c) => c.id === newCampus)?.academic_system : null) ??
+      "both") as Klass["academic_system"];
+  const systemLocked = inheritedSystem !== "both";
+  const newSystem: Klass["academic_system"] = systemLocked ? inheritedSystem : systemOverride ?? "board";
+
+
 
   async function createClass(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    if (!newCampus) return toast.error("Choose a campus first");
     const payload = {
-      campus_id: String(fd.get("campus_id")),
-      program_id: (fd.get("program_id") as string) || null,
+      campus_id: newCampus,
+      program_id: newProgram || null,
       name: String(fd.get("name")),
       grade_level: String(fd.get("grade_level") || "") || null,
       academic_year: String(fd.get("academic_year") || "") || null,
-      academic_system: String(fd.get("academic_system")) as Klass["academic_system"],
+      academic_system: newSystem,
     };
     const { error } = await supabase.from("classes").insert(payload);
     if (error) return toast.error(error.message);
     toast.success("Class created");
     setOpenCls(false);
+    setNewCampus(""); setNewProgram(""); setSystemOverride(null);
     qc.invalidateQueries({ queryKey: ["classes"] });
   }
 
