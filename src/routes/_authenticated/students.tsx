@@ -476,8 +476,19 @@ function StudentsPage() {
                   <Label>Section</Label>
                   <Select name="section_id" defaultValue={editing.section_id ?? undefined}>
                     <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                    <SelectContent>{sections?.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                    <SelectContent>
+                      {sections?.map((s) => {
+                        const cap = sectionCapacity.get(s.id);
+                        const blocked = !!cap?.full && s.id !== editing.section_id;
+                        return (
+                          <SelectItem key={s.id} value={s.id} disabled={blocked}>
+                            {s.name}{cap ? ` — ${sectionCapacity.label(s.id)}` : ""}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
                   </Select>
+                  <p className="text-[11px] text-muted-foreground">{SECTION_FULL_HINT}</p>
                 </div>
               </div>
               <DialogFooter><Button type="submit">Save changes</Button></DialogFooter>
