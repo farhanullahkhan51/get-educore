@@ -18,6 +18,7 @@ import { SeatingChart } from "@/components/classroom/seating-chart";
 import { LayoutMenu } from "@/components/layout/layout-menu";
 import { useModuleLayout } from "@/lib/ui-prefs";
 import { useArranged, byText, byNumberDesc, densityCell } from "@/lib/ui-arrange";
+import { ActiveFilterChip, FilteredEmptyState } from "@/components/layout/filter-chip";
 
 
 export const Route = createFileRoute("/_authenticated/classes")({
@@ -268,8 +269,16 @@ function ClassesPage() {
       />
 
       <div className="space-y-4">
-        {classes?.length === 0 && (
+        <div className="flex flex-wrap items-center gap-2"><ActiveFilterChip module="classes" /></div>
+        {(classes?.length ?? 0) === 0 && (
           <Card className="shadow-none"><CardContent className="py-8 text-center text-sm text-muted-foreground">No classes yet.</CardContent></Card>
+        )}
+        {(classes?.length ?? 0) > 0 && groups.reduce((n, g) => n + g.rows.length, 0) === 0 && (
+          <Card className="shadow-none">
+            <CardContent className="py-8 text-center text-sm text-muted-foreground">
+              <FilteredEmptyState module="classes" noun="classes" />
+            </CardContent>
+          </Card>
         )}
         {groups.map((group) => {
         const collapsed = collapsedGroups.includes(group.key);
