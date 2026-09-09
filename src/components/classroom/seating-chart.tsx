@@ -288,28 +288,88 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   async function autoFill() {
     const free: number[] = [];
     for (let i = 0; i < capacity; i++) if (!seatByIndex.has(i)) free.push(i);
-    const eligible = unseated.filter((st) => !seatingError(st.id, free[0] ?? 0));
-    const skipped = unseated.length - eligible.length;
+    const reasons = new Map<string, number>();
+    const bump = (reason: string) => reasons.set(reason, (reasons.get(reason) ?? 0) + 1);
+    const eligible: Student[] = [];
+    for (const st of unseated) {
+      const problem = seatingError(st.id, free[0] ?? 0);
+      if (problem) bump(problem);
+      else eligible.push(st);
+    }
     const queue = eligible.slice(0, free.length);
-    if (queue.length === 0) return toast.info(skipped > 0 ? "No eligible students to seat" : "Nothing to seat");
-    if (skipped > 0) toast.warning(`${skipped} student(s) skipped — campus, track, or status mismatch`);
+    for (let i = free.length; i < eligible.length; i++) {
+      bump(`No chairs left in ${section.name} (${capacity} chairs, ${rosterCount} students in this class).`);
+    }
+    if (queue.length === 0) {
+      if (reasons.size === 0) return toast.info("Everyone already has a chair");
+      for (const [reason, n] of reasons) toast.warning(`${n} student${n === 1 ? "" : "s"} not seated — ${reason}`);
+      return;
+    }
     setBusy(true);
     let placed = 0;
-    let failed = 0;
     for (let i = 0; i < queue.length; i++) {
       const { error } = await supabase.rpc("set_section_seat", {
         _section_id: section.id,
         _seat_index: free[i],
         _student_id: queue[i].id,
       });
-      if (error) failed++;
+      if (error) bump(friendly(error.message));
       else placed++;
     }
     setBusy(false);
     if (placed > 0) toast.success(`Seated ${placed} student${placed === 1 ? "" : "s"}`);
-    if (failed > 0) toast.error(`${failed} student(s) could not be seated`);
+    for (const [reason, n] of reasons) toast.warning(`${n} student${n === 1 ? "" : "s"} not seated — ${reason}`);
     refresh();
   }
+
+  /** Moves students to another section of the SAME class. Nothing else about them changes. */
+  async function moveToSection(studentIds: string[], targetId: string) {
+    const target = (siblings ?? []).find((s) => s.id === targetId);
+    if (!target || studentIds.length === 0) return;
+    if (target.campus_id !== section.campus_id) return toast.error("That section is on another campus.");
+    const room = target.capacity ?? 40;
+    let free = Math.max(0, room - target.used);
+    if (free === 0) return toast.error(`${target.name} is already full (${target.used} of ${room}).`);
+    setBusy(true);
+    let moved = 0;
+    const reasons = new Map<string, number>();
+    for (const id of studentIds) {
+      if (free === 0) {
+        reasons.set(`${target.name} ran out of places`, (reasons.get(`${target.name} ran out of places`) ?? 0) + 1);
+        continue;
+      }
+      const st = studentById.get(id);
+      if (
+        st &&
+        target.academic_system &&
+        target.academic_system !== "both" &&
+        st.academic_system &&
+        st.academic_system !== "both" &&
+        st.academic_system !== target.academic_system
+      ) {
+        reasons.set("different academic track", (reasons.get("different academic track") ?? 0) + 1);
+        continue;
+      }
+      const { error } = await supabase
+        .from("students")
+        .update({ section_id: target.id, class_id: section.class_id })
+        .eq("id", id);
+      if (error) {
+        const msg = friendly(error.message);
+        reasons.set(msg, (reasons.get(msg) ?? 0) + 1);
+      } else {
+        moved++;
+        free--;
+      }
+    }
+    setBusy(false);
+    setMoveTarget("");
+    if (moved > 0) toast.success(`${moved} student${moved === 1 ? "" : "s"} moved to ${target.name}`);
+    for (const [reason, n] of reasons) toast.warning(`${n} student${n === 1 ? "" : "s"} not moved — ${reason}`);
+    refresh();
+  }
+
+
 
 
   async function clearAll() {
