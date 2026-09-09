@@ -163,14 +163,20 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   const unseated = (students ?? []).filter((s) => !seatedIds.has(s.id));
   const cols = Math.min(8, Math.max(4, Math.ceil(Math.sqrt(capacity))));
   /** students whose record says they belong to THIS room (the real roster) */
-  const rosterCount = (students ?? []).filter(
-    (s) => s.section_id === section.id && (s.status ?? "active") === "active",
-  ).length;
+  const isActive = (s: Student) => (s.status ?? "active") === "active";
+  const sectionRoster = (students ?? []).filter((s) => s.section_id === section.id && isActive(s));
+  const rosterCount = sectionRoster.length;
+  /** every student of this section still without a chair — never truncated */
+  const sectionUnseated = sectionRoster.filter((s) => !seatedIds.has(s.id));
+  /** students of the same class sitting in other sections (available for deliberate moves only) */
+  const otherSectionStudents = unseated.filter(
+    (s) => s.section_id !== section.id && s.class_id === section.class_id && isActive(s),
+  );
+  const seatedCount = seats?.length ?? 0;
   const overflow = Math.max(0, rosterCount - capacity);
   /** unseated students who actually belong to this room — the ones with nowhere to sit */
-  const overflowStudents = unseated
-    .filter((s) => s.section_id === section.id && (s.status ?? "active") === "active")
-    .slice(0, overflow);
+  const overflowStudents = sectionUnseated.slice(0, Math.max(overflow, 0));
+
 
   /** Turns a database message into something staff can act on. */
   function friendly(message: string): string {
@@ -296,7 +302,7 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
     const reasons = new Map<string, number>();
     const bump = (reason: string) => reasons.set(reason, (reasons.get(reason) ?? 0) + 1);
     const eligible: Student[] = [];
-    for (const st of unseated) {
+    for (const st of sectionUnseated) {
       const problem = seatingError(st.id, free[0] ?? 0);
       if (problem) bump(problem);
       else eligible.push(st);
@@ -702,10 +708,11 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
 
 
         <div>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Unseated</p>
-            <span className="text-xs text-muted-foreground">
-              {seats?.length ?? 0} of {capacity} chairs filled · {rosterCount} students in this class
+            <span className="text-right text-xs text-muted-foreground">
+              {rosterCount} assigned · {seatedCount} seated · {sectionUnseated.length} need chairs
+              <span className="block text-[10px]">{capacity} chairs in this room</span>
             </span>
           </div>
 
@@ -733,7 +740,7 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
                       const free = Math.max(0, room - s.used);
                       return (
                         <SelectItem key={s.id} value={s.id} disabled={free === 0}>
-                          {s.name} — {free === 0 ? "full" : `${free} place${free === 1 ? "" : "s"} free`}
+                          {s.name} — {free === 0 ? `full (${s.used} of ${room})` : `${free} place${free === 1 ? "" : "s"} free`}
                         </SelectItem>
                       );
                     })}
@@ -759,8 +766,13 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
             data-drop="unseated"
             className="mt-2 max-h-[320px] space-y-1 overflow-y-auto rounded-md border border-dashed p-1"
           >
-            {unseated.length === 0 && <p className="text-xs text-muted-foreground">Everyone has a seat.</p>}
-            {unseated.map((st) => {
+            {sectionUnseated.length === 0 && otherSectionStudents.length === 0 && (
+              <p className="text-xs text-muted-foreground">Everyone has a seat.</p>
+            )}
+            {sectionUnseated.length === 0 && otherSectionStudents.length > 0 && (
+              <p className="px-1 py-1 text-xs text-muted-foreground">Everyone in {section.name} has a seat.</p>
+            )}
+            {sectionUnseated.map((st) => {
               const active = picked?.type === "student" && picked.id === st.id;
               return (
                 <button
@@ -784,8 +796,54 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
                 </button>
               );
             })}
+
+            {otherSectionStudents.length > 0 && (
+              <>
+                <p className="px-1 pt-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Other sections of this class
+                </p>
+                {otherSectionStudents.map((st) => {
+                  const active = picked?.type === "student" && picked.id === st.id;
+                  const blocked = rosterCount >= capacity;
+                  return (
+                    <button
+                      key={st.id}
+                      type="button"
+                      title={blocked ? `${section.name} is full (${rosterCount} of ${capacity}).` : undefined}
+                      style={{ touchAction: "none" }}
+                      onPointerDown={(e) => { if (!blocked) startDrag("student", st.id, `${st.first_name} ${st.last_name}`, e); }}
+                      onClick={() => {
+                        if (suppressClick()) return;
+                        if (blocked) {
+                          return void toast.error(
+                            `${section.name} is full (${rosterCount} of ${capacity}). Create another section for this grade, or add chairs here.`,
+                          );
+                        }
+                        setPicked(active ? null : { type: "student", id: st.id });
+                      }}
+                      className={`flex w-full items-center gap-2 rounded-md border border-dashed px-2 py-1.5 text-left text-xs transition-colors ${
+                        blocked
+                          ? "cursor-not-allowed opacity-50"
+                          : active
+                            ? "cursor-grab border-primary bg-primary/10"
+                            : "cursor-grab hover:bg-muted"
+                      }`}
+                    >
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold">
+                        {initials(st)}
+                      </span>
+                      <span className="truncate">
+                        <span className="font-medium">{st.first_name} {st.last_name}</span>
+                        <span className="block font-mono text-[10px] text-muted-foreground">{st.student_code}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </>
+            )}
           </div>
         </div>
+
 
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="outline" disabled={busy} onClick={autoFill}>

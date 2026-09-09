@@ -19,6 +19,8 @@ import { useModuleLayout } from "@/lib/ui-prefs";
 import { useArranged, byText, densityCell } from "@/lib/ui-arrange";
 import { useEntitlements, limitMessage } from "@/lib/entitlements";
 import { useLimitStatus, LimitNotice } from "@/lib/plan-usage";
+import { useSectionCapacity, SECTION_FULL_HINT } from "@/lib/section-capacity";
+import { ActiveFilterChip, FilteredEmptyState } from "@/components/layout/filter-chip";
 
 
 export const Route = createFileRoute("/_authenticated/students")({
@@ -80,6 +82,7 @@ function StudentsPage() {
       )) as Student[],
   });
   const studentLimit = useLimitStatus("students");
+  const sectionCapacity = useSectionCapacity();
 
   const campusMap = new Map(campuses?.map((c) => [c.id, c.name]));
   const classMap = new Map(classes?.map((c) => [c.id, c.name]));
@@ -124,6 +127,7 @@ function StudentsPage() {
   const showCol = (c: string) => !layout.hidden.includes(c);
   const cellCls = densityCell(layout.density);
   const colSpan = 3 + ["guardian", "campus", "class", "system", "docs"].filter(showCol).length;
+  const shownCount = groups.reduce((n, g) => n + g.rows.length, 0);
 
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
@@ -282,8 +286,18 @@ function StudentsPage() {
                     <Label>Section</Label>
                     <Select name="section_id">
                       <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                      <SelectContent>{sections?.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                      <SelectContent>
+                        {sections?.map((s) => {
+                          const cap = sectionCapacity.get(s.id);
+                          return (
+                            <SelectItem key={s.id} value={s.id} disabled={!!cap?.full}>
+                              {s.name}{cap ? ` — ${sectionCapacity.label(s.id)}` : ""}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
                     </Select>
+                    <p className="text-[11px] text-muted-foreground">{SECTION_FULL_HINT}</p>
                   </div>
                 </div>
                 <DialogFooter><Button type="submit">Register student</Button></DialogFooter>
@@ -295,14 +309,17 @@ function StudentsPage() {
 
       />
 
-      <div className="mb-4 relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search by name, guardian, occupation, or student ID"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
-        />
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="relative w-full max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by name, guardian, occupation, or student ID"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <ActiveFilterChip module="students" />
       </div>
 
       <Card className="shadow-none">
@@ -319,7 +336,17 @@ function StudentsPage() {
             </TableRow></TableHeader>
             <TableBody>
               {isLoading && <TableRow><TableCell colSpan={colSpan} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
-              {!isLoading && filtered.length === 0 && <TableRow><TableCell colSpan={colSpan} className="py-8 text-center text-sm text-muted-foreground">{search ? "No matching students." : "No students yet."}</TableCell></TableRow>}
+              {!isLoading && shownCount === 0 && (
+                <TableRow>
+                  <TableCell colSpan={colSpan} className="py-8 text-center text-sm text-muted-foreground">
+                    {(students?.length ?? 0) === 0
+                      ? "No students yet."
+                      : filtered.length === 0
+                        ? "No matching students."
+                        : <FilteredEmptyState module="students" noun="students" />}
+                  </TableCell>
+                </TableRow>
+              )}
               {groups.map((group) => (
                 <Fragment key={group.key}>
                   {group.label && (
@@ -476,8 +503,19 @@ function StudentsPage() {
                   <Label>Section</Label>
                   <Select name="section_id" defaultValue={editing.section_id ?? undefined}>
                     <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                    <SelectContent>{sections?.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                    <SelectContent>
+                      {sections?.map((s) => {
+                        const cap = sectionCapacity.get(s.id);
+                        const blocked = !!cap?.full && s.id !== editing.section_id;
+                        return (
+                          <SelectItem key={s.id} value={s.id} disabled={blocked}>
+                            {s.name}{cap ? ` — ${sectionCapacity.label(s.id)}` : ""}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
                   </Select>
+                  <p className="text-[11px] text-muted-foreground">{SECTION_FULL_HINT}</p>
                 </div>
               </div>
               <DialogFooter><Button type="submit">Save changes</Button></DialogFooter>

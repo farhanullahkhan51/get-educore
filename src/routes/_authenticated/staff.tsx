@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { LayoutMenu } from "@/components/layout/layout-menu";
 import { useModuleLayout } from "@/lib/ui-prefs";
 import { useArranged, byText, densityCell } from "@/lib/ui-arrange";
+import { ActiveFilterChip, FilteredEmptyState } from "@/components/layout/filter-chip";
 import { Fragment } from "react";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -155,6 +156,7 @@ function StaffPage() {
   const showCol = (c: string) => !layout.hidden.includes(c);
   const cellCls = densityCell(layout.density);
   const colSpan = 5 + ["track", "campus", "contact"].filter(showCol).length;
+  const staffShownCount = groups.reduce((n, g) => n + g.rows.length, 0);
 
   return (
     <>
@@ -219,6 +221,8 @@ function StaffPage() {
 
       />
 
+      <div className="mb-4 flex flex-wrap items-center gap-2"><ActiveFilterChip module="staff" /></div>
+
       <Card className="shadow-none">
         <CardContent className="p-0">
           <Table>
@@ -233,7 +237,13 @@ function StaffPage() {
             </TableRow></TableHeader>
             <TableBody>
               {isLoading && <TableRow><TableCell colSpan={colSpan} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
-              {staff?.length === 0 && <TableRow><TableCell colSpan={colSpan} className="py-8 text-center text-sm text-muted-foreground">No staff yet.</TableCell></TableRow>}
+              {!isLoading && staffShownCount === 0 && (
+                <TableRow>
+                  <TableCell colSpan={colSpan} className="py-8 text-center text-sm text-muted-foreground">
+                    {(staff?.length ?? 0) === 0 ? "No staff yet." : <FilteredEmptyState module="staff" noun="staff" />}
+                  </TableCell>
+                </TableRow>
+              )}
               {groups.map((group) => (
                 <Fragment key={group.key}>
                   {group.label && (
