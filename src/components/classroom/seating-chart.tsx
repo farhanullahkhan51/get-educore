@@ -290,19 +290,6 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
 
   const teacher = staff?.find((s) => s.id === section.class_teacher_id);
 
-  function onDeskDrop(e: React.DragEvent) {
-    e.preventDefault();
-    const teacherId = e.dataTransfer.getData("text/teacher");
-    if (teacherId) void assignTeacher(teacherId);
-  }
-
-  function onSeatDrop(e: React.DragEvent, seatIndex: number) {
-
-    e.preventDefault();
-    const studentId = e.dataTransfer.getData("text/student");
-    if (studentId) void seatStudent(studentId, seatIndex);
-  }
-
   function onSeatClick(seatIndex: number) {
     const occupant = seatByIndex.get(seatIndex);
     if (picked?.type === "student") return void seatStudent(picked.id, seatIndex);
