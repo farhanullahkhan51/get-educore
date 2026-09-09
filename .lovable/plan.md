@@ -28,6 +28,17 @@ Fix: show both figures side by side — "30 of 30 chairs filled · 42 students a
 - Moves respect the same rules as seating — a student cannot be moved into a section that is already full, on a different campus, or on a different academic track — and the reason is stated if one is refused.
 - After a move, a single confirmation states what happened, for example "12 students moved to Red", with the sending and receiving rooms both refreshed.
 
+## Nothing about a student's studies changes
+
+A move only changes which room of the same class a student sits in. Guaranteed by the design:
+
+- Only sections of the **same class** are offered — never another class, grade, programme, campus, or Board/Cambridge track.
+- The student's class, programme, group and academic track stay exactly as they are; only the section changes.
+- Courses, teaching assignments, timetable, attendance history, marks, report cards, certificates, fees and challans are all untouched — none of them are rewritten by the move.
+- Anything already recorded against the old section (past attendance, past marks) stays as history; only future records follow the new section.
+- Every move is written to the activity log so staff can see who moved whom and when.
+
+
 ## Operational note
 
 Yellow needs a decision either way: raise its size above 42, or move 12 students to Red (23 of 30) or the Green section with 25 of 30. The software changes above make that choice obvious instead of hiding it behind a failure count.
