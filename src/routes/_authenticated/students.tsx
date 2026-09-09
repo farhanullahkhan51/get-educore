@@ -21,6 +21,9 @@ import { useEntitlements, limitMessage } from "@/lib/entitlements";
 import { useLimitStatus, LimitNotice } from "@/lib/plan-usage";
 import { useSectionCapacity, SECTION_FULL_HINT } from "@/lib/section-capacity";
 import { ActiveFilterChip, FilteredEmptyState } from "@/components/layout/filter-chip";
+import { useModuleState } from "@/lib/module-state";
+import { TableSkeletonRows } from "@/components/layout/skeletons";
+import { UnsavedGuard } from "@/components/layout/unsaved-guard";
 
 
 export const Route = createFileRoute("/_authenticated/students")({
@@ -56,7 +59,8 @@ function StudentsPage() {
   const [editing, setEditing] = useState<Student | null>(null);
   const [viewing, setViewing] = useState<Student | null>(null);
   const [uploadFor, setUploadFor] = useState<Student | null>(null);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useModuleState("students.search", "");
+  const [dirty, setDirty] = useState(false);
 
   const { data: campuses } = useQuery({
     queryKey: ["campuses"],
