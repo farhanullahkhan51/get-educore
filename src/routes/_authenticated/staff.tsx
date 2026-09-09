@@ -219,6 +219,8 @@ function StaffPage() {
 
       />
 
+      <div className="mb-4 flex flex-wrap items-center gap-2"><ActiveFilterChip module="staff" /></div>
+
       <Card className="shadow-none">
         <CardContent className="p-0">
           <Table>
@@ -233,7 +235,13 @@ function StaffPage() {
             </TableRow></TableHeader>
             <TableBody>
               {isLoading && <TableRow><TableCell colSpan={colSpan} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
-              {staff?.length === 0 && <TableRow><TableCell colSpan={colSpan} className="py-8 text-center text-sm text-muted-foreground">No staff yet.</TableCell></TableRow>}
+              {!isLoading && staffShownCount === 0 && (
+                <TableRow>
+                  <TableCell colSpan={colSpan} className="py-8 text-center text-sm text-muted-foreground">
+                    {(staff?.length ?? 0) === 0 ? "No staff yet." : <FilteredEmptyState module="staff" noun="staff" />}
+                  </TableCell>
+                </TableRow>
+              )}
               {groups.map((group) => (
                 <Fragment key={group.key}>
                   {group.label && (
