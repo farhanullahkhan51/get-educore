@@ -234,3 +234,23 @@
     animation: none !important;
   }
 }
+
+@keyframes route-progress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@utility animate-page-enter {
+  animation: page-enter 0.18s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-page-enter {
+    animation: none !important;
+  }
+}
