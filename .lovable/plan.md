@@ -19,7 +19,14 @@ Fix: show both figures side by side — "30 of 30 chairs filled · 42 students a
 2. **Warn before auto-fill starts**, not after: if the class has more students than chairs, show how many will be left out and which classroom they need to move to.
 3. **Show the room's true state in the header**: "42 students assigned, 30 chairs" with a clear over-capacity note and a hint to raise the room size or move students to another section.
 4. **Skip pointless attempts.** Students who cannot possibly be placed (full room, wrong campus, wrong track, inactive) are filtered out of auto-fill up front so the run reports only genuine placements.
-5. **Give a way out.** From the over-capacity note, offer two direct actions: increase this room's size, or open the class roster to move the extra students to another section.
+5. **Give a way out.** From the over-capacity note, offer two direct actions: increase this room's size, or move the extra students to another section of the same class.
+
+## Moving overflow students to another section
+
+- Next to each unseated student, and in a "Move overflow students" action on the over-capacity note, offer the other sections of the same class with their free space shown, for example "Red — 7 seats free", "Green — 5 seats free". Sections with no space are listed but not selectable.
+- Selecting students (individually or "select all overflow") and a target section moves them: their class record changes to the new section, any chair they held here is released, and the room count updates at once.
+- Moves respect the same rules as seating — a student cannot be moved into a section that is already full, on a different campus, or on a different academic track — and the reason is stated if one is refused.
+- After a move, a single confirmation states what happened, for example "12 students moved to Red", with the sending and receiving rooms both refreshed.
 
 ## Operational note
 
@@ -29,5 +36,7 @@ Yellow needs a decision either way: raise its size above 42, or move 12 students
 
 - `src/components/classroom/seating-chart.tsx`: `autoFill` collects per-student RPC errors and maps Postgres messages (`Section capacity of % has been reached`, academic-system mismatch, inactive student, campus mismatch) to readable text; `seatStudent` uses the same mapping. Add a pre-flight active-roster-vs-capacity check.
 - `seatingError` gains a roster-capacity check mirroring the `enforce_section_capacity` trigger, so the UI blocks before the round trip.
-- Capacity banner and the two actions live in the seating dialog header; the "increase room size" action updates `sections.capacity`.
+- Header shows filled chairs, capacity, and assigned-roster count from separate counts, with an over-capacity banner.
+- Move flow: query sibling sections of `section.class_id` with their active-student counts, then update `students.section_id`/`class_id` per selected student; the existing `release_seat_on_section_change` trigger frees stale chairs and `enforce_section_capacity` blocks overfilling. Errors are surfaced per student. Invalidate `section-seats`, `seating-students`, `class-students`, and `sections`.
+- The "increase room size" action updates `sections.capacity`.
 - No database migration required — the capacity rule and `set_section_seat` stay as they are.
