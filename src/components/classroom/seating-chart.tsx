@@ -169,7 +169,9 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   /** every student of this section still without a chair — never truncated */
   const sectionUnseated = sectionRoster.filter((s) => !seatedIds.has(s.id));
   /** students of the same class sitting in other sections (available for deliberate moves only) */
-  const otherSectionStudents = unseated.filter((s) => s.section_id !== section.id && isActive(s));
+  const otherSectionStudents = unseated.filter(
+    (s) => s.section_id !== section.id && s.class_id === section.class_id && isActive(s),
+  );
   const seatedCount = seats?.length ?? 0;
   const overflow = Math.max(0, rosterCount - capacity);
   /** unseated students who actually belong to this room — the ones with nowhere to sit */
