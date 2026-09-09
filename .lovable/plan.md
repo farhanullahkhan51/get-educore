@@ -49,3 +49,5 @@ Nothing about the student records themselves changes — no data is added, remov
 - In `src/components/classroom/seating-chart.tsx`, derive `sectionRoster`, `sectionUnseated`, and `otherSectionStudents` separately. Auto-fill must consume only `sectionUnseated`; the primary unseated list renders all of it without slicing.
 - Keep overflow as `max(0, assigned - capacity)`, but do not use overflow to limit which unseated students are visible. Preserve same-class/campus/track checks and the one-student-one-chair database guard.
 - Validate the current live baseline after implementation: Grade 2 Blue is 30 assigned / 9 seated, Green is 30 / 3, Red and Yellow are 30 / 0; after auto-fill each should reach 30 / 30 independently without moving academic records.
+- Shared helper for per-section active roster counts and free places, consumed by the section pickers in `students.tsx`, `import-export.tsx`, `classes.tsx` and the seating overflow move list; full options render disabled with used/capacity labels.
+- Bulk import rejects rows targeting a full section with a per-row reason rather than a generic failure.
