@@ -307,6 +307,24 @@ function StudentImport({
       );
       const taken = existing.map((s) => s.student_code);
 
+      // places left in each section, so a full section never receives more students
+      const { data: sectionRows } = await supabase.from("sections").select("id, name, capacity");
+      const roster = await fetchAllRows<{ id: string; section_id: string | null; status: string | null }>((from, to) =>
+        supabase.from("students").select("id, section_id, status").order("id").range(from, to) as any,
+      );
+      const used = new Map<string, number>();
+      for (const st of roster) {
+        if (!st.section_id || (st.status ?? "active") !== "active") continue;
+        used.set(st.section_id, (used.get(st.section_id) ?? 0) + 1);
+      }
+      const freeBySection = new Map<string, number>();
+      const capBySection = new Map<string, number>();
+      for (const s of (sectionRows ?? []) as Array<{ id: string; capacity: number | null }>) {
+        const cap = s.capacity ?? 40;
+        capBySection.set(s.id, cap);
+        freeBySection.set(s.id, Math.max(0, cap - (used.get(s.id) ?? 0)));
+      }
+
       const classByName = new Map(classes.map((c) => [c.name.trim().toLowerCase(), c.id]));
       const secByKey = new Map(sections.map((s) => [`${s.class_id}:${s.name.trim().toLowerCase()}`, s.id]));
 
