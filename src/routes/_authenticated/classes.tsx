@@ -58,13 +58,20 @@ function ClassesPage() {
 
   const [seatSec, setSeatSec] = useState<{ section: Section; className: string } | null>(null);
 
+  /** New-class form: campus / program drive which examination system the class belongs to. */
+  const [newCampus, setNewCampus] = useState<string>("");
+  const [newProgram, setNewProgram] = useState<string>("");
+  const [systemOverride, setSystemOverride] = useState<Klass["academic_system"] | null>(null);
+
   const { data: campuses } = useQuery({
     queryKey: ["campuses"],
-    queryFn: async () => (await supabase.from("campuses").select("id, name").order("name")).data ?? [],
+    queryFn: async () =>
+      (await supabase.from("campuses").select("id, name, academic_system").order("name")).data ?? [],
   });
   const { data: programs } = useQuery({
     queryKey: ["programs"],
-    queryFn: async () => (await supabase.from("programs").select("id, name, campus_id").order("name")).data ?? [],
+    queryFn: async () =>
+      (await supabase.from("programs").select("id, name, campus_id, academic_system").order("name")).data ?? [],
   });
   const { data: classes } = useQuery({
     queryKey: ["classes"],
