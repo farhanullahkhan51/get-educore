@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { LayoutMenu } from "@/components/layout/layout-menu";
 import { useModuleLayout } from "@/lib/ui-prefs";
 import { useArranged, byText, densityCell } from "@/lib/ui-arrange";
+import { ActiveFilterChip, FilteredEmptyState } from "@/components/layout/filter-chip";
 import { Fragment } from "react";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -155,6 +156,7 @@ function StaffPage() {
   const showCol = (c: string) => !layout.hidden.includes(c);
   const cellCls = densityCell(layout.density);
   const colSpan = 5 + ["track", "campus", "contact"].filter(showCol).length;
+  const staffShownCount = groups.reduce((n, g) => n + g.rows.length, 0);
 
   return (
     <>
