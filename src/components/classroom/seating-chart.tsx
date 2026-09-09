@@ -163,14 +163,18 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   const unseated = (students ?? []).filter((s) => !seatedIds.has(s.id));
   const cols = Math.min(8, Math.max(4, Math.ceil(Math.sqrt(capacity))));
   /** students whose record says they belong to THIS room (the real roster) */
-  const rosterCount = (students ?? []).filter(
-    (s) => s.section_id === section.id && (s.status ?? "active") === "active",
-  ).length;
+  const isActive = (s: Student) => (s.status ?? "active") === "active";
+  const sectionRoster = (students ?? []).filter((s) => s.section_id === section.id && isActive(s));
+  const rosterCount = sectionRoster.length;
+  /** every student of this section still without a chair — never truncated */
+  const sectionUnseated = sectionRoster.filter((s) => !seatedIds.has(s.id));
+  /** students of the same class sitting in other sections (available for deliberate moves only) */
+  const otherSectionStudents = unseated.filter((s) => s.section_id !== section.id && isActive(s));
+  const seatedCount = seats?.length ?? 0;
   const overflow = Math.max(0, rosterCount - capacity);
   /** unseated students who actually belong to this room — the ones with nowhere to sit */
-  const overflowStudents = unseated
-    .filter((s) => s.section_id === section.id && (s.status ?? "active") === "active")
-    .slice(0, overflow);
+  const overflowStudents = sectionUnseated.slice(0, Math.max(overflow, 0));
+
 
   /** Turns a database message into something staff can act on. */
   function friendly(message: string): string {
