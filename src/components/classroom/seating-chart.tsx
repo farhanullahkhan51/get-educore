@@ -161,12 +161,28 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   const seatedIds = useMemo(() => new Set((seats ?? []).map((s) => s.student_id)), [seats]);
   const unseated = (students ?? []).filter((s) => !seatedIds.has(s.id));
   const cols = Math.min(8, Math.max(4, Math.ceil(Math.sqrt(capacity))));
+  /** students whose record says they belong to THIS room (the real roster) */
+  const rosterCount = (students ?? []).filter(
+    (s) => s.section_id === section.id && (s.status ?? "active") === "active",
+  ).length;
+  const overflow = Math.max(0, rosterCount - capacity);
+
+  /** Turns a database message into something staff can act on. */
+  function friendly(message: string): string {
+    const m = message.toLowerCase();
+    if (m.includes("capacity")) return `${section.name} is already full (${capacity} of ${capacity} chairs).`;
+    if (m.includes("academic system")) return "That student is on a different academic track.";
+    if (m.includes("only active")) return "Only active students can be seated.";
+    if (m.includes("institution") || m.includes("campus")) return "That student belongs to another campus.";
+    if (m.includes("out of range")) return `This room only has ${capacity} chairs.`;
+    return message;
+  }
 
   /** Returns a reason string when the student cannot take this seat, otherwise null. */
   function seatingError(studentId: string, seatIndex: number): string | null {
     const st = studentById.get(studentId);
     if (!st) return "That student is not part of this class.";
-    if (seatIndex < 0 || seatIndex >= capacity) return `This room only has ${capacity} seats.`;
+    if (seatIndex < 0 || seatIndex >= capacity) return `This room only has ${capacity} chairs.`;
     if (st.campus_id !== section.campus_id) return `${st.first_name} belongs to a different campus.`;
     if (st.status && st.status !== "active") return `${st.first_name} is ${st.status} and cannot be seated.`;
     if (
@@ -178,11 +194,16 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
     ) {
       return `${st.first_name} is on the ${st.academic_system} track — this section is ${section.academic_system}.`;
     }
+    // a student joining this room from another section needs a free place on the roster too
+    if (st.section_id !== section.id && rosterCount >= capacity) {
+      return `${section.name} is already full (${rosterCount} of ${capacity}). Move students to another section first.`;
+    }
     const occupant = seatByIndex.get(seatIndex);
     const alreadySeated = seatedIds.has(studentId);
-    if (!occupant && !alreadySeated && (seats?.length ?? 0) >= capacity) return "The classroom is full.";
+    if (!occupant && !alreadySeated && (seats?.length ?? 0) >= capacity) return "Every chair in this room is taken.";
     return null;
   }
+
 
   function refresh() {
     qc.invalidateQueries({ queryKey: ["section-seats", section.id] });
