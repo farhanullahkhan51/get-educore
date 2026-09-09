@@ -135,7 +135,8 @@ function StaffPage() {
     qc.invalidateQueries({ queryKey: ["staff"] });
   }
 
-  const { layout } = useModuleLayout("staff");
+  const { layout: savedLayout } = useModuleLayout("staff");
+  const layout = useTrackLayout(savedLayout);
   const groups = useArranged<Staff>(staff ?? [], layout, {
     group: {
       track: (s) => (s.academic_system === "cambridge" ? "Cambridge" : s.academic_system === "board" ? "Board" : "Board & Cambridge"),

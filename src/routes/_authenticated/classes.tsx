@@ -19,6 +19,8 @@ import { LayoutMenu } from "@/components/layout/layout-menu";
 import { useModuleLayout } from "@/lib/ui-prefs";
 import { useArranged, byText, byNumberDesc, densityCell } from "@/lib/ui-arrange";
 import { ActiveFilterChip, FilteredEmptyState } from "@/components/layout/filter-chip";
+import { trackChipCls, trackTextCls } from "@/components/layout/track-heading";
+import { useTrackLayout } from "@/lib/track-layout";
 
 
 export const Route = createFileRoute("/_authenticated/classes")({
@@ -92,7 +94,8 @@ function ClassesPage() {
 
   const campusMap = new Map(campuses?.map((c) => [c.id, c.name]));
 
-  const { layout } = useModuleLayout("classes");
+  const { layout: savedLayout } = useModuleLayout("classes");
+  const layout = useTrackLayout(savedLayout);
   const countFor = (classId: string) => {
     const ids = new Set((sections ?? []).filter((s) => s.class_id === classId).map((s) => s.id));
     return (students ?? []).filter((st) => st.class_id === classId || (st.section_id && ids.has(st.section_id))).length;

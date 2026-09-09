@@ -110,7 +110,8 @@ function StudentsPage() {
     });
   }, [students, search]);
 
-  const { layout } = useModuleLayout("students");
+  const { layout: savedLayout } = useModuleLayout("students");
+  const layout = useTrackLayout(savedLayout);
   const groups = useArranged<Student>(filtered, layout, {
     group: {
       track: (s) => (s.academic_system === "cambridge" ? "Cambridge" : s.academic_system === "both" ? "Board & Cambridge" : "Board"),
