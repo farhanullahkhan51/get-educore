@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.release_seat_on_section_change() FROM PUBLIC, anon, authenticated;
