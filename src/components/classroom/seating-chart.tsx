@@ -208,9 +208,11 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   function refresh() {
     qc.invalidateQueries({ queryKey: ["section-seats", section.id] });
     qc.invalidateQueries({ queryKey: ["seating-students", section.class_id, section.id] });
+    qc.invalidateQueries({ queryKey: ["sibling-sections", section.class_id, section.id] });
     qc.invalidateQueries({ queryKey: ["class-students"] });
     qc.invalidateQueries({ queryKey: ["sections"] });
   }
+
 
   async function seatStudent(studentId: string, seatIndex: number) {
     if (busy) return;
