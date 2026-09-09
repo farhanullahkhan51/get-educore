@@ -21,6 +21,9 @@ import { useEntitlements, limitMessage } from "@/lib/entitlements";
 import { useLimitStatus, LimitNotice } from "@/lib/plan-usage";
 import { useSectionCapacity, SECTION_FULL_HINT } from "@/lib/section-capacity";
 import { ActiveFilterChip, FilteredEmptyState } from "@/components/layout/filter-chip";
+import { useModuleState } from "@/lib/module-state";
+import { TableSkeletonRows } from "@/components/layout/skeletons";
+import { UnsavedGuard } from "@/components/layout/unsaved-guard";
 
 
 export const Route = createFileRoute("/_authenticated/students")({
@@ -56,7 +59,8 @@ function StudentsPage() {
   const [editing, setEditing] = useState<Student | null>(null);
   const [viewing, setViewing] = useState<Student | null>(null);
   const [uploadFor, setUploadFor] = useState<Student | null>(null);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useModuleState("students.search", "");
+  const [dirty, setDirty] = useState(false);
 
   const { data: campuses } = useQuery({
     queryKey: ["campuses"],
@@ -156,6 +160,7 @@ function StudentsPage() {
     });
     if (error) return toast.error(error.message);
     toast.success(`Student ${code} registered`);
+    setDirty(false);
     setOpen(false);
     qc.invalidateQueries({ queryKey: ["students"] });
     qc.invalidateQueries({ queryKey: ["plan-usage"] });
@@ -183,6 +188,7 @@ function StudentsPage() {
     }).eq("id", editing.id);
     if (error) return toast.error(error.message);
     toast.success("Student updated");
+    setDirty(false);
     setEditing(null);
     qc.invalidateQueries({ queryKey: ["students"] });
   }
@@ -213,14 +219,14 @@ function StudentsPage() {
             <LimitNotice cap={studentLimit.cap} label="students" />
           ) : null}
           <LayoutMenu module="students" />
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setDirty(false); }}>
             <DialogTrigger asChild>
               <Button disabled={studentLimit.reached}><Plus className="mr-1 h-4 w-4" /> New student</Button>
             </DialogTrigger>
 
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle className="font-serif">Register student</DialogTitle></DialogHeader>
-              <form onSubmit={handleCreate} className="space-y-4">
+              <form onSubmit={handleCreate} onChange={() => setDirty(true)} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2"><Label>First name</Label><Input name="first_name" required /></div>
                   <div className="space-y-2"><Label>Last name</Label><Input name="last_name" required /></div>
@@ -320,6 +326,7 @@ function StudentsPage() {
           />
         </div>
         <ActiveFilterChip module="students" />
+        <UnsavedGuard when={dirty && (open || !!editing)} />
       </div>
 
       <Card className="shadow-none">
@@ -335,7 +342,7 @@ function StudentsPage() {
               <TableHead className="text-right">Actions</TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {isLoading && <TableRow><TableCell colSpan={colSpan} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
+              {isLoading && <TableSkeletonRows cols={colSpan} />}
               {!isLoading && shownCount === 0 && (
                 <TableRow>
                   <TableCell colSpan={colSpan} className="py-8 text-center text-sm text-muted-foreground">
@@ -433,11 +440,11 @@ function StudentsPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+      <Dialog open={!!editing} onOpenChange={(o) => { if (!o) { setEditing(null); setDirty(false); } }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="font-serif">Edit student — {editing?.student_code}</DialogTitle></DialogHeader>
           {editing && (
-            <form onSubmit={handleUpdate} className="space-y-4" key={editing.id}>
+            <form onSubmit={handleUpdate} onChange={() => setDirty(true)} className="space-y-4" key={editing.id}>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2"><Label>First name</Label><Input name="first_name" defaultValue={editing.first_name} required /></div>
                 <div className="space-y-2"><Label>Last name</Label><Input name="last_name" defaultValue={editing.last_name} required /></div>

@@ -34,6 +34,7 @@ import { PullToRefresh } from "@/components/layout/pull-to-refresh";
 import { useEntitlements, type FeatureKey } from "@/lib/entitlements";
 import { TrialBanner } from "@/components/layout/trial-banner";
 import { ReadOnlyShield } from "@/components/layout/read-only-shield";
+import { RouteProgress } from "@/components/layout/route-progress";
 
 interface NavItem {
   to: string;
@@ -236,6 +237,13 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-background">
+      <RouteProgress />
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded-md focus:bg-primary focus:px-3 focus:py-2 focus:text-sm focus:text-primary-foreground"
+      >
+        Skip to content
+      </a>
       {preview && (
         <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-3 bg-foreground px-4 py-1.5 text-xs text-background">
           <span className="truncate">
@@ -312,7 +320,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         <EditModeBanner />
 
         <PullToRefresh>
-          <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8">{children}</div>
+          <div
+            id="main-content"
+            key={location.pathname}
+            className="animate-page-enter mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8"
+          >
+            {children}
+          </div>
         </PullToRefresh>
       </main>
     </div>
