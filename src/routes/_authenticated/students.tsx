@@ -127,6 +127,7 @@ function StudentsPage() {
   const showCol = (c: string) => !layout.hidden.includes(c);
   const cellCls = densityCell(layout.density);
   const colSpan = 3 + ["guardian", "campus", "class", "system", "docs"].filter(showCol).length;
+  const shownCount = groups.reduce((n, g) => n + g.rows.length, 0);
 
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
