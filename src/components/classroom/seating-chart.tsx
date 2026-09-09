@@ -300,7 +300,7 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
     const reasons = new Map<string, number>();
     const bump = (reason: string) => reasons.set(reason, (reasons.get(reason) ?? 0) + 1);
     const eligible: Student[] = [];
-    for (const st of unseated) {
+    for (const st of sectionUnseated) {
       const problem = seatingError(st.id, free[0] ?? 0);
       if (problem) bump(problem);
       else eligible.push(st);
