@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LayoutMenu } from "@/components/layout/layout-menu";
 import { useModuleLayout } from "@/lib/ui-prefs";
+import { trackRowCls, trackTextCls } from "@/components/layout/track-heading";
+import { useTrackLayout } from "@/lib/track-layout";
 import { useArranged, byText, densityCell } from "@/lib/ui-arrange";
 import { ActiveFilterChip, FilteredEmptyState } from "@/components/layout/filter-chip";
 import { Fragment } from "react";
