@@ -301,7 +301,9 @@ function ClassesPage() {
               title={collapsed ? `Expand ${group.label}` : `Collapse ${group.label}`}
             >
               <ChevronRight className={`h-4 w-4 transition-transform ${collapsed ? "" : "rotate-90"}`} />
-              <h2 className="font-serif text-sm font-semibold uppercase tracking-wide text-muted-foreground">{group.label}</h2>
+              <h2 className={`rounded px-2 py-0.5 font-serif text-sm font-semibold uppercase tracking-wide ${trackChipCls(group.label)} ${trackTextCls(group.label)}`}>
+                {group.label}
+              </h2>
               <span className="text-xs text-muted-foreground">{group.rows.length}</span>
             </button>
             <div className="h-px flex-1 bg-border" />

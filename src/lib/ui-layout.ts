@@ -75,6 +75,7 @@ export const MODULE_LAYOUTS: Record<string, ModuleSpec> = {
       { value: "room", label: "Room" },
       { value: "capacity", label: "Capacity" },
     ],
+    defaults: { groupBy: "track" },
   }),
   students: spec("Students", {
     groupBy: [
@@ -96,6 +97,7 @@ export const MODULE_LAYOUTS: Record<string, ModuleSpec> = {
       { value: "system", label: "System" },
       { value: "docs", label: "Documents" },
     ],
+    defaults: { groupBy: "track" },
   }),
   staff: spec("Staff", {
     groupBy: [
@@ -120,6 +122,7 @@ export const MODULE_LAYOUTS: Record<string, ModuleSpec> = {
       { value: "contact", label: "Contact" },
       { value: "track", label: "Teaching track" },
     ],
+    defaults: { groupBy: "track" },
   }),
   courses: spec("Courses", {
     groupBy: [
