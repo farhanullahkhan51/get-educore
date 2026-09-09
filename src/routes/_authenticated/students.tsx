@@ -82,6 +82,7 @@ function StudentsPage() {
       )) as Student[],
   });
   const studentLimit = useLimitStatus("students");
+  const sectionCapacity = useSectionCapacity();
 
   const campusMap = new Map(campuses?.map((c) => [c.id, c.name]));
   const classMap = new Map(classes?.map((c) => [c.id, c.name]));
