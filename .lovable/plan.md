@@ -30,7 +30,14 @@ The current seating sidebar makes this more confusing because it includes studen
 5. **Keep cross-section moves deliberate.** Students from other sections remain available only in a separate move area; they are never mixed into this section's auto-fill queue.
 6. **Verify every populated section.** Compare assigned, seated and unseated totals so `assigned = seated + unseated`; confirm every chair belongs to the selected section and no student occupies more than one chair.
 
+## Full sections stop accepting students
+
+1. Wherever a section is chosen — registering a student, editing one, bulk import, moving overflow and seating — a section already at capacity shows as **"Full (30 of 30)"** and cannot be picked.
+2. The message states the two ways forward: create another section for the same grade, or increase this section's chairs so everyone fits. Both actions are offered right there.
+3. The database already refuses to overfill a section; the screen now says so before the attempt instead of after a failed save.
+
 Nothing about the student records themselves changes — no data is added, removed, or edited.
+
 
 ## Technical details
 
@@ -42,3 +49,5 @@ Nothing about the student records themselves changes — no data is added, remov
 - In `src/components/classroom/seating-chart.tsx`, derive `sectionRoster`, `sectionUnseated`, and `otherSectionStudents` separately. Auto-fill must consume only `sectionUnseated`; the primary unseated list renders all of it without slicing.
 - Keep overflow as `max(0, assigned - capacity)`, but do not use overflow to limit which unseated students are visible. Preserve same-class/campus/track checks and the one-student-one-chair database guard.
 - Validate the current live baseline after implementation: Grade 2 Blue is 30 assigned / 9 seated, Green is 30 / 3, Red and Yellow are 30 / 0; after auto-fill each should reach 30 / 30 independently without moving academic records.
+- Shared helper for per-section active roster counts and free places, consumed by the section pickers in `students.tsx`, `import-export.tsx`, `classes.tsx` and the seating overflow move list; full options render disabled with used/capacity labels.
+- Bulk import rejects rows targeting a full section with a per-row reason rather than a generic failure.
