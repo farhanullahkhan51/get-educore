@@ -19,6 +19,14 @@ export type SeatSection = {
 };
 
 type Seat = { id: string; seat_index: number; student_id: string };
+type SiblingSection = {
+  id: string;
+  name: string;
+  capacity: number | null;
+  campus_id: string;
+  academic_system: "board" | "cambridge" | "both" | null;
+  used: number;
+};
 type Student = {
   id: string;
   student_code: string;
@@ -43,6 +51,7 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   const [pickedTeacher, setPickedTeacher] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [savingSeat, setSavingSeat] = useState<number | null>(null);
+  const [moveTarget, setMoveTarget] = useState<string>("");
 
 
   const { data: seats } = useQuery({
@@ -92,6 +101,30 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
     },
   });
 
+  // other sections of the same class, with their free space
+  const { data: siblings } = useQuery({
+    queryKey: ["sibling-sections", section.class_id, section.id],
+    queryFn: async () => {
+      const { data: secs, error } = await supabase
+        .from("sections")
+        .select("id, name, capacity, campus_id, academic_system")
+        .eq("class_id", section.class_id)
+        .neq("id", section.id)
+        .order("name");
+      if (error) throw error;
+      const list = secs ?? [];
+      if (list.length === 0) return [] as SiblingSection[];
+      const { data: counts } = await supabase
+        .from("students")
+        .select("id, section_id, status")
+        .in("section_id", list.map((s) => s.id));
+      return list.map((s) => ({
+        ...s,
+        used: (counts ?? []).filter((c) => c.section_id === s.id && (c.status ?? "active") === "active").length,
+      })) as SiblingSection[];
+    },
+  });
+
   // sections that already have a class teacher (used to enforce one class per teacher)
   const { data: assignedSections } = useQuery({
     queryKey: ["section-teachers"],
@@ -103,6 +136,7 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
       return (data ?? []) as Array<{ id: string; name: string; class_id: string; class_teacher_id: string }>;
     },
   });
+
 
   /** Returns a reason string when this teacher cannot take this section's desk, else null. */
   function teacherError(teacherId: string): string | null {
@@ -128,12 +162,32 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   const seatedIds = useMemo(() => new Set((seats ?? []).map((s) => s.student_id)), [seats]);
   const unseated = (students ?? []).filter((s) => !seatedIds.has(s.id));
   const cols = Math.min(8, Math.max(4, Math.ceil(Math.sqrt(capacity))));
+  /** students whose record says they belong to THIS room (the real roster) */
+  const rosterCount = (students ?? []).filter(
+    (s) => s.section_id === section.id && (s.status ?? "active") === "active",
+  ).length;
+  const overflow = Math.max(0, rosterCount - capacity);
+  /** unseated students who actually belong to this room — the ones with nowhere to sit */
+  const overflowStudents = unseated
+    .filter((s) => s.section_id === section.id && (s.status ?? "active") === "active")
+    .slice(0, overflow);
+
+  /** Turns a database message into something staff can act on. */
+  function friendly(message: string): string {
+    const m = message.toLowerCase();
+    if (m.includes("capacity")) return `${section.name} is already full (${capacity} of ${capacity} chairs).`;
+    if (m.includes("academic system")) return "That student is on a different academic track.";
+    if (m.includes("only active")) return "Only active students can be seated.";
+    if (m.includes("institution") || m.includes("campus")) return "That student belongs to another campus.";
+    if (m.includes("out of range")) return `This room only has ${capacity} chairs.`;
+    return message;
+  }
 
   /** Returns a reason string when the student cannot take this seat, otherwise null. */
   function seatingError(studentId: string, seatIndex: number): string | null {
     const st = studentById.get(studentId);
     if (!st) return "That student is not part of this class.";
-    if (seatIndex < 0 || seatIndex >= capacity) return `This room only has ${capacity} seats.`;
+    if (seatIndex < 0 || seatIndex >= capacity) return `This room only has ${capacity} chairs.`;
     if (st.campus_id !== section.campus_id) return `${st.first_name} belongs to a different campus.`;
     if (st.status && st.status !== "active") return `${st.first_name} is ${st.status} and cannot be seated.`;
     if (
@@ -145,18 +199,25 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
     ) {
       return `${st.first_name} is on the ${st.academic_system} track — this section is ${section.academic_system}.`;
     }
+    // a student joining this room from another section needs a free place on the roster too
+    if (st.section_id !== section.id && rosterCount >= capacity) {
+      return `${section.name} is already full (${rosterCount} of ${capacity}). Move students to another section first.`;
+    }
     const occupant = seatByIndex.get(seatIndex);
     const alreadySeated = seatedIds.has(studentId);
-    if (!occupant && !alreadySeated && (seats?.length ?? 0) >= capacity) return "The classroom is full.";
+    if (!occupant && !alreadySeated && (seats?.length ?? 0) >= capacity) return "Every chair in this room is taken.";
     return null;
   }
+
 
   function refresh() {
     qc.invalidateQueries({ queryKey: ["section-seats", section.id] });
     qc.invalidateQueries({ queryKey: ["seating-students", section.class_id, section.id] });
+    qc.invalidateQueries({ queryKey: ["sibling-sections", section.class_id, section.id] });
     qc.invalidateQueries({ queryKey: ["class-students"] });
     qc.invalidateQueries({ queryKey: ["sections"] });
   }
+
 
   async function seatStudent(studentId: string, seatIndex: number) {
     if (busy) return;
@@ -202,7 +263,8 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
       toast.success(existing ? "Seat updated" : "Student seated");
     } catch (e) {
       qc.setQueryData(queryKey, previousSeats);
-      toast.error(e instanceof Error ? e.message : "Could not seat student");
+      toast.error(e instanceof Error ? friendly(e.message) : "Could not seat this student");
+
     } finally {
       setBusy(false);
       setSavingSeat(null);
@@ -231,28 +293,100 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
   async function autoFill() {
     const free: number[] = [];
     for (let i = 0; i < capacity; i++) if (!seatByIndex.has(i)) free.push(i);
-    const eligible = unseated.filter((st) => !seatingError(st.id, free[0] ?? 0));
-    const skipped = unseated.length - eligible.length;
+    const reasons = new Map<string, number>();
+    const bump = (reason: string) => reasons.set(reason, (reasons.get(reason) ?? 0) + 1);
+    const eligible: Student[] = [];
+    for (const st of unseated) {
+      const problem = seatingError(st.id, free[0] ?? 0);
+      if (problem) bump(problem);
+      else eligible.push(st);
+    }
     const queue = eligible.slice(0, free.length);
-    if (queue.length === 0) return toast.info(skipped > 0 ? "No eligible students to seat" : "Nothing to seat");
-    if (skipped > 0) toast.warning(`${skipped} student(s) skipped — campus, track, or status mismatch`);
+    for (let i = free.length; i < eligible.length; i++) {
+      bump(`No chairs left in ${section.name} (${capacity} chairs, ${rosterCount} students in this class).`);
+    }
+    if (queue.length === 0) {
+      if (reasons.size === 0) return toast.info("Everyone already has a chair");
+      for (const [reason, n] of reasons) toast.warning(`${n} student${n === 1 ? "" : "s"} not seated — ${reason}`);
+      return;
+    }
     setBusy(true);
     let placed = 0;
-    let failed = 0;
     for (let i = 0; i < queue.length; i++) {
       const { error } = await supabase.rpc("set_section_seat", {
         _section_id: section.id,
         _seat_index: free[i],
         _student_id: queue[i].id,
       });
-      if (error) failed++;
+      if (error) bump(friendly(error.message));
       else placed++;
     }
     setBusy(false);
     if (placed > 0) toast.success(`Seated ${placed} student${placed === 1 ? "" : "s"}`);
-    if (failed > 0) toast.error(`${failed} student(s) could not be seated`);
+    for (const [reason, n] of reasons) toast.warning(`${n} student${n === 1 ? "" : "s"} not seated — ${reason}`);
     refresh();
   }
+
+  /** Moves students to another section of the SAME class. Nothing else about them changes. */
+  async function moveToSection(studentIds: string[], targetId: string) {
+    const target = (siblings ?? []).find((s) => s.id === targetId);
+    if (!target || studentIds.length === 0) return;
+    if (target.campus_id !== section.campus_id) return toast.error("That section is on another campus.");
+    const room = target.capacity ?? 40;
+    let free = Math.max(0, room - target.used);
+    if (free === 0) return toast.error(`${target.name} is already full (${target.used} of ${room}).`);
+    setBusy(true);
+    let moved = 0;
+    const reasons = new Map<string, number>();
+    for (const id of studentIds) {
+      if (free === 0) {
+        reasons.set(`${target.name} ran out of places`, (reasons.get(`${target.name} ran out of places`) ?? 0) + 1);
+        continue;
+      }
+      const st = studentById.get(id);
+      if (
+        st &&
+        target.academic_system &&
+        target.academic_system !== "both" &&
+        st.academic_system &&
+        st.academic_system !== "both" &&
+        st.academic_system !== target.academic_system
+      ) {
+        reasons.set("different academic track", (reasons.get("different academic track") ?? 0) + 1);
+        continue;
+      }
+      const { error } = await supabase
+        .from("students")
+        .update({ section_id: target.id, class_id: section.class_id })
+        .eq("id", id);
+      if (error) {
+        const msg = friendly(error.message);
+        reasons.set(msg, (reasons.get(msg) ?? 0) + 1);
+      } else {
+        moved++;
+        free--;
+      }
+    }
+    setBusy(false);
+    setMoveTarget("");
+    if (moved > 0) toast.success(`${moved} student${moved === 1 ? "" : "s"} moved to ${target.name}`);
+    for (const [reason, n] of reasons) toast.warning(`${n} student${n === 1 ? "" : "s"} not moved — ${reason}`);
+    refresh();
+  }
+
+  /** Enlarges this room so every student on its roster has a chair. */
+  async function growRoom() {
+    if (rosterCount <= capacity) return;
+    setBusy(true);
+    const { error } = await supabase.from("sections").update({ capacity: rosterCount }).eq("id", section.id);
+    setBusy(false);
+    if (error) return toast.error(friendly(error.message));
+    toast.success(`${section.name} now has ${rosterCount} chairs`);
+    refresh();
+  }
+
+
+
 
 
   async function clearAll() {
@@ -570,8 +704,57 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
         <div>
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Unseated</p>
-            <span className="text-xs text-muted-foreground">{seats?.length ?? 0} / {capacity} seated</span>
+            <span className="text-xs text-muted-foreground">
+              {seats?.length ?? 0} of {capacity} chairs filled · {rosterCount} students in this class
+            </span>
           </div>
+
+          {overflow > 0 && (
+            <div className="mt-2 space-y-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-[11px]">
+              <p className="font-medium text-amber-900 dark:text-amber-200">
+                {rosterCount} students are in {section.name}, but the room only has {capacity} chairs — {overflow} cannot
+                be seated here.
+              </p>
+              <p className="text-muted-foreground">
+                Move students to another section of the same class, or make this room bigger. Their class, subjects,
+                marks, attendance and fees stay exactly as they are.
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Select value={moveTarget} onValueChange={setMoveTarget}>
+                  <SelectTrigger className="h-8 w-[190px] text-xs">
+                    <SelectValue placeholder="Move to section…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(siblings ?? []).length === 0 && (
+                      <SelectItem value="none" disabled>No other section in this class</SelectItem>
+                    )}
+                    {(siblings ?? []).map((s) => {
+                      const room = s.capacity ?? 40;
+                      const free = Math.max(0, room - s.used);
+                      return (
+                        <SelectItem key={s.id} value={s.id} disabled={free === 0}>
+                          {s.name} — {free === 0 ? "full" : `${free} place${free === 1 ? "" : "s"} free`}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8"
+                  disabled={busy || !moveTarget || overflowStudents.length === 0}
+                  onClick={() => void moveToSection(overflowStudents.map((s) => s.id), moveTarget)}
+                >
+                  Move {overflowStudents.length} unseated
+                </Button>
+                <Button size="sm" variant="ghost" className="h-8" disabled={busy} onClick={growRoom}>
+                  Make room fit {rosterCount}
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div
             data-drop="unseated"
             className="mt-2 max-h-[320px] space-y-1 overflow-y-auto rounded-md border border-dashed p-1"
