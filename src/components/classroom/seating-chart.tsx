@@ -688,8 +688,57 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
         <div>
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Unseated</p>
-            <span className="text-xs text-muted-foreground">{seats?.length ?? 0} / {capacity} seated</span>
+            <span className="text-xs text-muted-foreground">
+              {seats?.length ?? 0} of {capacity} chairs filled · {rosterCount} students in this class
+            </span>
           </div>
+
+          {overflow > 0 && (
+            <div className="mt-2 space-y-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-[11px]">
+              <p className="font-medium text-amber-900 dark:text-amber-200">
+                {rosterCount} students are in {section.name}, but the room only has {capacity} chairs — {overflow} cannot
+                be seated here.
+              </p>
+              <p className="text-muted-foreground">
+                Move students to another section of the same class, or make this room bigger. Their class, subjects,
+                marks, attendance and fees stay exactly as they are.
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Select value={moveTarget} onValueChange={setMoveTarget}>
+                  <SelectTrigger className="h-8 w-[190px] text-xs">
+                    <SelectValue placeholder="Move to section…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(siblings ?? []).length === 0 && (
+                      <SelectItem value="none" disabled>No other section in this class</SelectItem>
+                    )}
+                    {(siblings ?? []).map((s) => {
+                      const room = s.capacity ?? 40;
+                      const free = Math.max(0, room - s.used);
+                      return (
+                        <SelectItem key={s.id} value={s.id} disabled={free === 0}>
+                          {s.name} — {free === 0 ? "full" : `${free} place${free === 1 ? "" : "s"} free`}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8"
+                  disabled={busy || !moveTarget || unseated.length === 0}
+                  onClick={() => void moveToSection(unseated.slice(0, overflow).map((s) => s.id), moveTarget)}
+                >
+                  Move {Math.min(overflow, unseated.length)} unseated
+                </Button>
+                <Button size="sm" variant="ghost" className="h-8" disabled={busy} onClick={growRoom}>
+                  Make room fit {rosterCount}
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div
             data-drop="unseated"
             className="mt-2 max-h-[320px] space-y-1 overflow-y-auto rounded-md border border-dashed p-1"
