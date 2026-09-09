@@ -15,6 +15,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LayoutMenu } from "@/components/layout/layout-menu";
 import { useModuleLayout } from "@/lib/ui-prefs";
+import { trackRowCls, trackChipCls, trackTextCls } from "@/components/layout/track-heading";
 import { arrange, byText, densityCell } from "@/lib/ui-arrange";
 import { Fragment } from "react";
 
@@ -50,31 +51,10 @@ type Assignment = {
   academic_year: string | null;
 };
 
-/** Board groups read blue, Cambridge groups read orange. */
-function trackOf(label: string): "board" | "cambridge" | "other" {
-  const l = label.toLowerCase();
-  if (l.startsWith("cambridge")) return "cambridge";
-  if (l.startsWith("board")) return "board";
-  return "other";
-}
-const groupRowCls = (label: string) =>
-  ({
-    board: "bg-blue-50 hover:bg-blue-50 dark:bg-blue-950/40 dark:hover:bg-blue-950/40",
-    cambridge: "bg-orange-50 hover:bg-orange-50 dark:bg-orange-950/40 dark:hover:bg-orange-950/40",
-    other: "bg-muted/50 hover:bg-muted/50",
-  })[trackOf(label)];
-const groupChipCls = (label: string) =>
-  ({
-    board: "border-blue-500 bg-blue-50 text-blue-800 dark:bg-blue-950/40 dark:text-blue-200",
-    cambridge: "border-orange-500 bg-orange-50 text-orange-800 dark:bg-orange-950/40 dark:text-orange-200",
-    other: "border-border bg-muted text-muted-foreground",
-  })[trackOf(label)];
-const groupTextCls = (label: string) =>
-  ({
-    board: "text-blue-800 dark:text-blue-200",
-    cambridge: "text-orange-800 dark:text-orange-200",
-    other: "text-muted-foreground",
-  })[trackOf(label)];
+/** Board groups read blue, Cambridge groups read orange (shared with Classes, Students, Staff). */
+const groupRowCls = trackRowCls;
+const groupChipCls = trackChipCls;
+const groupTextCls = trackTextCls;
 
 function CoursesPage() {
   return (

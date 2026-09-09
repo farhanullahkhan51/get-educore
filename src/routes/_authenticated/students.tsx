@@ -16,6 +16,8 @@ import { Plus, Upload, FileText, Pencil, Search } from "lucide-react";
 import { SystemBadge } from "./campuses";
 import { LayoutMenu } from "@/components/layout/layout-menu";
 import { useModuleLayout } from "@/lib/ui-prefs";
+import { trackRowCls, trackTextCls } from "@/components/layout/track-heading";
+import { useTrackLayout } from "@/lib/track-layout";
 import { useArranged, byText, densityCell } from "@/lib/ui-arrange";
 import { useEntitlements, limitMessage } from "@/lib/entitlements";
 import { useLimitStatus, LimitNotice } from "@/lib/plan-usage";
@@ -108,7 +110,8 @@ function StudentsPage() {
     });
   }, [students, search]);
 
-  const { layout } = useModuleLayout("students");
+  const { layout: savedLayout } = useModuleLayout("students");
+  const layout = useTrackLayout(savedLayout);
   const groups = useArranged<Student>(filtered, layout, {
     group: {
       track: (s) => (s.academic_system === "cambridge" ? "Cambridge" : s.academic_system === "both" ? "Board & Cambridge" : "Board"),
@@ -357,8 +360,8 @@ function StudentsPage() {
               {groups.map((group) => (
                 <Fragment key={group.key}>
                   {group.label && (
-                    <TableRow className="bg-muted/50 hover:bg-muted/50">
-                      <TableCell colSpan={colSpan} className="py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <TableRow className={trackRowCls(group.label)}>
+                      <TableCell colSpan={colSpan} className={`py-2 text-xs font-semibold uppercase tracking-wide ${trackTextCls(group.label)}`}>
                         {group.label} · {group.rows.length}
                       </TableCell>
                     </TableRow>

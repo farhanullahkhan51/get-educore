@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LayoutMenu } from "@/components/layout/layout-menu";
 import { useModuleLayout } from "@/lib/ui-prefs";
+import { trackRowCls, trackTextCls } from "@/components/layout/track-heading";
+import { useTrackLayout } from "@/lib/track-layout";
 import { useArranged, byText, densityCell } from "@/lib/ui-arrange";
 import { ActiveFilterChip, FilteredEmptyState } from "@/components/layout/filter-chip";
 import { Fragment } from "react";
@@ -133,7 +135,8 @@ function StaffPage() {
     qc.invalidateQueries({ queryKey: ["staff"] });
   }
 
-  const { layout } = useModuleLayout("staff");
+  const { layout: savedLayout } = useModuleLayout("staff");
+  const layout = useTrackLayout(savedLayout);
   const groups = useArranged<Staff>(staff ?? [], layout, {
     group: {
       track: (s) => (s.academic_system === "cambridge" ? "Cambridge" : s.academic_system === "board" ? "Board" : "Board & Cambridge"),
@@ -247,8 +250,8 @@ function StaffPage() {
               {groups.map((group) => (
                 <Fragment key={group.key}>
                   {group.label && (
-                    <TableRow className="bg-muted/50 hover:bg-muted/50">
-                      <TableCell colSpan={colSpan} className="py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <TableRow className={trackRowCls(group.label)}>
+                      <TableCell colSpan={colSpan} className={`py-2 text-xs font-semibold uppercase tracking-wide ${trackTextCls(group.label)}`}>
                         {group.label} · {group.rows.length}
                       </TableCell>
                     </TableRow>

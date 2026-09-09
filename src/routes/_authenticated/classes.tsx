@@ -19,6 +19,8 @@ import { LayoutMenu } from "@/components/layout/layout-menu";
 import { useModuleLayout } from "@/lib/ui-prefs";
 import { useArranged, byText, byNumberDesc, densityCell } from "@/lib/ui-arrange";
 import { ActiveFilterChip, FilteredEmptyState } from "@/components/layout/filter-chip";
+import { trackChipCls, trackTextCls } from "@/components/layout/track-heading";
+import { useTrackLayout } from "@/lib/track-layout";
 
 
 export const Route = createFileRoute("/_authenticated/classes")({
@@ -56,13 +58,20 @@ function ClassesPage() {
 
   const [seatSec, setSeatSec] = useState<{ section: Section; className: string } | null>(null);
 
+  /** New-class form: campus / program drive which examination system the class belongs to. */
+  const [newCampus, setNewCampus] = useState<string>("");
+  const [newProgram, setNewProgram] = useState<string>("");
+  const [systemOverride, setSystemOverride] = useState<Klass["academic_system"] | null>(null);
+
   const { data: campuses } = useQuery({
     queryKey: ["campuses"],
-    queryFn: async () => (await supabase.from("campuses").select("id, name").order("name")).data ?? [],
+    queryFn: async () =>
+      (await supabase.from("campuses").select("id, name, academic_system").order("name")).data ?? [],
   });
   const { data: programs } = useQuery({
     queryKey: ["programs"],
-    queryFn: async () => (await supabase.from("programs").select("id, name, campus_id").order("name")).data ?? [],
+    queryFn: async () =>
+      (await supabase.from("programs").select("id, name, campus_id, academic_system").order("name")).data ?? [],
   });
   const { data: classes } = useQuery({
     queryKey: ["classes"],
@@ -92,7 +101,8 @@ function ClassesPage() {
 
   const campusMap = new Map(campuses?.map((c) => [c.id, c.name]));
 
-  const { layout } = useModuleLayout("classes");
+  const { layout: savedLayout } = useModuleLayout("classes");
+  const layout = useTrackLayout(savedLayout);
   const countFor = (classId: string) => {
     const ids = new Set((sections ?? []).filter((s) => s.class_id === classId).map((s) => s.id));
     return (students ?? []).filter((st) => st.class_id === classId || (st.section_id && ids.has(st.section_id))).length;
@@ -118,22 +128,33 @@ function ClassesPage() {
   const showCol = (c: string) => !layout.hidden.includes(c);
   const cellCls = densityCell(layout.density);
 
+  /** A new class belongs to the programme's system, or the campus's when no programme is chosen. */
+  const inheritedSystem: Klass["academic_system"] =
+    ((newProgram ? programs?.find((p) => p.id === newProgram)?.academic_system : null) ??
+      (newCampus ? campuses?.find((c) => c.id === newCampus)?.academic_system : null) ??
+      "both") as Klass["academic_system"];
+  const systemLocked = inheritedSystem !== "both";
+  const newSystem: Klass["academic_system"] = systemLocked ? inheritedSystem : systemOverride ?? "board";
+
+
 
   async function createClass(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    if (!newCampus) return toast.error("Choose a campus first");
     const payload = {
-      campus_id: String(fd.get("campus_id")),
-      program_id: (fd.get("program_id") as string) || null,
+      campus_id: newCampus,
+      program_id: newProgram || null,
       name: String(fd.get("name")),
       grade_level: String(fd.get("grade_level") || "") || null,
       academic_year: String(fd.get("academic_year") || "") || null,
-      academic_system: String(fd.get("academic_system")) as Klass["academic_system"],
+      academic_system: newSystem,
     };
     const { error } = await supabase.from("classes").insert(payload);
     if (error) return toast.error(error.message);
     toast.success("Class created");
     setOpenCls(false);
+    setNewCampus(""); setNewProgram(""); setSystemOverride(null);
     qc.invalidateQueries({ queryKey: ["classes"] });
   }
 
@@ -172,18 +193,27 @@ function ClassesPage() {
     e.preventDefault();
     if (!editCls) return;
     const fd = new FormData(e.currentTarget);
+    const campus_id = String(fd.get("campus_id"));
+    const academic_system = String(fd.get("academic_system")) as Klass["academic_system"];
     const { error } = await supabase.from("classes").update({
-      campus_id: String(fd.get("campus_id")),
+      campus_id,
       program_id: (fd.get("program_id") as string) || null,
       name: String(fd.get("name")),
       grade_level: String(fd.get("grade_level") || "") || null,
       academic_year: String(fd.get("academic_year") || "") || null,
-      academic_system: String(fd.get("academic_system")) as Klass["academic_system"],
+      academic_system,
     }).eq("id", editCls.id);
     if (error) return toast.error(error.message);
+    // Sections always follow their parent class's campus and examination system.
+    const { error: secErr } = await supabase
+      .from("sections")
+      .update({ campus_id, academic_system })
+      .eq("class_id", editCls.id);
+    if (secErr) return toast.error(secErr.message);
     toast.success("Class updated");
     setEditCls(null);
     qc.invalidateQueries({ queryKey: ["classes"] });
+    qc.invalidateQueries({ queryKey: ["sections"] });
   }
 
   async function updateSection(e: React.FormEvent<HTMLFormElement>) {
@@ -219,16 +249,20 @@ function ClassesPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label>Campus</Label>
-                    <Select name="campus_id" required>
+                    <Select value={newCampus} onValueChange={(v) => { setNewCampus(v); setNewProgram(""); setSystemOverride(null); }}>
                       <SelectTrigger><SelectValue placeholder="Campus" /></SelectTrigger>
                       <SelectContent>{campuses?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
                     <Label>Program (optional)</Label>
-                    <Select name="program_id">
+                    <Select value={newProgram} onValueChange={(v) => { setNewProgram(v); setSystemOverride(null); }}>
                       <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                      <SelectContent>{programs?.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                      <SelectContent>
+                        {(programs ?? [])
+                          .filter((p) => !newCampus || p.campus_id === newCampus)
+                          .map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                      </SelectContent>
                     </Select>
                   </div>
                 </div>
@@ -249,7 +283,11 @@ function ClassesPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>System</Label>
-                    <Select name="academic_system" defaultValue="board">
+                    <Select
+                      value={newSystem}
+                      disabled={systemLocked}
+                      onValueChange={(v) => setSystemOverride(v as Klass["academic_system"])}
+                    >
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="board">Board</SelectItem>
@@ -257,6 +295,11 @@ function ClassesPage() {
                         <SelectItem value="both">Both</SelectItem>
                       </SelectContent>
                     </Select>
+                    <p className="text-[11px] text-muted-foreground">
+                      {systemLocked
+                        ? `Set by the ${newProgram ? "programme" : "campus"} you chose.`
+                        : "Choose which examination system this class follows."}
+                    </p>
                   </div>
                 </div>
                 <DialogFooter><Button type="submit">Create class</Button></DialogFooter>
@@ -298,7 +341,9 @@ function ClassesPage() {
               title={collapsed ? `Expand ${group.label}` : `Collapse ${group.label}`}
             >
               <ChevronRight className={`h-4 w-4 transition-transform ${collapsed ? "" : "rotate-90"}`} />
-              <h2 className="font-serif text-sm font-semibold uppercase tracking-wide text-muted-foreground">{group.label}</h2>
+              <h2 className={`rounded px-2 py-0.5 font-serif text-sm font-semibold uppercase tracking-wide ${trackChipCls(group.label)} ${trackTextCls(group.label)}`}>
+                {group.label}
+              </h2>
               <span className="text-xs text-muted-foreground">{group.rows.length}</span>
             </button>
             <div className="h-px flex-1 bg-border" />
