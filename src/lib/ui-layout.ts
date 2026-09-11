@@ -170,13 +170,21 @@ export const MODULE_LAYOUTS: Record<string, ModuleSpec> = {
     ],
   }),
   admissions: spec("Admissions", {
-    groupBy: [...TRACK_GROUP, { value: "campus", label: "Campus" }, { value: "source", label: "Source" }],
-    filter: TRACK_FILTER,
+    groupBy: [...TRACK_GROUP, { value: "campus", label: "Campus" }, { value: "status", label: "Stage" }],
+    filter: [
+      ...TRACK_FILTER,
+      { value: "open", label: "Open inquiries" },
+      { value: "converted", label: "Converted only" },
+    ],
     sortBy: [
       { value: "recent", label: "Most recent" },
       { value: "name", label: "Student name" },
     ],
-    columns: [],
+    columns: [
+      { value: "campus", label: "Campus" },
+      { value: "guardian", label: "Guardian" },
+      { value: "age", label: "Time since inquiry" },
+    ],
   }),
   certificates: spec("Certificates", {
     groupBy: [
@@ -253,11 +261,13 @@ export function describeLayout(module: string, layout: ModuleLayout): string {
 /** True when the layout differs from the module's built-in defaults. */
 export function isCustomised(module: string, layout: ModuleLayout): boolean {
   const d = defaultsFor(module);
+  const sameHidden =
+    d.hidden.length === layout.hidden.length && d.hidden.every((h) => layout.hidden.includes(h));
   return (
     d.groupBy !== layout.groupBy ||
     d.filter !== layout.filter ||
     d.sortBy !== layout.sortBy ||
     d.density !== layout.density ||
-    d.hidden.length !== layout.hidden.length
+    !sameHidden
   );
 }
