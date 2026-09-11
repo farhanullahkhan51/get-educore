@@ -101,6 +101,18 @@ function ClassesPage() {
 
   const campusMap = new Map(campuses?.map((c) => [c.id, c.name]));
 
+  /** Chairs currently occupied, per section — so the list shows seating without opening each class. */
+  const { data: seats } = useQuery({
+    queryKey: ["section-seat-counts"],
+    queryFn: async () =>
+      (await supabase.from("section_seats").select("section_id, student_id")).data ?? [],
+  });
+  const seatedBySection = new Map<string, number>();
+  for (const s of seats ?? []) {
+    if (!s.student_id) continue;
+    seatedBySection.set(s.section_id, (seatedBySection.get(s.section_id) ?? 0) + 1);
+  }
+
   const { layout: savedLayout } = useModuleLayout("classes");
   const layout = useTrackLayout(savedLayout);
   const countFor = (classId: string) => {
@@ -109,11 +121,14 @@ function ClassesPage() {
   };
   const trackLabel = (s: Klass["academic_system"]) =>
     s === "cambridge" ? "Cambridge" : s === "both" ? "Board & Cambridge" : "Board";
+  // Board and Cambridge stay apart under every grouping, not only the Board / Cambridge one.
+  const withTrack = (label: string, c: Klass) =>
+    layout.groupBy === "track" ? label : `${trackLabel(c.academic_system)} — ${label}`;
   const groups = useArranged<Klass>(classes ?? [], layout, {
     group: {
       track: (c) => trackLabel(c.academic_system),
-      campus: (c) => campusMap.get(c.campus_id) ?? "—",
-      year: (c) => c.academic_year ?? "No academic year",
+      campus: (c) => withTrack(campusMap.get(c.campus_id) ?? "—", c),
+      year: (c) => withTrack(c.academic_year ?? "No academic year", c),
     },
     filter: {
       board: (c) => c.academic_system !== "cambridge",
@@ -357,6 +372,8 @@ function ClassesPage() {
             students?.filter(
               (st) => st.class_id === cls.id || (st.section_id && sectionNames.has(st.section_id)),
             ) ?? [];
+          const clsSeated = clsSections.reduce((n, s) => n + (seatedBySection.get(s.id) ?? 0), 0);
+          const clsSeats = clsSections.reduce((n, s) => n + (s.capacity ?? 0), 0);
           const isOpen = expanded === cls.id;
           return (
             <Card key={cls.id} className="shadow-none">
@@ -377,6 +394,11 @@ function ClassesPage() {
                       <span>{cls.academic_year ?? "—"}</span>
                       <span>·</span>
                       <span>{clsStudents.length} student{clsStudents.length === 1 ? "" : "s"}</span>
+                      <span>·</span>
+                      <span className={clsStudents.length > clsSeated ? "font-medium text-amber-700 dark:text-amber-400" : ""}>
+                        {clsSeated} seated{clsSeats > 0 ? ` of ${clsSeats} chairs` : ""}
+                        {clsStudents.length > clsSeated ? ` · ${clsStudents.length - clsSeated} unseated` : ""}
+                      </span>
                       <SystemBadge system={cls.academic_system} />
                     </div>
                   </div>
@@ -418,7 +440,8 @@ function ClassesPage() {
                       <TableHead>Section</TableHead>
                       {showCol("teacher") && <TableHead>Class teacher</TableHead>}
                       {showCol("room") && <TableHead>Room</TableHead>}
-                      {showCol("capacity") && <TableHead>Capacity</TableHead>}
+                      {showCol("capacity") && <TableHead>Enrolled / Capacity</TableHead>}
+                      {showCol("capacity") && <TableHead>Seated</TableHead>}
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow></TableHeader>
                     <TableBody>
@@ -434,21 +457,34 @@ function ClassesPage() {
                           )}
                           {showCol("room") && <TableCell className={cellCls}>{s.room ?? "—"}</TableCell>}
                           {showCol("capacity") && (() => {
-                            const seated = (students ?? []).filter(
+                            const enrolled = (students ?? []).filter(
                               (st) => st.section_id === s.id && (st.status ?? "active") === "active",
                             ).length;
-                            const over = s.capacity != null && seated > s.capacity;
+                            const seated = seatedBySection.get(s.id) ?? 0;
+                            const over = s.capacity != null && enrolled > s.capacity;
                             return (
-                              <TableCell className={cellCls}>
-                                <span className={over ? "font-semibold text-destructive" : ""}>
-                                  {seated}/{s.capacity ?? "—"}
-                                </span>
-                                {over && (
-                                  <span className="ml-2 rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive">
-                                    Over capacity
+                              <>
+                                <TableCell className={cellCls}>
+                                  <span className={over ? "font-semibold text-destructive" : ""}>
+                                    {enrolled}/{s.capacity ?? "—"}
                                   </span>
-                                )}
-                              </TableCell>
+                                  {over && (
+                                    <span className="ml-2 rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive">
+                                      Over capacity
+                                    </span>
+                                  )}
+                                </TableCell>
+                                <TableCell className={cellCls}>
+                                  <span className={enrolled > seated ? "text-amber-700 dark:text-amber-400" : ""}>
+                                    {seated} seated
+                                  </span>
+                                  {enrolled > seated && (
+                                    <span className="ml-1 text-[11px] text-muted-foreground">
+                                      · {enrolled - seated} unseated
+                                    </span>
+                                  )}
+                                </TableCell>
+                              </>
                             );
                           })()}
 

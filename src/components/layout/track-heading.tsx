@@ -4,8 +4,8 @@
  */
 export function trackOf(label: string): "board" | "cambridge" | "other" {
   const l = label.toLowerCase();
-  if (l.startsWith("cambridge")) return "cambridge";
-  if (l.startsWith("board")) return "board";
+  if (l.includes("cambridge")) return l.includes("board") ? "other" : "cambridge";
+  if (l.includes("board")) return "board";
   return "other";
 }
 

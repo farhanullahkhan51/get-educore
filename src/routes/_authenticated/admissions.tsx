@@ -20,6 +20,12 @@ import { formatDistanceToNow } from "date-fns";
 import { generateCode } from "@/lib/generate-code";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { FeatureGate } from "@/components/layout/feature-gate";
+import { LayoutMenu } from "@/components/layout/layout-menu";
+import { useModuleLayout } from "@/lib/ui-prefs";
+import { useTrackLayout } from "@/lib/track-layout";
+import { useArranged, byText, densityCell } from "@/lib/ui-arrange";
+import { ActiveFilterChip, FilteredEmptyState } from "@/components/layout/filter-chip";
+import { trackChipCls, trackTextCls } from "@/components/layout/track-heading";
 
 export const Route = createFileRoute("/_authenticated/admissions")({
   component: GatedAdmissionsPage,
@@ -139,11 +145,36 @@ function AdmissionsPage() {
     return list;
   }, [inquiries, campusFilter, search]);
 
+  const { layout: savedLayout } = useModuleLayout("admissions");
+  const layout = useTrackLayout(savedLayout);
+  const trackLabel = (s: AcademicSystem | null) =>
+    s === "cambridge" ? "Cambridge" : s === "both" ? "Board & Cambridge" : "Board";
+  const arranged = useArranged<Inquiry>(filtered, layout, {
+    group: {
+      track: (i) => trackLabel(i.academic_system),
+      campus: (i) => (i.campus_id ? campusMap.get(i.campus_id) ?? "—" : "No campus"),
+      status: (i) => COLUMNS.find((c) => c.status === i.status)?.label ?? i.status,
+    },
+    filter: {
+      board: (i) => i.academic_system !== "cambridge",
+      cambridge: (i) => i.academic_system !== "board" && i.academic_system !== null,
+      open: (i) => i.status !== "converted" && i.status !== "lost",
+      converted: (i) => i.status === "converted",
+    },
+    sort: {
+      recent: (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      name: byText((i) => i.student_name),
+    },
+  });
+  const inView = useMemo(() => arranged.flatMap((g) => g.rows), [arranged]);
+  const showCol = (k: string) => !layout.hidden.includes(k);
+  const cellCls = densityCell(layout.density);
+
   const grouped = useMemo(() => {
     const map: Record<Status, Inquiry[]> = { new: [], contacted: [], visited: [], converted: [], lost: [] };
-    for (const i of filtered) map[i.status].push(i);
+    for (const i of inView) map[i.status].push(i);
     return map;
-  }, [filtered]);
+  }, [inView]);
 
   async function updateStatus(id: string, status: Status) {
     const { error } = await supabase.from("inquiries").update({ status }).eq("id", id);
@@ -168,9 +199,12 @@ function AdmissionsPage() {
         title="Inquiry pipeline"
         description="Every prospective family, from first inquiry through enrollment."
         actions={
-          <Button onClick={() => setNewOpen(true)}>
-            <UserPlus className="mr-1 h-4 w-4" /> Log inquiry
-          </Button>
+          <div className="flex items-center gap-2">
+            <LayoutMenu module="admissions" />
+            <Button onClick={() => setNewOpen(true)}>
+              <UserPlus className="mr-1 h-4 w-4" /> Log inquiry
+            </Button>
+          </div>
         }
       />
 
@@ -193,7 +227,9 @@ function AdmissionsPage() {
             {campuses?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
+        <ActiveFilterChip module="admissions" />
       </div>
+
 
       <EditableTabs scope="module:admissions" fallback="board">
 
@@ -229,37 +265,62 @@ function AdmissionsPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="table" className="mt-4">
-          <Card className="shadow-none">
-            <CardContent className="p-0">
-              <div className="divide-y divide-border">
-                {filtered.map((inq) => (
-                  <button
-                    key={inq.id}
-                    onClick={() => setSelected(inq)}
-                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-muted/40"
-                  >
-                    <div>
-                      <div className="font-medium">{inq.student_name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {inq.guardian_name} · {inq.guardian_phone}
-                        {inq.campus_id && <> · {campusMap.get(inq.campus_id)}</>}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(inq.created_at), { addSuffix: true })}
-                      </span>
-                      <Badge variant="outline" className={STATUS_STYLES[inq.status]}>{inq.status}</Badge>
-                    </div>
-                  </button>
-                ))}
-                {filtered.length === 0 && (
-                  <div className="p-8 text-center text-sm text-muted-foreground">No inquiries match your filters.</div>
+        <TabsContent value="table" className="mt-4 space-y-4">
+          {arranged.map((group) => (
+            <div key={group.key || "all"} className="space-y-2">
+              {group.label && (
+                <div className="flex items-center gap-3">
+                  <h2 className={`font-serif text-sm font-semibold uppercase tracking-wide ${trackTextCls(group.label)}`}>
+                    {group.label}
+                  </h2>
+                  <span className={`rounded border px-1.5 py-0.5 text-[11px] ${trackChipCls(group.label)}`}>
+                    {group.rows.length}
+                  </span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+              )}
+              <Card className="shadow-none">
+                <CardContent className="p-0">
+                  <div className="divide-y divide-border">
+                    {group.rows.map((inq) => (
+                      <button
+                        key={inq.id}
+                        onClick={() => setSelected(inq)}
+                        className={`flex w-full items-center justify-between gap-3 px-4 text-left hover:bg-muted/40 ${cellCls || "py-3"}`}
+                      >
+                        <div>
+                          <div className="font-medium">{inq.student_name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {showCol("guardian") && <>{inq.guardian_name} · {inq.guardian_phone}</>}
+                            {showCol("campus") && inq.campus_id && <> · {campusMap.get(inq.campus_id)}</>}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {showCol("age") && (
+                            <span className="text-xs text-muted-foreground">
+                              {formatDistanceToNow(new Date(inq.created_at), { addSuffix: true })}
+                            </span>
+                          )}
+                          <Badge variant="outline" className={STATUS_STYLES[inq.status]}>{inq.status}</Badge>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ))}
+          {inView.length === 0 && (
+            <Card className="shadow-none">
+              <CardContent className="p-8 text-center text-sm text-muted-foreground">
+                {filtered.length > 0 ? (
+                  <FilteredEmptyState module="admissions" noun="inquiries" />
+                ) : (
+                  "No inquiries match your filters."
                 )}
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </EditableTabs>
 

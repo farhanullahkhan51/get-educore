@@ -27,7 +27,7 @@ export function arrange<T>(rows: T[], layout: ModuleLayout, acc: Accessors<T>): 
     else map.set(label, [row]);
   }
   return [...map.entries()]
-    .sort((a, b) => a[0].localeCompare(b[0]))
+    .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true, sensitivity: "base" }))
     .map(([label, groupRows]) => ({ key: label, label, rows: groupRows }));
 }
 

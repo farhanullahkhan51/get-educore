@@ -5,6 +5,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllRows } from "@/lib/fetch-all";
 import { PageHeader } from "@/components/layout/page-header";
+import { LayoutMenu } from "@/components/layout/layout-menu";
+import { useModuleLayout } from "@/lib/ui-prefs";
+import { useArranged, byText, densityCell } from "@/lib/ui-arrange";
+import { ActiveFilterChip, FilteredEmptyState } from "@/components/layout/filter-chip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -429,6 +433,38 @@ function ChallansTab({
     return true;
   });
 
+  const { layout } = useModuleLayout("fees");
+  const showCol = (k: string) => !layout.hidden.includes(k);
+  const cellCls = densityCell(layout.density);
+  const structMap = useMemo(
+    () => new Map((structures ?? []).map((s: any) => [s.id, s])),
+    [structures],
+  );
+  const netOf = (c: Challan) => Number(c.gross_amount) - Number(c.discount_amount) + Number(c.fine_amount);
+  const today = new Date().toISOString().slice(0, 10);
+  const effStatus = (c: Challan) =>
+    c.status !== "waived" && netOf(c) - Number(c.paid_amount) > 0 && c.due_date < today ? "overdue" : c.status;
+  const categoryOf = (c: Challan) =>
+    (structMap.get((c as any).fee_structure_id) as any)?.category ?? "Uncategorised";
+  const campusName = (id: string) => campuses.find((x) => x.id === id)?.name ?? "—";
+  const arranged = useArranged<Challan>(filtered, layout, {
+    group: {
+      status: (c) => effStatus(c),
+      category: (c) => String(categoryOf(c)),
+      campus: (c) => campusName(c.campus_id),
+    },
+    filter: {
+      unpaid: (c) => effStatus(c) !== "paid" && c.status !== "waived",
+      paid: (c) => c.status === "paid",
+    },
+    sort: {
+      due: (a, b) => (a.due_date < b.due_date ? 1 : a.due_date > b.due_date ? -1 : 0),
+      amount: (a, b) => netOf(b) - netOf(a),
+      student: byText((c) => studentMap.get(c.student_id)?.name ?? ""),
+    },
+  });
+  const inView = arranged.reduce((n, g) => n + g.rows.length, 0);
+
   const { data: totals } = useQuery({
     queryKey: ["fee-totals", campusFilter],
     queryFn: async () => {
@@ -516,6 +552,8 @@ function ChallansTab({
                   <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
+            <ActiveFilterChip module="fees" />
+            <LayoutMenu module="fees" />
             {canManage && (
               <Button onClick={() => setGeneratorOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" /> Generate Challans
@@ -523,18 +561,33 @@ function ChallansTab({
             )}
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-5">
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
           ) : filtered.length === 0 ? (
             <p className="text-sm text-muted-foreground">No challans yet.</p>
+          ) : inView === 0 ? (
+            <div className="text-sm text-muted-foreground">
+              <FilteredEmptyState module="fees" noun="challans" />
+            </div>
           ) : (
+            arranged.map((group) => (
+            <div key={group.key || "all"} className="space-y-2">
+              {group.label && (
+                <div className="flex items-center gap-3">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{group.label}</h3>
+                  <span className="text-xs text-muted-foreground">{group.rows.length}</span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+              )}
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Challan #</TableHead>
                   <TableHead>Student</TableHead>
-                  <TableHead>Period</TableHead>
+                  {showCol("category") && <TableHead>Category</TableHead>}
+                  {showCol("campus") && <TableHead>Campus</TableHead>}
+                  {showCol("period") && <TableHead>Period</TableHead>}
                   <TableHead>Due</TableHead>
                   <TableHead className="text-right">Net</TableHead>
                   <TableHead className="text-right">Paid</TableHead>
@@ -543,27 +596,27 @@ function ChallansTab({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((c) => {
+                {group.rows.map((c) => {
                   const s = studentMap.get(c.student_id);
-                  const net = Number(c.gross_amount) - Number(c.discount_amount) + Number(c.fine_amount);
-                  const now = new Date().toISOString().slice(0, 10);
-                   const balance = Math.max(net - Number(c.paid_amount), 0);
-                   const isOverdue = c.status !== "waived" && balance > 0 && c.due_date < now;
+                  const net = netOf(c);
+                  const isOverdue = effStatus(c) === "overdue";
                   return (
                     <TableRow key={c.id}>
-                      <TableCell className="font-mono text-xs">{c.challan_no}</TableCell>
-                      <TableCell>
+                      <TableCell className={`font-mono text-xs ${cellCls}`}>{c.challan_no}</TableCell>
+                      <TableCell className={cellCls}>
                         <div className="text-sm">{s?.name ?? "—"}</div>
                         <div className="text-xs text-muted-foreground">{s?.code ?? ""}</div>
                       </TableCell>
-                      <TableCell>{c.period_label ?? "—"}</TableCell>
-                      <TableCell>
+                      {showCol("category") && <TableCell className={cellCls}>{String(categoryOf(c))}</TableCell>}
+                      {showCol("campus") && <TableCell className={cellCls}>{campusName(c.campus_id)}</TableCell>}
+                      {showCol("period") && <TableCell className={cellCls}>{c.period_label ?? "—"}</TableCell>}
+                      <TableCell className={cellCls}>
                         <span className={isOverdue ? "text-red-600 font-medium" : ""}>{c.due_date}</span>
                       </TableCell>
-                      <TableCell className="text-right">{PKR.format(net)}</TableCell>
-                      <TableCell className="text-right">{PKR.format(Number(c.paid_amount))}</TableCell>
-                      <TableCell>{statusBadge(isOverdue ? "overdue" : c.status)}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className={`text-right ${cellCls}`}>{PKR.format(net)}</TableCell>
+                      <TableCell className={`text-right ${cellCls}`}>{PKR.format(Number(c.paid_amount))}</TableCell>
+                      <TableCell className={cellCls}>{statusBadge(isOverdue ? "overdue" : c.status)}</TableCell>
+                      <TableCell className={`text-right ${cellCls}`}>
                         <div className="flex justify-end gap-1">
                           <Button size="icon" variant="ghost" title="View" onClick={() => setViewing(c)}>
                             <Eye className="h-4 w-4" />
@@ -591,6 +644,8 @@ function ChallansTab({
                 })}
               </TableBody>
             </Table>
+            </div>
+            ))
           )}
         </CardContent>
       </Card>
