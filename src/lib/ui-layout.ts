@@ -36,11 +36,13 @@ function spec(
     sortBy: Option[];
     columns?: Option[];
     defaults?: Partial<ModuleLayout>;
+    /** Modules that must always keep Board and Cambridge apart cannot be ungrouped. */
+    noNone?: boolean;
   },
 ): ModuleSpec {
   return {
     label,
-    groupBy: [NONE, ...(o.groupBy ?? [])],
+    groupBy: [...(o.noNone ? [] : [NONE]), ...(o.groupBy ?? [])],
     filter: [ALL, ...(o.filter ?? [])],
     sortBy: o.sortBy,
     columns: o.columns ?? [],
