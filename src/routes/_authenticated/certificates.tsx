@@ -419,6 +419,15 @@ function CertificatesPage() {
         </CardContent>
       </Card>
 
+      {filtered.length === 0 && (
+        <Card className="shadow-none">
+          <CardContent className="py-10 text-center text-sm text-muted-foreground">
+            <Award className="mx-auto mb-2 h-6 w-6 opacity-50" />
+            No certificates match your search.
+          </CardContent>
+        </Card>
+      )}
+
       {filtered.length > 0 && visibleCount === 0 && (
         <Card className="shadow-none">
           <CardContent className="py-8 text-center text-sm text-muted-foreground">
