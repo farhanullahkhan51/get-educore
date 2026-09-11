@@ -390,9 +390,12 @@ function CertificatesPage() {
         title="Certificates"
         description="Issue, track and reprint bonafide, character, leaving, transfer and merit certificates. Every document carries a unique serial for verification."
         actions={
-          <Button onClick={() => { reset(); setOpen(true); }}>
-            <Plus className="mr-1 h-4 w-4" /> New Certificate
-          </Button>
+          <div className="flex items-center gap-2">
+            <LayoutMenu module="certificates" />
+            <Button onClick={() => { reset(); setOpen(true); }}>
+              <Plus className="mr-1 h-4 w-4" /> New Certificate
+            </Button>
+          </div>
         }
       />
 
