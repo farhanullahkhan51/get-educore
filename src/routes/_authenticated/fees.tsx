@@ -429,6 +429,38 @@ function ChallansTab({
     return true;
   });
 
+  const { layout } = useModuleLayout("fees");
+  const showCol = (k: string) => !layout.hidden.includes(k);
+  const cellCls = densityCell(layout.density);
+  const structMap = useMemo(
+    () => new Map((structures ?? []).map((s: any) => [s.id, s])),
+    [structures],
+  );
+  const netOf = (c: Challan) => Number(c.gross_amount) - Number(c.discount_amount) + Number(c.fine_amount);
+  const today = new Date().toISOString().slice(0, 10);
+  const effStatus = (c: Challan) =>
+    c.status !== "waived" && netOf(c) - Number(c.paid_amount) > 0 && c.due_date < today ? "overdue" : c.status;
+  const categoryOf = (c: Challan) =>
+    (structMap.get((c as any).fee_structure_id) as any)?.category ?? "Uncategorised";
+  const campusName = (id: string) => campuses.find((x) => x.id === id)?.name ?? "—";
+  const arranged = useArranged<Challan>(filtered, layout, {
+    group: {
+      status: (c) => effStatus(c),
+      category: (c) => String(categoryOf(c)),
+      campus: (c) => campusName(c.campus_id),
+    },
+    filter: {
+      unpaid: (c) => effStatus(c) !== "paid" && c.status !== "waived",
+      paid: (c) => c.status === "paid",
+    },
+    sort: {
+      due: (a, b) => (a.due_date < b.due_date ? 1 : a.due_date > b.due_date ? -1 : 0),
+      amount: (a, b) => netOf(b) - netOf(a),
+      student: byText((c) => studentMap.get(c.student_id)?.name ?? ""),
+    },
+  });
+  const inView = arranged.reduce((n, g) => n + g.rows.length, 0);
+
   const { data: totals } = useQuery({
     queryKey: ["fee-totals", campusFilter],
     queryFn: async () => {
