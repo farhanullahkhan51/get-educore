@@ -372,6 +372,8 @@ function ClassesPage() {
             students?.filter(
               (st) => st.class_id === cls.id || (st.section_id && sectionNames.has(st.section_id)),
             ) ?? [];
+          const clsSeated = clsSections.reduce((n, s) => n + (seatedBySection.get(s.id) ?? 0), 0);
+          const clsSeats = clsSections.reduce((n, s) => n + (s.capacity ?? 0), 0);
           const isOpen = expanded === cls.id;
           return (
             <Card key={cls.id} className="shadow-none">
@@ -392,6 +394,11 @@ function ClassesPage() {
                       <span>{cls.academic_year ?? "—"}</span>
                       <span>·</span>
                       <span>{clsStudents.length} student{clsStudents.length === 1 ? "" : "s"}</span>
+                      <span>·</span>
+                      <span className={clsStudents.length > clsSeated ? "font-medium text-amber-700 dark:text-amber-400" : ""}>
+                        {clsSeated} seated{clsSeats > 0 ? ` of ${clsSeats} chairs` : ""}
+                        {clsStudents.length > clsSeated ? ` · ${clsStudents.length - clsSeated} unseated` : ""}
+                      </span>
                       <SystemBadge system={cls.academic_system} />
                     </div>
                   </div>
