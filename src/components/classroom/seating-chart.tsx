@@ -221,6 +221,7 @@ export function SeatingChart({ section, className }: { section: SeatSection; cla
     qc.invalidateQueries({ queryKey: ["seating-students", section.class_id, section.id] });
     qc.invalidateQueries({ queryKey: ["sibling-sections", section.class_id, section.id] });
     qc.invalidateQueries({ queryKey: ["class-students"] });
+    qc.invalidateQueries({ queryKey: ["section-seat-counts"] });
     qc.invalidateQueries({ queryKey: ["sections"] });
   }
 
