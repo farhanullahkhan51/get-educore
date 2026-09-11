@@ -20,6 +20,12 @@ import { formatDistanceToNow } from "date-fns";
 import { generateCode } from "@/lib/generate-code";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { FeatureGate } from "@/components/layout/feature-gate";
+import { LayoutMenu } from "@/components/layout/layout-menu";
+import { useModuleLayout } from "@/lib/ui-prefs";
+import { useTrackLayout } from "@/lib/track-layout";
+import { useArranged, byText, densityCell } from "@/lib/ui-arrange";
+import { ActiveFilterChip, FilteredEmptyState } from "@/components/layout/filter-chip";
+import { trackChipCls, trackTextCls } from "@/components/layout/track-heading";
 
 export const Route = createFileRoute("/_authenticated/admissions")({
   component: GatedAdmissionsPage,
