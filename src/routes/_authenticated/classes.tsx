@@ -101,6 +101,18 @@ function ClassesPage() {
 
   const campusMap = new Map(campuses?.map((c) => [c.id, c.name]));
 
+  /** Chairs currently occupied, per section — so the list shows seating without opening each class. */
+  const { data: seats } = useQuery({
+    queryKey: ["section-seat-counts"],
+    queryFn: async () =>
+      (await supabase.from("section_seats").select("section_id, student_id")).data ?? [],
+  });
+  const seatedBySection = new Map<string, number>();
+  for (const s of seats ?? []) {
+    if (!s.student_id) continue;
+    seatedBySection.set(s.section_id, (seatedBySection.get(s.section_id) ?? 0) + 1);
+  }
+
   const { layout: savedLayout } = useModuleLayout("classes");
   const layout = useTrackLayout(savedLayout);
   const countFor = (classId: string) => {
@@ -109,11 +121,14 @@ function ClassesPage() {
   };
   const trackLabel = (s: Klass["academic_system"]) =>
     s === "cambridge" ? "Cambridge" : s === "both" ? "Board & Cambridge" : "Board";
+  // Board and Cambridge stay apart under every grouping, not only the Board / Cambridge one.
+  const withTrack = (label: string, c: Klass) =>
+    layout.groupBy === "track" ? label : `${trackLabel(c.academic_system)} — ${label}`;
   const groups = useArranged<Klass>(classes ?? [], layout, {
     group: {
       track: (c) => trackLabel(c.academic_system),
-      campus: (c) => campusMap.get(c.campus_id) ?? "—",
-      year: (c) => c.academic_year ?? "No academic year",
+      campus: (c) => withTrack(campusMap.get(c.campus_id) ?? "—", c),
+      year: (c) => withTrack(c.academic_year ?? "No academic year", c),
     },
     filter: {
       board: (c) => c.academic_system !== "cambridge",
