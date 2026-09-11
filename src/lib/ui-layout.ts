@@ -78,6 +78,7 @@ export const MODULE_LAYOUTS: Record<string, ModuleSpec> = {
       { value: "capacity", label: "Capacity" },
     ],
     defaults: { groupBy: "track" },
+    noNone: true,
   }),
   students: spec("Students", {
     groupBy: [
@@ -100,6 +101,7 @@ export const MODULE_LAYOUTS: Record<string, ModuleSpec> = {
       { value: "docs", label: "Documents" },
     ],
     defaults: { groupBy: "track" },
+    noNone: true,
   }),
   staff: spec("Staff", {
     groupBy: [
