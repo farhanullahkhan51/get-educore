@@ -23,6 +23,10 @@ import { toast } from "sonner";
 import { Award, Plus, Printer, Ban, Search, Eye, Pencil, Trash2 } from "lucide-react";
 import { useTenantId, getActiveTenantName } from "@/lib/tenant-context";
 import { FeatureGate } from "@/components/layout/feature-gate";
+import { LayoutMenu } from "@/components/layout/layout-menu";
+import { useModuleLayout } from "@/lib/ui-prefs";
+import { useArranged, byText, densityCell } from "@/lib/ui-arrange";
+import { ActiveFilterChip, FilteredEmptyState } from "@/components/layout/filter-chip";
 
 export const Route = createFileRoute("/_authenticated/certificates")({
   component: GatedCertificatesPage,
