@@ -227,7 +227,9 @@ function AdmissionsPage() {
             {campuses?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
+        <ActiveFilterChip module="admissions" />
       </div>
+
 
       <EditableTabs scope="module:admissions" fallback="board">
 
