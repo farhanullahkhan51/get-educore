@@ -199,9 +199,12 @@ function AdmissionsPage() {
         title="Inquiry pipeline"
         description="Every prospective family, from first inquiry through enrollment."
         actions={
-          <Button onClick={() => setNewOpen(true)}>
-            <UserPlus className="mr-1 h-4 w-4" /> Log inquiry
-          </Button>
+          <div className="flex items-center gap-2">
+            <LayoutMenu module="admissions" />
+            <Button onClick={() => setNewOpen(true)}>
+              <UserPlus className="mr-1 h-4 w-4" /> Log inquiry
+            </Button>
+          </div>
         }
       />
 
