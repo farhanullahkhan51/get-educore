@@ -440,7 +440,8 @@ function ClassesPage() {
                       <TableHead>Section</TableHead>
                       {showCol("teacher") && <TableHead>Class teacher</TableHead>}
                       {showCol("room") && <TableHead>Room</TableHead>}
-                      {showCol("capacity") && <TableHead>Capacity</TableHead>}
+                      {showCol("capacity") && <TableHead>Enrolled / Capacity</TableHead>}
+                      {showCol("capacity") && <TableHead>Seated</TableHead>}
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow></TableHeader>
                     <TableBody>
@@ -456,21 +457,34 @@ function ClassesPage() {
                           )}
                           {showCol("room") && <TableCell className={cellCls}>{s.room ?? "—"}</TableCell>}
                           {showCol("capacity") && (() => {
-                            const seated = (students ?? []).filter(
+                            const enrolled = (students ?? []).filter(
                               (st) => st.section_id === s.id && (st.status ?? "active") === "active",
                             ).length;
-                            const over = s.capacity != null && seated > s.capacity;
+                            const seated = seatedBySection.get(s.id) ?? 0;
+                            const over = s.capacity != null && enrolled > s.capacity;
                             return (
-                              <TableCell className={cellCls}>
-                                <span className={over ? "font-semibold text-destructive" : ""}>
-                                  {seated}/{s.capacity ?? "—"}
-                                </span>
-                                {over && (
-                                  <span className="ml-2 rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive">
-                                    Over capacity
+                              <>
+                                <TableCell className={cellCls}>
+                                  <span className={over ? "font-semibold text-destructive" : ""}>
+                                    {enrolled}/{s.capacity ?? "—"}
                                   </span>
-                                )}
-                              </TableCell>
+                                  {over && (
+                                    <span className="ml-2 rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive">
+                                      Over capacity
+                                    </span>
+                                  )}
+                                </TableCell>
+                                <TableCell className={cellCls}>
+                                  <span className={enrolled > seated ? "text-amber-700 dark:text-amber-400" : ""}>
+                                    {seated} seated
+                                  </span>
+                                  {enrolled > seated && (
+                                    <span className="ml-1 text-[11px] text-muted-foreground">
+                                      · {enrolled - seated} unseated
+                                    </span>
+                                  )}
+                                </TableCell>
+                              </>
                             );
                           })()}
 
