@@ -358,6 +358,29 @@ function CertificatesPage() {
     return list;
   }, [certificates, typeFilter, search]);
 
+  const { layout } = useModuleLayout("certificates");
+  const showCol = (k: string) => !layout.hidden.includes(k);
+  const cellCls = densityCell(layout.density);
+  const campusLabel = (id: string) => campuses?.find((c) => c.id === id)?.name ?? "—";
+  const groups = useArranged<Certificate>(filtered, layout, {
+    group: {
+      type: (c) => TYPE_LABEL[c.type],
+      status: (c) => c.status.charAt(0).toUpperCase() + c.status.slice(1),
+      campus: (c) => campusLabel(c.campus_id),
+    },
+    filter: {
+      issued: (c) => c.status === "issued",
+      revoked: (c) => c.status === "revoked",
+    },
+    sort: {
+      recent: (a, b) => new Date(b.issue_date).getTime() - new Date(a.issue_date).getTime(),
+      recipient: byText((c) => c.recipient_name),
+      serial: byText((c) => c.serial_no),
+    },
+  });
+  const visibleCount = groups.reduce((n, g) => n + g.rows.length, 0);
+
+
   const campusName = (id: string) => campuses?.find((c) => c.id === id)?.name ?? "—";
 
   return (
