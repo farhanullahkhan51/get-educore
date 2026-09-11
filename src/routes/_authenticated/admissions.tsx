@@ -265,37 +265,62 @@ function AdmissionsPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="table" className="mt-4">
-          <Card className="shadow-none">
-            <CardContent className="p-0">
-              <div className="divide-y divide-border">
-                {filtered.map((inq) => (
-                  <button
-                    key={inq.id}
-                    onClick={() => setSelected(inq)}
-                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-muted/40"
-                  >
-                    <div>
-                      <div className="font-medium">{inq.student_name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {inq.guardian_name} · {inq.guardian_phone}
-                        {inq.campus_id && <> · {campusMap.get(inq.campus_id)}</>}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(inq.created_at), { addSuffix: true })}
-                      </span>
-                      <Badge variant="outline" className={STATUS_STYLES[inq.status]}>{inq.status}</Badge>
-                    </div>
-                  </button>
-                ))}
-                {filtered.length === 0 && (
-                  <div className="p-8 text-center text-sm text-muted-foreground">No inquiries match your filters.</div>
+        <TabsContent value="table" className="mt-4 space-y-4">
+          {arranged.map((group) => (
+            <div key={group.key || "all"} className="space-y-2">
+              {group.label && (
+                <div className="flex items-center gap-3">
+                  <h2 className={`font-serif text-sm font-semibold uppercase tracking-wide ${trackTextCls(group.label)}`}>
+                    {group.label}
+                  </h2>
+                  <span className={`rounded border px-1.5 py-0.5 text-[11px] ${trackChipCls(group.label)}`}>
+                    {group.rows.length}
+                  </span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+              )}
+              <Card className="shadow-none">
+                <CardContent className="p-0">
+                  <div className="divide-y divide-border">
+                    {group.rows.map((inq) => (
+                      <button
+                        key={inq.id}
+                        onClick={() => setSelected(inq)}
+                        className={`flex w-full items-center justify-between gap-3 px-4 text-left hover:bg-muted/40 ${cellCls || "py-3"}`}
+                      >
+                        <div>
+                          <div className="font-medium">{inq.student_name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {showCol("guardian") && <>{inq.guardian_name} · {inq.guardian_phone}</>}
+                            {showCol("campus") && inq.campus_id && <> · {campusMap.get(inq.campus_id)}</>}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {showCol("age") && (
+                            <span className="text-xs text-muted-foreground">
+                              {formatDistanceToNow(new Date(inq.created_at), { addSuffix: true })}
+                            </span>
+                          )}
+                          <Badge variant="outline" className={STATUS_STYLES[inq.status]}>{inq.status}</Badge>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ))}
+          {inView.length === 0 && (
+            <Card className="shadow-none">
+              <CardContent className="p-8 text-center text-sm text-muted-foreground">
+                {filtered.length > 0 ? (
+                  <FilteredEmptyState module="admissions" noun="inquiries" />
+                ) : (
+                  "No inquiries match your filters."
                 )}
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </EditableTabs>
 
