@@ -415,62 +415,86 @@ function CertificatesPage() {
               ))}
             </SelectContent>
           </Select>
+          <ActiveFilterChip module="certificates" />
         </CardContent>
       </Card>
 
-      <Card className="shadow-none">
-        <CardContent className="p-0 overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Serial</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Recipient</TableHead>
-                <TableHead>Campus</TableHead>
-                <TableHead>Issued</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.length === 0 && (
-                <TableRow><TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
-                  <Award className="mx-auto mb-2 h-6 w-6 opacity-50" />
-                  No certificates issued yet.
-                </TableCell></TableRow>
-              )}
-              {filtered.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell className="font-mono text-xs">{c.serial_no}</TableCell>
-                  <TableCell className="text-sm">{TYPE_LABEL[c.type]}</TableCell>
-                  <TableCell>
-                    <div className="text-sm font-medium">{c.recipient_name}</div>
-                    <div className="text-xs text-muted-foreground">{c.recipient_ref ?? "—"}</div>
-                  </TableCell>
-                  <TableCell className="text-sm">{campusName(c.campus_id)}</TableCell>
-                  <TableCell className="text-sm">{new Date(c.issue_date).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    {c.status === "issued" && <Badge variant="secondary">Issued</Badge>}
-                    {c.status === "revoked" && <Badge variant="destructive">Revoked</Badge>}
-                    {c.status === "draft" && <Badge variant="outline">Draft</Badge>}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" title="View" onClick={() => setViewing(c)}>
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" title="Edit" onClick={() => openEdit(c)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" title="Print" onClick={() => printCert(c)}>
-                      <Printer className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      {filtered.length > 0 && visibleCount === 0 && (
+        <Card className="shadow-none">
+          <CardContent className="py-8 text-center text-sm text-muted-foreground">
+            <FilteredEmptyState module="certificates" noun="certificates" />
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="space-y-4">
+        {groups.map((group) => (
+          <div key={group.key || "all"} className="space-y-2">
+            {group.label && (
+              <div className="flex items-center gap-3 pt-1">
+                <h2 className="font-serif text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  {group.label}
+                </h2>
+                <span className="text-xs text-muted-foreground">{group.rows.length}</span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+            )}
+            <Card className="shadow-none">
+              <CardContent className="p-0 overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Serial</TableHead>
+                      {showCol("type") && <TableHead>Type</TableHead>}
+                      <TableHead>Recipient</TableHead>
+                      {showCol("campus") && <TableHead>Campus</TableHead>}
+                      <TableHead>Issued</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.length === 0 && (
+                      <TableRow><TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
+                        <Award className="mx-auto mb-2 h-6 w-6 opacity-50" />
+                        No certificates issued yet.
+                      </TableCell></TableRow>
+                    )}
+                    {group.rows.map((c) => (
+                      <TableRow key={c.id}>
+                        <TableCell className={`font-mono text-xs ${cellCls}`}>{c.serial_no}</TableCell>
+                        {showCol("type") && <TableCell className={`text-sm ${cellCls}`}>{TYPE_LABEL[c.type]}</TableCell>}
+                        <TableCell className={cellCls}>
+                          <div className="text-sm font-medium">{c.recipient_name}</div>
+                          <div className="text-xs text-muted-foreground">{c.recipient_ref ?? "—"}</div>
+                        </TableCell>
+                        {showCol("campus") && <TableCell className={`text-sm ${cellCls}`}>{campusName(c.campus_id)}</TableCell>}
+                        <TableCell className={`text-sm ${cellCls}`}>{new Date(c.issue_date).toLocaleDateString()}</TableCell>
+                        <TableCell className={cellCls}>
+                          {c.status === "issued" && <Badge variant="secondary">Issued</Badge>}
+                          {c.status === "revoked" && <Badge variant="destructive">Revoked</Badge>}
+                          {c.status === "draft" && <Badge variant="outline">Draft</Badge>}
+                        </TableCell>
+                        <TableCell className={`text-right ${cellCls}`}>
+                          <Button variant="ghost" size="icon" title="View" onClick={() => setViewing(c)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" title="Edit" onClick={() => openEdit(c)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" title="Print" onClick={() => printCert(c)}>
+                            <Printer className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+        ))}
+      </div>
 
       {/* Create dialog */}
       <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
