@@ -145,11 +145,36 @@ function AdmissionsPage() {
     return list;
   }, [inquiries, campusFilter, search]);
 
+  const { layout: savedLayout } = useModuleLayout("admissions");
+  const layout = useTrackLayout(savedLayout);
+  const trackLabel = (s: AcademicSystem | null) =>
+    s === "cambridge" ? "Cambridge" : s === "both" ? "Board & Cambridge" : "Board";
+  const arranged = useArranged<Inquiry>(filtered, layout, {
+    group: {
+      track: (i) => trackLabel(i.academic_system),
+      campus: (i) => (i.campus_id ? campusMap.get(i.campus_id) ?? "—" : "No campus"),
+      status: (i) => COLUMNS.find((c) => c.status === i.status)?.label ?? i.status,
+    },
+    filter: {
+      board: (i) => i.academic_system !== "cambridge",
+      cambridge: (i) => i.academic_system !== "board" && i.academic_system !== null,
+      open: (i) => i.status !== "converted" && i.status !== "lost",
+      converted: (i) => i.status === "converted",
+    },
+    sort: {
+      recent: (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      name: byText((i) => i.student_name),
+    },
+  });
+  const inView = useMemo(() => arranged.flatMap((g) => g.rows), [arranged]);
+  const showCol = (k: string) => !layout.hidden.includes(k);
+  const cellCls = densityCell(layout.density);
+
   const grouped = useMemo(() => {
     const map: Record<Status, Inquiry[]> = { new: [], contacted: [], visited: [], converted: [], lost: [] };
-    for (const i of filtered) map[i.status].push(i);
+    for (const i of inView) map[i.status].push(i);
     return map;
-  }, [filtered]);
+  }, [inView]);
 
   async function updateStatus(id: string, status: Status) {
     const { error } = await supabase.from("inquiries").update({ status }).eq("id", id);
