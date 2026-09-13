@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as InquireRouteImport } from './routes/inquire'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -40,8 +41,10 @@ import { Route as AuthenticatedBoardRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as AuthenticatedAdmissionsRouteImport } from './routes/_authenticated/admissions'
 import { Route as AuthenticatedAcademicsRouteImport } from './routes/_authenticated/academics'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AuthenticatedAssistantIndexRouteImport } from './routes/_authenticated/assistant.index'
 import { Route as AuthenticatedAssistantThreadIdRouteImport } from './routes/_authenticated/assistant.$threadId'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as ApiPublicBillingRemindersRouteImport } from './routes/api/public/billing/reminders'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -57,6 +60,11 @@ const SignupRoute = SignupRouteImport.update({
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InquireRoute = InquireRouteImport.update({
@@ -201,6 +209,12 @@ const AuthenticatedAcademicsRoute = AuthenticatedAcademicsRouteImport.update({
   path: '/academics',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedAssistantIndexRoute =
   AuthenticatedAssistantIndexRouteImport.update({
     id: '/assistant/',
@@ -213,6 +227,11 @@ const AuthenticatedAssistantThreadIdRoute =
     path: '/assistant/$threadId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicBillingRemindersRoute =
   ApiPublicBillingRemindersRouteImport.update({
     id: '/api/public/billing/reminders',
@@ -224,9 +243,11 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/inquire': typeof InquireRoute
+  '/mcp': typeof McpRoute
   '/pricing': typeof PricingRoute
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/academics': typeof AuthenticatedAcademicsRoute
   '/admissions': typeof AuthenticatedAdmissionsRoute
   '/billing': typeof AuthenticatedBillingRoute
@@ -251,6 +272,7 @@ export interface FileRoutesByFullPath {
   '/users': typeof AuthenticatedUsersRoute
   '/api/chat': typeof ApiChatRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/assistant/': typeof AuthenticatedAssistantIndexRoute
   '/api/public/billing/reminders': typeof ApiPublicBillingRemindersRoute
@@ -259,9 +281,11 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/inquire': typeof InquireRoute
+  '/mcp': typeof McpRoute
   '/pricing': typeof PricingRoute
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/academics': typeof AuthenticatedAcademicsRoute
   '/admissions': typeof AuthenticatedAdmissionsRoute
   '/billing': typeof AuthenticatedBillingRoute
@@ -286,6 +310,7 @@ export interface FileRoutesByTo {
   '/users': typeof AuthenticatedUsersRoute
   '/api/chat': typeof ApiChatRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/assistant': typeof AuthenticatedAssistantIndexRoute
   '/api/public/billing/reminders': typeof ApiPublicBillingRemindersRoute
@@ -296,9 +321,11 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/inquire': typeof InquireRoute
+  '/mcp': typeof McpRoute
   '/pricing': typeof PricingRoute
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/academics': typeof AuthenticatedAcademicsRoute
   '/_authenticated/admissions': typeof AuthenticatedAdmissionsRoute
   '/_authenticated/billing': typeof AuthenticatedBillingRoute
@@ -323,6 +350,7 @@ export interface FileRoutesById {
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/api/chat': typeof ApiChatRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/_authenticated/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/_authenticated/assistant/': typeof AuthenticatedAssistantIndexRoute
   '/api/public/billing/reminders': typeof ApiPublicBillingRemindersRoute
@@ -333,9 +361,11 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/inquire'
+    | '/mcp'
     | '/pricing'
     | '/signup'
     | '/sitemap.xml'
+    | '/.well-known/oauth-protected-resource'
     | '/academics'
     | '/admissions'
     | '/billing'
@@ -360,6 +390,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/api/chat'
     | '/api/transcribe'
+    | '/.lovable/oauth/consent'
     | '/assistant/$threadId'
     | '/assistant/'
     | '/api/public/billing/reminders'
@@ -368,9 +399,11 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/inquire'
+    | '/mcp'
     | '/pricing'
     | '/signup'
     | '/sitemap.xml'
+    | '/.well-known/oauth-protected-resource'
     | '/academics'
     | '/admissions'
     | '/billing'
@@ -395,6 +428,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/api/chat'
     | '/api/transcribe'
+    | '/.lovable/oauth/consent'
     | '/assistant/$threadId'
     | '/assistant'
     | '/api/public/billing/reminders'
@@ -404,9 +438,11 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/inquire'
+    | '/mcp'
     | '/pricing'
     | '/signup'
     | '/sitemap.xml'
+    | '/.well-known/oauth-protected-resource'
     | '/_authenticated/academics'
     | '/_authenticated/admissions'
     | '/_authenticated/billing'
@@ -431,6 +467,7 @@ export interface FileRouteTypes {
     | '/_authenticated/users'
     | '/api/chat'
     | '/api/transcribe'
+    | '/.lovable/oauth/consent'
     | '/_authenticated/assistant/$threadId'
     | '/_authenticated/assistant/'
     | '/api/public/billing/reminders'
@@ -441,11 +478,14 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   InquireRoute: typeof InquireRoute
+  McpRoute: typeof McpRoute
   PricingRoute: typeof PricingRoute
   SignupRoute: typeof SignupRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiTranscribeRoute: typeof ApiTranscribeRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   ApiPublicBillingRemindersRoute: typeof ApiPublicBillingRemindersRoute
 }
 
@@ -470,6 +510,13 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/inquire': {
@@ -668,6 +715,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAcademicsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/assistant/': {
       id: '/_authenticated/assistant/'
       path: '/assistant'
@@ -681,6 +735,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/assistant/$threadId'
       preLoaderRoute: typeof AuthenticatedAssistantThreadIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/billing/reminders': {
       id: '/api/public/billing/reminders'
@@ -754,11 +815,15 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   InquireRoute: InquireRoute,
+  McpRoute: McpRoute,
   PricingRoute: PricingRoute,
   SignupRoute: SignupRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
   ApiChatRoute: ApiChatRoute,
   ApiTranscribeRoute: ApiTranscribeRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   ApiPublicBillingRemindersRoute: ApiPublicBillingRemindersRoute,
 }
 export const routeTree = rootRouteImport

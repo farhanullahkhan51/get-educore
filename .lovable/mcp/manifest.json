@@ -1,0 +1,191 @@
+{
+  "version": 1,
+  "sdk_version": "2.0.4",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://urrbkxkbfsmmlicmujly.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "educore",
+      "version": "0.1.0",
+      "title": "EduCore"
+    },
+    "tools": [
+      {
+        "name": "search_students",
+        "title": "Search students",
+        "description": "Find students by name or student ID. Returns name, student ID, status, grade, academic system and guardian contact.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "query": {
+              "default": "",
+              "description": "Name or student ID fragment. Leave empty to list recent students.",
+              "type": "string"
+            },
+            "limit": {
+              "default": 20,
+              "description": "Maximum students to return.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_classes",
+        "title": "List classes and sections",
+        "description": "List the institution's classes with their sections, capacity and academic system (Board or Cambridge).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "academic_system": {
+              "default": "all",
+              "description": "Restrict to one academic track.",
+              "type": "string",
+              "enum": [
+                "all",
+                "board",
+                "cambridge"
+              ]
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_staff",
+        "title": "List staff",
+        "description": "List staff members with designation, department, status and contact details.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "query": {
+              "default": "",
+              "description": "Name or staff ID fragment. Leave empty to list everyone.",
+              "type": "string"
+            },
+            "limit": {
+              "default": 25,
+              "description": "Maximum staff records to return.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "fees_summary",
+        "title": "Fees summary",
+        "description": "Summarise fee challans: total billed, collected, outstanding, and how many challans are overdue. Optionally for one billing period (YYYY-MM).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "period": {
+              "default": "",
+              "description": "Billing period as YYYY-MM, e.g. 2026-07. Leave empty for all periods.",
+              "type": "string"
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_inquiry",
+        "title": "Create admission inquiry",
+        "description": "Record a new admission inquiry in the admissions pipeline. Only supply details the user actually provided.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "student_name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Prospective student's full name."
+            },
+            "guardian_name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Guardian's full name."
+            },
+            "guardian_phone": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Guardian's contact number."
+            },
+            "guardian_email": {
+              "default": "",
+              "description": "Guardian's email, if known.",
+              "type": "string"
+            },
+            "grade_applying_for": {
+              "default": "",
+              "description": "Class or grade applied for, e.g. Class 9.",
+              "type": "string"
+            },
+            "academic_system": {
+              "default": "unspecified",
+              "description": "Preferred academic track.",
+              "type": "string",
+              "enum": [
+                "unspecified",
+                "board",
+                "cambridge"
+              ]
+            },
+            "notes": {
+              "default": "",
+              "description": "Any extra context from the enquiry.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "student_name",
+            "guardian_name",
+            "guardian_phone"
+          ]
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
