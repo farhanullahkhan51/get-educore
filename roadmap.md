@@ -1,6 +1,7 @@
 # EduCore roadmap
 
 ## In progress
+- [ ] Make Classes & Sections Board/Cambridge grouping deterministic across loading and saved-layout states.
 - [ ] Agent integrations (MCP): expose EduCore tools to AI assistants, secured with sign-in.
 
 ## Outstanding (from gap audit)
