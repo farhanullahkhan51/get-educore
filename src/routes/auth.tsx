@@ -11,14 +11,14 @@ import { toast } from "sonner";
 import { GraduationCap } from "lucide-react";
 import { useTenant } from "@/lib/tenant-context";
 
-function safeNext(value: unknown): string {
-  if (typeof value !== "string") return "";
+function safeNext(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
   // Same-origin relative paths only.
-  return value.startsWith("/") && !value.startsWith("//") ? value : "";
+  return value.startsWith("/") && !value.startsWith("//") ? value : undefined;
 }
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (s: Record<string, unknown>) => ({ next: safeNext(s.next) }),
+  validateSearch: (s: Record<string, unknown>): { next?: string } => ({ next: safeNext(s.next) }),
   component: AuthPage,
 });
 
