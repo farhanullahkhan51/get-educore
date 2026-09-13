@@ -114,7 +114,9 @@ function ClassesPage() {
   }
 
   const { layout: savedLayout } = useModuleLayout("classes");
-  const layout = useTrackLayout(savedLayout);
+  // Class records are authoritative here. Tenant branding can resolve later or
+  // contain an outdated system value, which must never collapse mixed records.
+  const layout = useTrackLayout(savedLayout, (classes ?? []).map((c) => c.academic_system));
   const countFor = (classId: string) => {
     const ids = new Set((sections ?? []).filter((s) => s.class_id === classId).map((s) => s.id));
     return (students ?? []).filter((st) => st.class_id === classId || (st.section_id && ids.has(st.section_id))).length;
