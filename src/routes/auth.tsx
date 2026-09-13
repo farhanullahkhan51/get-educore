@@ -48,7 +48,7 @@ function AuthPage() {
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Welcome back");
-    navigate({ to: "/dashboard" });
+    goOn();
   }
 
   async function handleSignUp(e: React.FormEvent<HTMLFormElement>) {
@@ -59,22 +59,22 @@ function AuthPage() {
       email: String(fd.get("email")),
       password: String(fd.get("password")),
       options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
+        emailRedirectTo: `${window.location.origin}${next ?? "/dashboard"}`,
         data: { full_name: String(fd.get("full_name")) },
       },
     });
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Account created. Check your email if confirmation is required.");
-    navigate({ to: "/dashboard" });
+    goOn();
   }
 
   async function handleGoogle() {
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: `${window.location.origin}${next ?? ""}`,
     });
     if (result.error) toast.error("Google sign-in failed");
-    if (!result.redirected && !result.error) navigate({ to: "/dashboard" });
+    if (!result.redirected && !result.error) goOn();
   }
 
   return (
