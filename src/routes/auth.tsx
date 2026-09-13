@@ -11,15 +11,31 @@ import { toast } from "sonner";
 import { GraduationCap } from "lucide-react";
 import { useTenant } from "@/lib/tenant-context";
 
+function safeNext(value: unknown): string {
+  if (typeof value !== "string") return "";
+  // Same-origin relative paths only.
+  return value.startsWith("/") && !value.startsWith("//") ? value : "";
+}
+
 export const Route = createFileRoute("/auth")({
+  validateSearch: (s: Record<string, unknown>) => ({ next: safeNext(s.next) }),
   component: AuthPage,
 });
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
   const { tenant } = useTenant();
   const brandName = tenant?.name ?? "EduCore";
   const [loading, setLoading] = useState(false);
+
+  function goOn() {
+    if (next) {
+      window.location.href = next;
+      return;
+    }
+    navigate({ to: "/dashboard" });
+  }
 
   async function handleSignIn(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
