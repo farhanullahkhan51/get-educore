@@ -11,15 +11,31 @@ import { toast } from "sonner";
 import { GraduationCap } from "lucide-react";
 import { useTenant } from "@/lib/tenant-context";
 
+function safeNext(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  // Same-origin relative paths only.
+  return value.startsWith("/") && !value.startsWith("//") ? value : undefined;
+}
+
 export const Route = createFileRoute("/auth")({
+  validateSearch: (s: Record<string, unknown>): { next?: string } => ({ next: safeNext(s.next) }),
   component: AuthPage,
 });
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
   const { tenant } = useTenant();
   const brandName = tenant?.name ?? "EduCore";
   const [loading, setLoading] = useState(false);
+
+  function goOn() {
+    if (next) {
+      window.location.href = next;
+      return;
+    }
+    navigate({ to: "/dashboard" });
+  }
 
   async function handleSignIn(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -32,7 +48,7 @@ function AuthPage() {
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Welcome back");
-    navigate({ to: "/dashboard" });
+    goOn();
   }
 
   async function handleSignUp(e: React.FormEvent<HTMLFormElement>) {
@@ -43,22 +59,22 @@ function AuthPage() {
       email: String(fd.get("email")),
       password: String(fd.get("password")),
       options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
+        emailRedirectTo: `${window.location.origin}${next ?? "/dashboard"}`,
         data: { full_name: String(fd.get("full_name")) },
       },
     });
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Account created. Check your email if confirmation is required.");
-    navigate({ to: "/dashboard" });
+    goOn();
   }
 
   async function handleGoogle() {
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: `${window.location.origin}${next ?? ""}`,
     });
     if (result.error) toast.error("Google sign-in failed");
-    if (!result.redirected && !result.error) navigate({ to: "/dashboard" });
+    if (!result.redirected && !result.error) goOn();
   }
 
   return (
