@@ -65,7 +65,7 @@ const TRACK_GROUP: Option[] = [{ value: "track", label: "Board / Cambridge" }];
 
 export const MODULE_LAYOUTS: Record<string, ModuleSpec> = {
   classes: spec("Classes & Sections", {
-    groupBy: [...TRACK_GROUP, { value: "campus", label: "Campus" }, { value: "year", label: "Academic year" }],
+    groupBy: TRACK_GROUP,
     filter: TRACK_FILTER,
     sortBy: [
       { value: "name", label: "Name" },
