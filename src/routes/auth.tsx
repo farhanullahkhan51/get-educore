@@ -92,7 +92,7 @@ function AuthPage() {
         </div>
         <div>
           <p className="max-w-md font-serif text-3xl leading-tight">
-            "Order, memory, and continuity — the three pillars of any institution worth keeping."
+            "A school is only as strong as the records it keeps and the people it remembers."
           </p>
           <p className="mt-4 text-sm opacity-70">{brandName} Administrative Handbook</p>
         </div>
