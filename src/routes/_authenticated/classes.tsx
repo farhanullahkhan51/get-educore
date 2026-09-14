@@ -20,10 +20,19 @@ import { useModuleLayout } from "@/lib/ui-prefs";
 import { useArranged, byText, byNumberDesc, densityCell } from "@/lib/ui-arrange";
 import { ActiveFilterChip, FilteredEmptyState } from "@/components/layout/filter-chip";
 import { trackChipCls, trackTextCls } from "@/components/layout/track-heading";
-import { useTrackLayout } from "@/lib/track-layout";
 
 
 export const Route = createFileRoute("/_authenticated/classes")({
+  head: () => ({
+    meta: [
+      { title: "Classes & Sections | EduCore" },
+      { name: "description", content: "Manage Board and Cambridge classes, sections, enrolment, and seating." },
+      { property: "og:title", content: "Classes & Sections | EduCore" },
+      { property: "og:description", content: "Manage Board and Cambridge classes, sections, enrolment, and seating." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: ClassesPage,
 });
 
@@ -114,23 +123,19 @@ function ClassesPage() {
   }
 
   const { layout: savedLayout } = useModuleLayout("classes");
-  // Class records are authoritative here. Tenant branding can resolve later or
-  // contain an outdated system value, which must never collapse mixed records.
-  const layout = useTrackLayout(savedLayout, (classes ?? []).map((c) => c.academic_system));
+  // This screen has one permanent top-level structure: Board and Cambridge.
+  // Personal or institution preferences may change filtering, sorting, columns,
+  // and density, but can never merge the two examination systems.
+  const layout = { ...savedLayout, groupBy: "track" };
   const countFor = (classId: string) => {
     const ids = new Set((sections ?? []).filter((s) => s.class_id === classId).map((s) => s.id));
     return (students ?? []).filter((st) => st.class_id === classId || (st.section_id && ids.has(st.section_id))).length;
   };
   const trackLabel = (s: Klass["academic_system"]) =>
     s === "cambridge" ? "Cambridge" : s === "both" ? "Board & Cambridge" : "Board";
-  // Board and Cambridge stay apart under every grouping, not only the Board / Cambridge one.
-  const withTrack = (label: string, c: Klass) =>
-    layout.groupBy === "track" ? label : `${trackLabel(c.academic_system)} — ${label}`;
   const groups = useArranged<Klass>(classes ?? [], layout, {
     group: {
       track: (c) => trackLabel(c.academic_system),
-      campus: (c) => withTrack(campusMap.get(c.campus_id) ?? "—", c),
-      year: (c) => withTrack(c.academic_year ?? "No academic year", c),
     },
     filter: {
       board: (c) => c.academic_system !== "cambridge",

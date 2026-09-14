@@ -2,6 +2,7 @@
 
 ## In progress
 - [ ] Agent integrations (MCP): expose EduCore tools to AI assistants, secured with sign-in.
+- [x] Keep Classes & Sections permanently separated into Board and Cambridge groups.
 
 ## Outstanding (from gap audit)
 - [ ] Lock Timetable and Insights by plan (URL currently bypasses the menu restriction).
