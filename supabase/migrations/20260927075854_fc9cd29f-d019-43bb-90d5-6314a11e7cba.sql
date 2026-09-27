@@ -1,0 +1,1 @@
+ALTER TABLE public.notices ALTER COLUMN tenant_id SET DEFAULT get_user_tenant(auth.uid());

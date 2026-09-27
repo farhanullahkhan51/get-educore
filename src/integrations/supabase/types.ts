@@ -1843,6 +1843,74 @@ export type Database = {
           },
         ]
       }
+      notices: {
+        Row: {
+          audience: string
+          campus_id: string | null
+          category: string
+          content: string
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          is_pinned: boolean
+          is_published: boolean
+          issued_by: string
+          priority: string
+          published_at: string
+          reference_no: string
+          tenant_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          audience?: string
+          campus_id?: string | null
+          category?: string
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_pinned?: boolean
+          is_published?: boolean
+          issued_by?: string
+          priority?: string
+          published_at?: string
+          reference_no: string
+          tenant_id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          audience?: string
+          campus_id?: string | null
+          category?: string
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_pinned?: boolean
+          is_published?: boolean
+          issued_by?: string
+          priority?: string
+          published_at?: string
+          reference_no?: string
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notices_campus_id_fkey"
+            columns: ["campus_id"]
+            isOneToOne: false
+            referencedRelation: "campuses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_tiers: {
         Row: {
           ai_message_limit: number | null

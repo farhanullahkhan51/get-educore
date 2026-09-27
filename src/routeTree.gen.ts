@@ -28,6 +28,7 @@ import { Route as AuthenticatedResultsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedProgramsRouteImport } from './routes/_authenticated/programs'
 import { Route as AuthenticatedPortalRouteImport } from './routes/_authenticated/portal'
 import { Route as AuthenticatedPlatformRouteImport } from './routes/_authenticated/platform'
+import { Route as AuthenticatedNoticesRouteImport } from './routes/_authenticated/notices'
 import { Route as AuthenticatedInsightsRouteImport } from './routes/_authenticated/insights'
 import { Route as AuthenticatedImportExportRouteImport } from './routes/_authenticated/import-export'
 import { Route as AuthenticatedFeesRouteImport } from './routes/_authenticated/fees'
@@ -140,6 +141,11 @@ const AuthenticatedPortalRoute = AuthenticatedPortalRouteImport.update({
 const AuthenticatedPlatformRoute = AuthenticatedPlatformRouteImport.update({
   id: '/platform',
   path: '/platform',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedNoticesRoute = AuthenticatedNoticesRouteImport.update({
+  id: '/notices',
+  path: '/notices',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedInsightsRoute = AuthenticatedInsightsRouteImport.update({
@@ -261,6 +267,7 @@ export interface FileRoutesByFullPath {
   '/fees': typeof AuthenticatedFeesRoute
   '/import-export': typeof AuthenticatedImportExportRoute
   '/insights': typeof AuthenticatedInsightsRoute
+  '/notices': typeof AuthenticatedNoticesRoute
   '/platform': typeof AuthenticatedPlatformRoute
   '/portal': typeof AuthenticatedPortalRoute
   '/programs': typeof AuthenticatedProgramsRoute
@@ -299,6 +306,7 @@ export interface FileRoutesByTo {
   '/fees': typeof AuthenticatedFeesRoute
   '/import-export': typeof AuthenticatedImportExportRoute
   '/insights': typeof AuthenticatedInsightsRoute
+  '/notices': typeof AuthenticatedNoticesRoute
   '/platform': typeof AuthenticatedPlatformRoute
   '/portal': typeof AuthenticatedPortalRoute
   '/programs': typeof AuthenticatedProgramsRoute
@@ -339,6 +347,7 @@ export interface FileRoutesById {
   '/_authenticated/fees': typeof AuthenticatedFeesRoute
   '/_authenticated/import-export': typeof AuthenticatedImportExportRoute
   '/_authenticated/insights': typeof AuthenticatedInsightsRoute
+  '/_authenticated/notices': typeof AuthenticatedNoticesRoute
   '/_authenticated/platform': typeof AuthenticatedPlatformRoute
   '/_authenticated/portal': typeof AuthenticatedPortalRoute
   '/_authenticated/programs': typeof AuthenticatedProgramsRoute
@@ -379,6 +388,7 @@ export interface FileRouteTypes {
     | '/fees'
     | '/import-export'
     | '/insights'
+    | '/notices'
     | '/platform'
     | '/portal'
     | '/programs'
@@ -417,6 +427,7 @@ export interface FileRouteTypes {
     | '/fees'
     | '/import-export'
     | '/insights'
+    | '/notices'
     | '/platform'
     | '/portal'
     | '/programs'
@@ -456,6 +467,7 @@ export interface FileRouteTypes {
     | '/_authenticated/fees'
     | '/_authenticated/import-export'
     | '/_authenticated/insights'
+    | '/_authenticated/notices'
     | '/_authenticated/platform'
     | '/_authenticated/portal'
     | '/_authenticated/programs'
@@ -624,6 +636,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlatformRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/notices': {
+      id: '/_authenticated/notices'
+      path: '/notices'
+      fullPath: '/notices'
+      preLoaderRoute: typeof AuthenticatedNoticesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/insights': {
       id: '/_authenticated/insights'
       path: '/insights'
@@ -767,6 +786,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFeesRoute: typeof AuthenticatedFeesRoute
   AuthenticatedImportExportRoute: typeof AuthenticatedImportExportRoute
   AuthenticatedInsightsRoute: typeof AuthenticatedInsightsRoute
+  AuthenticatedNoticesRoute: typeof AuthenticatedNoticesRoute
   AuthenticatedPlatformRoute: typeof AuthenticatedPlatformRoute
   AuthenticatedPortalRoute: typeof AuthenticatedPortalRoute
   AuthenticatedProgramsRoute: typeof AuthenticatedProgramsRoute
@@ -794,6 +814,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFeesRoute: AuthenticatedFeesRoute,
   AuthenticatedImportExportRoute: AuthenticatedImportExportRoute,
   AuthenticatedInsightsRoute: AuthenticatedInsightsRoute,
+  AuthenticatedNoticesRoute: AuthenticatedNoticesRoute,
   AuthenticatedPlatformRoute: AuthenticatedPlatformRoute,
   AuthenticatedPortalRoute: AuthenticatedPortalRoute,
   AuthenticatedProgramsRoute: AuthenticatedProgramsRoute,

@@ -15,6 +15,7 @@ export const FEATURES = [
   { key: "timetable", label: "Timetable & scheduling" },
   { key: "certificates", label: "Certificates & documents" },
   { key: "certificates_all_templates", label: "All certificate templates" },
+  { key: "notices", label: "Notice board & circulars" },
   { key: "portal", label: "Student portal" },
   { key: "insights", label: "Principal insights & analytics" },
   { key: "ai_assistant", label: "AI assistant" },

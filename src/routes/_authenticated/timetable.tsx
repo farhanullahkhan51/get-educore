@@ -28,6 +28,7 @@ import { Plus, Trash2, Printer, CalendarDays } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useTenant } from "@/lib/tenant-context";
 import { cn } from "@/lib/utils";
+import { FeatureGate } from "@/components/layout/feature-gate";
 
 export const Route = createFileRoute("/_authenticated/timetable")({
   head: () => ({
@@ -38,7 +39,7 @@ export const Route = createFileRoute("/_authenticated/timetable")({
       { property: "og:description", content: "Weekly class and teacher timetables with clash detection." },
     ],
   }),
-  component: TimetablePage,
+  component: TimetableRoute,
 });
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -68,6 +69,14 @@ type CourseOpt = { id: string; title: string; code: string };
 type TeacherOpt = { id: string; name: string; profile_id: string | null };
 
 const fmtTime = (t: string) => t.slice(0, 5);
+
+function TimetableRoute() {
+  return (
+    <FeatureGate feature="timetable" title="Timetable & Scheduling">
+      <TimetablePage />
+    </FeatureGate>
+  );
+}
 
 function TimetablePage() {
   const qc = useQueryClient();

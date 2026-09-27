@@ -22,6 +22,7 @@ import {
 import { format, subMonths, startOfMonth } from "date-fns";
 import { useEntitlements } from "@/lib/entitlements";
 import { usePlanUsage } from "@/lib/plan-usage";
+import { NoticeFeed } from "@/components/layout/notice-feed";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -236,7 +237,11 @@ function Dashboard() {
             </SelectContent>
           </Select>
         </div>
-      ) : null}
+       ) : null}
+
+      <div className="mb-6">
+        <NoticeFeed limit={3} />
+      </div>
 
       {ent.planName && isSuper ? (
         <Card className="mb-6 shadow-none">

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { CalendarCheck, Wallet, Award, FileText, CalendarClock } from "lucide-react";
 import { FeatureGate } from "@/components/layout/feature-gate";
+import { NoticeFeed } from "@/components/layout/notice-feed";
 
 export const Route = createFileRoute("/_authenticated/portal")({
   head: () => ({
@@ -176,6 +177,10 @@ function StudentPortalPage() {
         <Kpi label="Outstanding fees" value={feeStats.outstanding.toLocaleString()} sub={`${feeStats.unpaid} unpaid challan(s)`} icon={Wallet} />
         <Kpi label="Report cards" value={reports?.length ?? 0} sub="Terms recorded" icon={FileText} />
         <Kpi label="Certificates" value={certs?.length ?? 0} sub="Issued to you" icon={Award} />
+      </div>
+
+      <div className="mb-6">
+        <NoticeFeed limit={3} showLink={false} title="Notices from your school" />
       </div>
 
       <EditableTabs scope="module:portal" fallback="attendance" listClassName="flex-wrap h-auto">
