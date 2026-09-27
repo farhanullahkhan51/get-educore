@@ -1878,7 +1878,7 @@ export type Database = {
           priority?: string
           published_at?: string
           reference_no: string
-          tenant_id: string
+          tenant_id?: string
           title: string
           updated_at?: string
         }
