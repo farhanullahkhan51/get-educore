@@ -104,6 +104,7 @@ export const SURFACES: Record<string, Surface> = {
     { id: "/fees", label: "Fees & Finance" },
     { id: "/certificates", label: "Certificates" },
     { id: "/import-export", label: "Import & Export" },
+    { id: "/billing", label: "Billing & Plan" },
     { id: "/users", label: "Users & Roles" },
     { id: "/platform", label: "Platform Admin" },
   ]),
