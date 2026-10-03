@@ -53,7 +53,7 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
         <h1 className="font-serif text-2xl font-semibold text-foreground">
           Something went wrong
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
+        <p className="mt-2 text-sm text-muted-foreground">{error instanceof Error ? error.message : String(error)}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
