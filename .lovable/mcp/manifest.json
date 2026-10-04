@@ -12,7 +12,7 @@
   "mcp": {
     "server": {
       "name": "educore",
-      "version": "0.4.0",
+      "version": "0.5.0",
       "title": "EduCore"
     },
     "tools": [
@@ -472,6 +472,55 @@
           },
           "required": [
             "query"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "handle_parent_query",
+        "title": "Answer a parent's question",
+        "description": "Answer a parent/guardian question about their own child (fee dues, attendance, results, today's timetable, school notices). Requires BOTH the student code and the guardian phone number the parent gave; both must match the record on file or nothing is returned. Never guess identifiers and never share details of any other student. Reply politely; answer in Urdu if the parent wrote in Urdu.",
+        "annotations": {
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "student_code": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40,
+              "description": "Student / roll / GR code the parent gave."
+            },
+            "guardian_phone": {
+              "type": "string",
+              "minLength": 7,
+              "maxLength": 20,
+              "description": "Phone number the parent is contacting from or gave."
+            },
+            "topics": {
+              "default": [],
+              "description": "Which areas to fetch; empty = all.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "fees",
+                  "attendance",
+                  "results",
+                  "timetable",
+                  "notices"
+                ]
+              }
+            }
+          },
+          "required": [
+            "student_code",
+            "guardian_phone"
           ]
         },
         "outputSchema": null
