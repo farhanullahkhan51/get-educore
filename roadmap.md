@@ -5,7 +5,7 @@
 - [x] Timetable Optimisation tool (clash check, auto-fill, free periods).
 - [x] Proxy Teacher Allocator (cover for absent teachers, printable slip).
 - [ ] Bilingual Circular generator.
-- [ ] Parent Query handler.
+- [x] Parent Query handler.
 - [ ] WhatsApp/SMS gateway (needs provider account).
 - [x] Keep Classes & Sections permanently separated into Board and Cambridge groups.
 
