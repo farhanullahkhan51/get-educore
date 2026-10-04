@@ -29,6 +29,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { useTenant } from "@/lib/tenant-context";
 import { cn } from "@/lib/utils";
 import { FeatureGate } from "@/components/layout/feature-gate";
+import { TimetableOptimizer } from "@/components/timetable/optimizer-dialog";
 
 export const Route = createFileRoute("/_authenticated/timetable")({
   head: () => ({
@@ -244,14 +245,17 @@ function TimetablePage() {
         title="Timetable"
         description="Build weekly timetables per section with automatic teacher and room clash detection."
         actions={
-          <Select value={activeCampus} onValueChange={setCampusId}>
-            <SelectTrigger className="w-48"><SelectValue placeholder="Campus" /></SelectTrigger>
-            <SelectContent>
-              {(campuses ?? []).map((c) => (
-                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2">
+            {!isTeacherOnly && <TimetableOptimizer campusId={activeCampus} tenantId={tenant?.id ?? null} canEdit={canEdit} />}
+            <Select value={activeCampus} onValueChange={setCampusId}>
+              <SelectTrigger className="w-48"><SelectValue placeholder="Campus" /></SelectTrigger>
+              <SelectContent>
+                {(campuses ?? []).map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         }
       />
 
