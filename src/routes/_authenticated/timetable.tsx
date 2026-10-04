@@ -30,6 +30,7 @@ import { useTenant } from "@/lib/tenant-context";
 import { cn } from "@/lib/utils";
 import { FeatureGate } from "@/components/layout/feature-gate";
 import { TimetableOptimizer } from "@/components/timetable/optimizer-dialog";
+import { ProxyAllocator } from "@/components/timetable/proxy-dialog";
 
 export const Route = createFileRoute("/_authenticated/timetable")({
   head: () => ({
@@ -247,6 +248,7 @@ function TimetablePage() {
         actions={
           <div className="flex gap-2">
             {!isTeacherOnly && <TimetableOptimizer campusId={activeCampus} tenantId={tenant?.id ?? null} canEdit={canEdit} />}
+            {!isTeacherOnly && <ProxyAllocator campusId={activeCampus} tenantId={tenant?.id ?? null} canEdit={canEdit} />}
             <Select value={activeCampus} onValueChange={setCampusId}>
               <SelectTrigger className="w-48"><SelectValue placeholder="Campus" /></SelectTrigger>
               <SelectContent>
