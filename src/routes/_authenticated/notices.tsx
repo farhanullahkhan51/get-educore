@@ -217,10 +217,11 @@ function NoticesPage() {
     if (!w) return;
     const body = n.content
       .split(/\n{2,}/)
-      .map((p) => `<p>${p.replace(/\n/g, "<br/>")}</p>`)
+      .map((p) => `<p dir="auto">${p.replace(/\n/g, "<br/>")}</p>`)
       .join("");
     w.document.write(`<!doctype html><html><head><title>${n.reference_no} - ${n.title}</title>
       <meta name="color-scheme" content="light only">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu&display=swap">
       <style>
         :root { color-scheme: light; }
         html,body{background:#fff !important;color:#111 !important;}
@@ -231,6 +232,7 @@ function NoticesPage() {
         .meta{display:flex;justify-content:space-between;font-size:12px;color:#444;margin-bottom:20px;}
         h2{font-size:16px;text-align:center;text-transform:uppercase;letter-spacing:2px;margin:24px 0 16px;}
         p{font-size:13.5px;margin:0 0 12px;}
+        p:dir(rtl){font-family:"Noto Nastaliq Urdu",serif;text-align:right;line-height:2.3;font-size:15px;}
         .to{font-size:12px;color:#444;margin-bottom:14px;}
         .sig{margin-top:56px;text-align:right;font-size:12px;}
         .sig div{display:inline-block;border-top:1px solid #111;padding-top:6px;min-width:220px;text-align:center;}
