@@ -116,7 +116,7 @@ export function ProxyAllocator({ campusId, tenantId, canEdit }: { campusId: stri
           )}
           <DialogFooter>
             {plan && plan.needs.length > 0 && <Button variant="outline" onClick={() => print(plan)}><Printer className="h-4 w-4 mr-1" />Print slip</Button>}
-            {plan && canEdit && <Button onClick={save} disabled={busy || !Object.keys(picks).length}>Confirm & print</Button>}
+            {plan && plan.needs.length > 0 && canEdit && <Button onClick={save} disabled={busy || !Object.keys(picks).length}>Confirm & print</Button>}
           </DialogFooter>
         </DialogContent>
       </Dialog>
