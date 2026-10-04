@@ -9,7 +9,7 @@ type AnyClient = SupabaseClient<any, any, any>;
 
 export type ProxyCandidate = { teacher_id: string; teacher: string; score: number; reasons: string[] };
 export type ProxyNeed = {
-  period_id: string; slot: string; section_id: string; section: string;
+  period_id: string; slot: string; section_id: string; section: string; absent_teacher_id: string; absent_teacher: string;
   course_id: string | null; course: string; existing_proxy: string | null;
   candidates: ProxyCandidate[]; recommended: ProxyCandidate | null;
 };
@@ -114,19 +114,19 @@ export function planProxies(pd: ProxyData, absentIds: string[], opts: { maxDaily
       weekly.set(rec.teacher_id, (weekly.get(rec.teacher_id) ?? 0) + 1);
     }
     needs.push({
+      absent_teacher_id: e.teacher_id!, absent_teacher: tt.teachers.get(e.teacher_id!) ?? "Teacher",
       period_id: e.period_id, slot: slotLabel(p), section_id: e.section_id, section: tt.sections.get(e.section_id) ?? "Section",
       course_id: e.course_id, course: e.course_id ? tt.courses.get(e.course_id) ?? "Lesson" : "Lesson",
       existing_proxy: existing ? tt.teachers.get(existing) ?? "assigned" : null,
       candidates: candidates.slice(0, 5), recommended: rec,
     });
-    (needs[needs.length - 1] as ProxyNeed & { absent_teacher_id: string }).absent_teacher_id = e.teacher_id!;
   }
   return {
     date, weekday: DAY_NAMES[day],
     lessons_to_cover: needs.length,
     already_covered: needs.filter((n) => n.existing_proxy).length,
     uncoverable: needs.filter((n) => !n.existing_proxy && !n.recommended).length,
-    needs: needs as (ProxyNeed & { absent_teacher_id: string })[],
+    needs,
   };
 }
 
