@@ -12,7 +12,7 @@
   "mcp": {
     "server": {
       "name": "educore",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "title": "EduCore"
     },
     "tools": [
@@ -183,6 +183,139 @@
             "guardian_name",
             "guardian_phone"
           ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "analyze_timetable_clashes",
+        "title": "Analyse timetable clashes",
+        "description": "Scan a campus timetable for teacher double-bookings, room clashes, lessons placed in breaks, overloaded teacher days and assigned courses that have no periods yet.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "campus_id": {
+              "description": "Campus id; defaults to the first campus visible to the user.",
+              "type": "string"
+            },
+            "section": {
+              "description": "Optional section name or id to focus on, e.g. 'Grade 9 A'.",
+              "type": "string"
+            },
+            "teacher": {
+              "description": "Optional teacher name or id to focus on.",
+              "type": "string"
+            },
+            "max_daily_periods": {
+              "default": 6,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 12
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "optimize_timetable_schedule",
+        "title": "Auto-fill timetable",
+        "description": "Fill empty timetable slots with each section's assigned courses and teachers, clash-free, balanced across the week and respecting breaks. Existing lessons are never changed. Set apply=false to preview first.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "campus_id": {
+              "type": "string"
+            },
+            "sections": {
+              "description": "Section names or ids; omit for all sections with teaching assignments.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "max_daily_periods": {
+              "default": 6,
+              "description": "Maximum periods a teacher teaches per day.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 12
+            },
+            "max_per_course_daily": {
+              "default": 1,
+              "description": "How often one subject may appear per day per section.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4
+            },
+            "apply": {
+              "default": false,
+              "description": "true = save to the timetable; false = preview only.",
+              "type": "boolean"
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "find_available_slots",
+        "title": "Find free timetable slots",
+        "description": "Find periods when the given teachers, sections and/or room are all free, e.g. 'when are the Physics teacher and Grade 9 A both free on Thursday?'.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "campus_id": {
+              "type": "string"
+            },
+            "teachers": {
+              "description": "Teacher names or ids.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "sections": {
+              "description": "Section names or ids.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "room": {
+              "type": "string"
+            },
+            "day": {
+              "default": "any",
+              "type": "string",
+              "enum": [
+                "any",
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+                "Sunday"
+              ]
+            }
+          }
         },
         "outputSchema": null
       }
