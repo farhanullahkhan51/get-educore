@@ -17,3 +17,11 @@
 - [x] Notice Board & Circulars (announcements, audience targeting, printable letterhead).
 - [ ] Notification centre / SMS-WhatsApp alerts — post-launch.
 - [ ] Full launch rehearsal with a fresh institution on desktop and mobile.
+
+## MCP rollout
+- [x] Timetable optimisation MCP (tested on demo timetable)
+- [x] Proxy teacher allocator MCP (hard-case tested)
+- [x] Bilingual circular MCP (English + Urdu)
+- [ ] Parent query handler MCP
+- [ ] WhatsApp/SMS gateway (needs provider credentials)
+- [ ] Remove demo data before go-live (staff codes DEMO-*, "(Demo)" circulars, demo lessons)

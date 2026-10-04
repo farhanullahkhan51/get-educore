@@ -45,7 +45,7 @@ export async function loadTimetable(sb: AnyClient, campusId: string): Promise<TT
     entries: (e.data ?? []) as TTEntry[],
     assignments: (a.data ?? []) as TTAssignment[],
     sections: new Map(((s.data ?? []) as unknown as { id: string; name: string; classes: { name: string } | null }[]).map((x) => [x.id, `${x.classes?.name ?? ""} ${x.name}`.trim()])),
-    courses: new Map(((c.data ?? []) as { id: string; title: string; code: string }[]).map((x) => [x.id, x.code ? `${x.code} · ${x.title}` : x.title])),
+    courses: new Map(((c.data ?? []) as { id: string; title: string; code: string }[]).map((x) => [x.id, x.title || x.code])),
     teachers: new Map(((t.data ?? []) as { id: string; first_name: string; last_name: string }[]).map((x) => [x.id, `${x.first_name} ${x.last_name}`])),
   };
 }
