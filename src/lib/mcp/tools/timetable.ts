@@ -83,7 +83,7 @@ export const findAvailableSlotsTool = defineTool({
       const slots = findAvailableSlots(d, {
         teacherIds: (teachers ?? []).flatMap((t) => matchIds(d.teachers, t).slice(0, 1)),
         sectionIds: (sections ?? []).flatMap((s) => matchIds(d.sections, s).slice(0, 1)),
-        room, day: day === "any" ? undefined : days.indexOf(day),
+        room, day: day === "any" ? undefined : days.indexOf(day) - 1,
       });
       return json({ count: slots.length, slots });
     } catch (e) { return fail((e as Error).message); }

@@ -336,7 +336,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
         teachers: z.array(z.string()).optional(),
         sections: z.array(z.string()).optional(),
         room: z.string().optional(),
-        day: z.number().int().min(1).max(7).optional().describe("1=Monday … 7=Sunday"),
+        day: z.number().int().min(0).max(6).optional().describe("0=Monday … 6=Sunday"),
       }),
       execute: async ({ teachers, sections, room, day }) => {
         const tt = await import("@/lib/timetable-engine");

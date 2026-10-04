@@ -4,7 +4,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export const DAY_NAMES = ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+export const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]; // day_of_week: 0=Monday … 6=Sunday
 
 export type TTPeriod = { id: string; campus_id: string; day_of_week: number; period_number: number; start_time: string; end_time: string; is_break: boolean; label: string | null };
 export type TTEntry = { id: string; section_id: string; period_id: string; course_id: string | null; teacher_id: string | null; room: string | null };
@@ -199,7 +199,7 @@ export function findAvailableSlots(d: TTData, opts: { teacherIds?: string[]; sec
   }
   const free = d.periods.filter((p) => {
     if (p.is_break) return false;
-    if (opts.day && p.day_of_week !== opts.day) return false;
+    if (opts.day !== undefined && p.day_of_week !== opts.day) return false;
     const k = `${p.day_of_week}|${p.period_number}`;
     if (opts.teacherIds?.some((t) => busy.has(`t:${t}|${k}`))) return false;
     if (opts.sectionIds?.some((s) => busy.has(`s:${s}|${k}`))) return false;
