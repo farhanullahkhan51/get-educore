@@ -508,6 +508,21 @@ export function buildAssistantTools(ctx: AssistantContext) {
       },
     }),
 
+    handle_parent_query: tool({
+      description:
+        "Answer a parent's question about their child (fees, attendance, results, today's timetable, notices). Needs BOTH the student code and the guardian phone the parent gave; if they don't match, nothing is returned — tell the user verification failed. Never share other students' details.",
+      inputSchema: z.object({
+        student_code: z.string().min(1).max(40),
+        guardian_phone: z.string().min(7).max(20),
+        topics: z.array(z.enum(["fees", "attendance", "results", "timetable", "notices"])).default([]),
+      }),
+      execute: async ({ student_code, guardian_phone, topics }) => {
+        const { parentSnapshot } = await import("@/lib/parent-query");
+        try { return await parentSnapshot(supabase, student_code, guardian_phone, topics); }
+        catch (e) { return { error: (e as Error).message }; }
+      },
+    }),
+
     draft_bilingual_notice: tool({
       description:
         "Save a circular in English AND Urdu on the Notice Board. You write both: formal English and formal Urdu (Urdu script, respectful school-office register). Keep dates/amounts/names identical. Saved as draft unless publish=true.",
