@@ -2,6 +2,11 @@
 
 ## In progress
 - [ ] Agent integrations (MCP): expose EduCore tools to AI assistants, secured with sign-in.
+- [x] Timetable Optimisation tool (clash check, auto-fill, free periods).
+- [x] Proxy Teacher Allocator (cover for absent teachers, printable slip).
+- [ ] Bilingual Circular generator.
+- [ ] Parent Query handler.
+- [ ] WhatsApp/SMS gateway (needs provider account).
 - [x] Keep Classes & Sections permanently separated into Board and Cambridge groups.
 
 ## Outstanding (from gap audit)

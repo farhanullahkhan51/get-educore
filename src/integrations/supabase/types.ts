@@ -3018,6 +3018,100 @@ export type Database = {
           },
         ]
       }
+      timetable_substitutions: {
+        Row: {
+          absent_teacher_id: string
+          campus_id: string
+          course_id: string | null
+          created_at: string
+          created_by: string | null
+          date: string
+          id: string
+          period_id: string
+          proxy_teacher_id: string
+          remarks: string | null
+          section_id: string
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          absent_teacher_id: string
+          campus_id: string
+          course_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date: string
+          id?: string
+          period_id: string
+          proxy_teacher_id: string
+          remarks?: string | null
+          section_id: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Update: {
+          absent_teacher_id?: string
+          campus_id?: string
+          course_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          id?: string
+          period_id?: string
+          proxy_teacher_id?: string
+          remarks?: string | null
+          section_id?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timetable_substitutions_absent_teacher_id_fkey"
+            columns: ["absent_teacher_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timetable_substitutions_campus_id_fkey"
+            columns: ["campus_id"]
+            isOneToOne: false
+            referencedRelation: "campuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timetable_substitutions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timetable_substitutions_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "timetable_periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timetable_substitutions_proxy_teacher_id_fkey"
+            columns: ["proxy_teacher_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timetable_substitutions_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       track_switches: {
         Row: {
           approved_by: string | null

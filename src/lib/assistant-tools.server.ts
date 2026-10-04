@@ -330,6 +330,27 @@ export function buildAssistantTools(ctx: AssistantContext) {
       },
     }),
 
+    allocate_proxy_teacher: tool({
+      description: "Find and rank cover (proxy) teachers for absent teachers' lessons on a date. Preview first (apply=false); only apply after the user confirms.",
+      inputSchema: z.object({
+        absent_teachers: z.array(z.string()).min(1),
+        date: z.string().optional().describe("YYYY-MM-DD, default today"),
+        apply: z.boolean().default(false),
+      }),
+      execute: async ({ absent_teachers, date, apply }) => {
+        const tt = await import("@/lib/timetable-engine");
+        const px = await import("@/lib/proxy-engine");
+        const campus = await tt.resolveCampus(supabase, ctx.campusId);
+        if (!campus) return { error: "No campus found." };
+        const pd = await px.loadProxyData(supabase, campus, date ?? new Date().toISOString().slice(0, 10));
+        const ids = absent_teachers.flatMap((t) => tt.matchIds(pd.tt.teachers, t).slice(0, 1));
+        if (!ids.length) return { error: "No matching teacher found." };
+        const plan = px.planProxies(pd, ids);
+        if (!apply) return { mode: "preview", ...plan };
+        return { mode: "applied", ...(await px.applyProxies(supabase, pd, ctx.tenantId, plan)) };
+      },
+    }),
+
     find_available_slots: tool({
       description: "Find periods when the named teachers, sections and/or room are all free.",
       inputSchema: z.object({
