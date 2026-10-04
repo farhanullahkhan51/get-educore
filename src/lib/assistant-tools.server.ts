@@ -508,6 +508,25 @@ export function buildAssistantTools(ctx: AssistantContext) {
       },
     }),
 
+    draft_bilingual_notice: tool({
+      description:
+        "Save a circular in English AND Urdu on the Notice Board. You write both: formal English and formal Urdu (Urdu script, respectful school-office register). Keep dates/amounts/names identical. Saved as draft unless publish=true.",
+      inputSchema: z.object({
+        title_en: z.string().min(3).max(140), title_ur: z.string().min(2).max(140),
+        content_en: z.string().min(10).max(6000), content_ur: z.string().min(5).max(6000),
+        category: z.enum(["general", "academic", "administrative", "holiday", "examination", "fees"]).default("general"),
+        audience: z.enum(["all", "staff", "students"]).default("all"),
+        priority: z.enum(["normal", "urgent", "critical"]).default("normal"),
+        expires_at: z.string().optional().describe("YYYY-MM-DD"),
+        publish: z.boolean().default(false),
+      }),
+      execute: async (input) => {
+        const { saveBilingualNotice } = await import("@/lib/bilingual-notices");
+        try { return { saved: true, notice: await saveBilingualNotice(supabase, input) }; }
+        catch (e) { return { error: (e as Error).message }; }
+      },
+    }),
+
     attendance_summary: tool({
       description: "Attendance summary over the last N days: present/absent/late counts and attendance rate.",
       inputSchema: z.object({ days: z.number().int().describe("How many days back to look, e.g. 30.") }),
