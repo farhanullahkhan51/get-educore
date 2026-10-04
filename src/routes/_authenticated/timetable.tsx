@@ -172,7 +172,7 @@ function TimetablePage() {
   const entryAt = (section: string, periodId: string) =>
     (entries ?? []).find((e) => e.section_id === section && e.period_id === periodId);
 
-  const courseName = (id: string | null) => courses?.find((c) => c.id === id)?.code ?? "";
+  const courseName = (id: string | null) => { const c = courses?.find((x) => x.id === id); return c?.title || c?.code || ""; };
   const teacherName = (id: string | null) => teachers?.find((t) => t.id === id)?.name ?? "";
   const sectionName = (id: string) => {
     const s = sections?.find((x) => x.id === id);
