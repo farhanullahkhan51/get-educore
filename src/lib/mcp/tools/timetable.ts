@@ -5,7 +5,7 @@ import {
   analyzeClashes, applyProposals, findAvailableSlots, loadTimetable, matchIds, optimizeSchedule, resolveCampus,
 } from "@/lib/timetable-engine";
 
-const json = (v: unknown) => ({ content: [{ type: "text" as const, text: JSON.stringify(v, null, 2) }], structuredContent: v as Record<string, unknown> });
+const json = (v: unknown) => ({ content: [{ type: "text" as const, text: JSON.stringify(v, null, 2) }], structuredContent: JSON.parse(JSON.stringify(v)) as { [k: string]: string } });
 const fail = (m: string) => ({ content: [{ type: "text" as const, text: m }], isError: true });
 
 export const analyzeTimetableClashes = defineTool({
