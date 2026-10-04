@@ -292,7 +292,67 @@ export function buildAssistantTools(ctx: AssistantContext) {
 
 
   const tools = {
+    /* ------------------------------------------------------------- timetable */
+
+    analyze_timetable_clashes: tool({
+      description: "Scan the campus timetable for teacher/room clashes, lessons in breaks, overloaded teacher days and assigned courses with no periods.",
+      inputSchema: z.object({
+        section: z.string().optional().describe("Section name to focus on"),
+        teacher: z.string().optional().describe("Teacher name to focus on"),
+        max_daily_periods: z.number().int().min(1).max(12).optional(),
+      }),
+      execute: async ({ section, teacher, max_daily_periods }) => {
+        const tt = await import("@/lib/timetable-engine");
+        const campus = await tt.resolveCampus(supabase, ctx.campusId);
+        if (!campus) return { error: "No campus found." };
+        const d = await tt.loadTimetable(supabase, campus);
+        return tt.analyzeClashes(d, { maxDailyPeriods: max_daily_periods, sectionId: tt.matchIds(d.sections, section)[0], teacherId: tt.matchIds(d.teachers, teacher)[0] });
+      },
+    }),
+
+    optimize_timetable_schedule: tool({
+      description: "Auto-fill empty timetable slots with each section's assigned courses, clash-free and balanced. Existing lessons are never changed. Preview first (apply=false); only apply after the user confirms.",
+      inputSchema: z.object({
+        sections: z.array(z.string()).optional().describe("Section names; omit for all"),
+        max_daily_periods: z.number().int().min(1).max(12).optional(),
+        apply: z.boolean().default(false),
+      }),
+      execute: async ({ sections, max_daily_periods, apply }) => {
+        const tt = await import("@/lib/timetable-engine");
+        const campus = await tt.resolveCampus(supabase, ctx.campusId);
+        if (!campus) return { error: "No campus found." };
+        const d = await tt.loadTimetable(supabase, campus);
+        const ids = (sections ?? []).flatMap((s) => tt.matchIds(d.sections, s));
+        const plan = tt.optimizeSchedule(d, { sectionIds: ids, maxDailyPeriods: max_daily_periods });
+        if (!apply) return { mode: "preview", proposed: plan.proposals.length, sample: plan.proposals.slice(0, 40), unfilled: plan.unfilled_slots.length };
+        const res = await tt.applyProposals(supabase, d, ctx.tenantId, plan.proposals);
+        return { mode: "applied", ...res, unfilled: plan.unfilled_slots.length };
+      },
+    }),
+
+    find_available_slots: tool({
+      description: "Find periods when the named teachers, sections and/or room are all free.",
+      inputSchema: z.object({
+        teachers: z.array(z.string()).optional(),
+        sections: z.array(z.string()).optional(),
+        room: z.string().optional(),
+        day: z.number().int().min(0).max(6).optional().describe("0=Monday … 6=Sunday"),
+      }),
+      execute: async ({ teachers, sections, room, day }) => {
+        const tt = await import("@/lib/timetable-engine");
+        const campus = await tt.resolveCampus(supabase, ctx.campusId);
+        if (!campus) return { error: "No campus found." };
+        const d = await tt.loadTimetable(supabase, campus);
+        return { slots: tt.findAvailableSlots(d, {
+          teacherIds: (teachers ?? []).flatMap((t) => tt.matchIds(d.teachers, t).slice(0, 1)),
+          sectionIds: (sections ?? []).flatMap((s) => tt.matchIds(d.sections, s).slice(0, 1)),
+          room, day,
+        }) };
+      },
+    }),
+
     /* ------------------------------------------------------------------ read */
+
 
     institution_overview: tool({
       description:
