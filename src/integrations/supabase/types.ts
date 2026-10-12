@@ -510,48 +510,63 @@ export type Database = {
       bank_transactions: {
         Row: {
           amount: number
+          applied_amount: number
           bank_account_id: string | null
           campus_id: string
           created_at: string
           description: string | null
+          external_txn_id: string | null
           id: string
           import_batch: string | null
+          match_note: string | null
+          match_status: string
           matched_at: string | null
           matched_by: string | null
           matched_challan_id: string | null
           reference: string | null
+          source: string
           tenant_id: string
           txn_date: string
           updated_at: string
         }
         Insert: {
           amount: number
+          applied_amount?: number
           bank_account_id?: string | null
           campus_id: string
           created_at?: string
           description?: string | null
+          external_txn_id?: string | null
           id?: string
           import_batch?: string | null
+          match_note?: string | null
+          match_status?: string
           matched_at?: string | null
           matched_by?: string | null
           matched_challan_id?: string | null
           reference?: string | null
+          source?: string
           tenant_id?: string
           txn_date: string
           updated_at?: string
         }
         Update: {
           amount?: number
+          applied_amount?: number
           bank_account_id?: string | null
           campus_id?: string
           created_at?: string
           description?: string | null
+          external_txn_id?: string | null
           id?: string
           import_batch?: string | null
+          match_note?: string | null
+          match_status?: string
           matched_at?: string | null
           matched_by?: string | null
           matched_challan_id?: string | null
           reference?: string | null
+          source?: string
           tenant_id?: string
           txn_date?: string
           updated_at?: string
@@ -3299,6 +3314,14 @@ export type Database = {
       ai_reporting_summary:
         | { Args: { _campus?: string; _feature: string }; Returns: Json }
         | { Args: { _days?: number; _kind: string }; Returns: Json }
+      apply_bank_payment: {
+        Args: { _challan_id: string; _note?: string; _txn_id: string }
+        Returns: Json
+      }
+      auto_reconcile_bank_transactions: {
+        Args: { _batch?: string }
+        Returns: Json
+      }
       campus_of_uid_text: { Args: { _uid_text: string }; Returns: string }
       can_manage_fees: {
         Args: { _campus_id: string; _user_id: string }
