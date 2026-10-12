@@ -46,6 +46,36 @@ function UsersPage() {
     queryKey: ["campuses"],
     queryFn: async () => (await supabase.from("campuses").select("id, name").order("name")).data ?? [],
   });
+  const { data: studentRecs } = useQuery({
+    queryKey: ["link-students"],
+    queryFn: async () => ((await supabase.from("students").select("id, first_name, last_name, student_code, profile_id").order("first_name").range(0, 9999)).data ?? [])
+      .map((s) => ({ id: s.id, first_name: s.first_name, last_name: s.last_name, code: s.student_code, profile_id: s.profile_id })),
+  });
+  const { data: staffRecs } = useQuery({
+    queryKey: ["link-staff"],
+    queryFn: async () => ((await supabase.from("staff").select("id, first_name, last_name, staff_code, profile_id").order("first_name").range(0, 9999)).data ?? [])
+      .map((s) => ({ id: s.id, first_name: s.first_name, last_name: s.last_name, code: s.staff_code, profile_id: s.profile_id })),
+  });
+
+  async function linkRecord(userId: string, target: string) {
+    // One login ↔ one record: clear any existing link for this user first.
+    const a = await supabase.from("students").update({ profile_id: null }).eq("profile_id", userId);
+    const b = await supabase.from("staff").update({ profile_id: null }).eq("profile_id", userId);
+    if (a.error || b.error) return toast.error((a.error ?? b.error)!.message);
+    if (target !== "none") {
+      const [kind, id] = target.split(":");
+      const { error } = await supabase.from(kind === "student" ? "students" : "staff").update({ profile_id: userId }).eq("id", id);
+      if (error) return toast.error(error.message);
+      toast.success(`Linked to ${kind} record`);
+    } else {
+      toast.success("Record unlinked");
+    }
+    qc.invalidateQueries({ queryKey: ["link-students"] });
+    qc.invalidateQueries({ queryKey: ["link-staff"] });
+    qc.invalidateQueries({ queryKey: ["students"] });
+    qc.invalidateQueries({ queryKey: ["staff"] });
+  }
+
 
   const campusMap = new Map(campuses?.map((c) => [c.id, c.name]));
   const rolesByUser = new Map<string, typeof roles>();
@@ -135,10 +165,11 @@ function UsersPage() {
             <TableHeader><TableRow>
               <TableHead>User</TableHead><TableHead>Campus</TableHead>
               <TableHead>Roles</TableHead><TableHead>Assign role</TableHead>
+              <TableHead>Linked record</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {isLoading && <TableRow><TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
+              {isLoading && <TableRow><TableCell colSpan={6}  className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>}
 
               {profiles?.map((p) => {
                 const userRoles = rolesByUser.get(p.id) ?? [];
@@ -173,6 +204,9 @@ function UsersPage() {
                     </TableCell>
                     <TableCell>
                       <RoleAssigner onAssign={(role) => assignRole(p.id, role, p.campus_id)} />
+                    </TableCell>
+                    <TableCell>
+                      <RecordLinker userId={p.id} students={studentRecs ?? []} staff={staffRecs ?? []} onLink={(t) => linkRecord(p.id, t)} />
                     </TableCell>
                     <TableCell className="text-right">
                       <Button
@@ -237,6 +271,39 @@ function UsersPage() {
       </AlertDialog>
     </>
 
+  );
+}
+
+type RecordOpt = { id: string; first_name: string; last_name: string; code: string; profile_id: string | null };
+
+function RecordLinker({
+  userId, students, staff, onLink,
+}: {
+  userId: string;
+  students: RecordOpt[];
+  staff: RecordOpt[];
+  onLink: (target: string) => void;
+}) {
+  const linkedStudent = students.find((s) => s.profile_id === userId);
+  const linkedStaff = staff.find((s) => s.profile_id === userId);
+  const value = linkedStudent ? `student:${linkedStudent.id}` : linkedStaff ? `staff:${linkedStaff.id}` : "none";
+  const freeStudents = students.filter((s) => !s.profile_id || s.profile_id === userId);
+  const freeStaff = staff.filter((s) => !s.profile_id || s.profile_id === userId);
+  return (
+    <Select value={value} onValueChange={onLink}>
+      <SelectTrigger className="w-56" aria-label="Link student or staff record"><SelectValue /></SelectTrigger>
+      <SelectContent className="max-h-80">
+        <SelectItem value="none">— not linked —</SelectItem>
+        {freeStaff.length > 0 && <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">Staff</div>}
+        {freeStaff.map((s) => (
+          <SelectItem key={s.id} value={`staff:${s.id}`}>{s.first_name} {s.last_name} · {s.code}</SelectItem>
+        ))}
+        {freeStudents.length > 0 && <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">Students</div>}
+        {freeStudents.map((s) => (
+          <SelectItem key={s.id} value={`student:${s.id}`}>{s.first_name} {s.last_name} · {s.code}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 
