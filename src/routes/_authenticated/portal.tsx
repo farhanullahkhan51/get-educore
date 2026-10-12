@@ -180,7 +180,7 @@ function StudentPortalPage() {
         <Kpi label="Certificates" value={certs?.length ?? 0} sub="Issued to you" icon={Award} />
       </div>
 
-      <div className="mb-6">
+      <div className="mb-6 space-y-4">
         {student?.section_id && <DiaryFeed sectionId={student.section_id} />}
         <NoticeFeed limit={3} showLink={false} title="Notices from your school" />
       </div>

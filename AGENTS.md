@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 - Bilingual circulars store English and Urdu in one notice separated by URDU_DIVIDER (src/lib/bilingual-notices.ts); the calling AI writes both languages so no server-side translation cost.
 - Staff attendance/leave rows take tenant_id and campus_id from the staff record via trigger (staff_hr_fill_scope); never trust client-sent scope.
+- Homework diary rows take tenant_id/campus_id/created_by from the section and session via trigger (homework_fill_scope); teachers may edit only their own entries.
