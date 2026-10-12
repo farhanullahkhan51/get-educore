@@ -23,7 +23,7 @@ import {
   CalendarDays,
   ArrowDownUp,
   Megaphone,
-  BookOpenCheck,
+  BookOpenCheck, Receipt,
   CalendarCheck,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
