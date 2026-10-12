@@ -23,7 +23,7 @@ import {
   CalendarDays,
   ArrowDownUp,
   Megaphone,
-  BookOpenCheck,
+  BookOpenCheck, Receipt,
   CalendarCheck,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
@@ -126,6 +126,12 @@ const NAV: NavItem[] = [
     label: "Homework & Diary",
     icon: BookOpenCheck,
     roles: ["super_admin", "campus_admin", "teacher"],
+  },
+  {
+    to: "/expenses",
+    label: "Expenses & Petty Cash",
+    icon: Receipt,
+    roles: ["super_admin", "campus_admin", "finance_officer"],
   },
   {
     to: "/notices",
