@@ -26,3 +26,4 @@
 - [ ] Parent query handler MCP
 - [ ] WhatsApp/SMS gateway (needs provider credentials)
 - [ ] Remove demo data before go-live (staff codes DEMO-*, "(Demo)" circulars, demo lessons)
+- [x] Homework & Daily Diary (teacher posting, copy to sections, print, student portal feed)
