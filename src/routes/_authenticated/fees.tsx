@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllRows } from "@/lib/fetch-all";
+import { parseStatement, statementKey } from "@/lib/bank-statement";
 import { PageHeader } from "@/components/layout/page-header";
 import { LayoutMenu } from "@/components/layout/layout-menu";
 import { useModuleLayout } from "@/lib/ui-prefs";
@@ -1285,6 +1286,22 @@ function ScholarshipsTab({ canManage, campuses }: {
 
 /* --------------------------------- BANK RECON ---------------------------------- */
 
+const RECON_LABEL: Record<string, { label: string; cls: string }> = {
+  matched: { label: "settled", cls: "bg-emerald-100 text-emerald-800" },
+  partial: { label: "partial", cls: "bg-amber-100 text-amber-800" },
+  overpaid: { label: "overpaid", cls: "bg-amber-100 text-amber-800" },
+  duplicate: { label: "already credited", cls: "bg-muted text-muted-foreground" },
+  review: { label: "needs review", cls: "bg-destructive/10 text-destructive" },
+  ambiguous: { label: "needs review", cls: "bg-destructive/10 text-destructive" },
+  unknown: { label: "unknown deposit", cls: "bg-destructive/10 text-destructive" },
+  unmatched: { label: "unmatched", cls: "" },
+};
+
+function ReconBadge({ status }: { status: string }) {
+  const s = RECON_LABEL[status] ?? RECON_LABEL.unmatched;
+  return s.cls ? <Badge className={s.cls}>{s.label}</Badge> : <Badge variant="secondary">{s.label}</Badge>;
+}
+
 function BankTab({ canManage, campuses }: {
   canManage: boolean;
   campuses: Array<{ id: string; name: string }>;
@@ -1440,7 +1457,22 @@ function BankTab({ canManage, campuses }: {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Bank Transactions</CardTitle></CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle>Bank Transactions</CardTitle>
+          {canManage && (
+            <Button size="sm" variant="outline" onClick={async () => {
+              const { data, error } = await supabase.rpc("auto_reconcile_bank_transactions" as any, { _batch: null });
+              if (error) return toast.error(error.message);
+              const r = (data ?? {}) as Record<string, number>;
+              toast.success(`${r.matched ?? 0} settled · ${r.partial ?? 0} partial · ${(r.review ?? 0) + (r.unknown ?? 0)} need review`);
+              qc.invalidateQueries({ queryKey: ["bank_transactions"] });
+              qc.invalidateQueries({ queryKey: ["fee_challans"] });
+              qc.invalidateQueries({ queryKey: ["fee-totals"] });
+            }}>
+              <CheckCircle2 className="mr-1 h-3 w-3" /> Auto-match pending
+            </Button>
+          )}
+        </CardHeader>
         <CardContent className="p-0 sm:p-6">
           {isLoading ? <p className="text-sm text-muted-foreground p-6">Loading…</p>
             : filteredTxns.length === 0 ? <p className="text-sm text-muted-foreground p-6">No transactions imported yet.</p>
