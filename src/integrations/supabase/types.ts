@@ -2534,6 +2534,121 @@ export type Database = {
           },
         ]
       }
+      staff_attendance: {
+        Row: {
+          campus_id: string
+          check_in: string | null
+          check_out: string | null
+          created_at: string
+          date: string
+          id: string
+          marked_by: string | null
+          note: string | null
+          staff_id: string
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          campus_id: string
+          check_in?: string | null
+          check_out?: string | null
+          created_at?: string
+          date: string
+          id?: string
+          marked_by?: string | null
+          note?: string | null
+          staff_id: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          campus_id?: string
+          check_in?: string | null
+          check_out?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          marked_by?: string | null
+          note?: string | null
+          staff_id?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_attendance_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_leaves: {
+        Row: {
+          campus_id: string
+          created_at: string
+          created_by: string | null
+          end_date: string
+          id: string
+          leave_type: string
+          reason: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          staff_id: string
+          start_date: string
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          campus_id: string
+          created_at?: string
+          created_by?: string | null
+          end_date: string
+          id?: string
+          leave_type?: string
+          reason?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          staff_id: string
+          start_date: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          campus_id?: string
+          created_at?: string
+          created_by?: string | null
+          end_date?: string
+          id?: string
+          leave_type?: string
+          reason?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          staff_id?: string
+          start_date?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_leaves_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_payroll: {
         Row: {
           amount: number
@@ -3327,6 +3442,10 @@ export type Database = {
         Args: { _campus_id: string; _user_id: string }
         Returns: boolean
       }
+      can_manage_staff_hr: {
+        Args: { _campus: string; _user: string }
+        Returns: boolean
+      }
       dashboard_metrics: {
         Args: { _campus?: string; _since?: string }
         Returns: Json
@@ -3363,6 +3482,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_own_staff: {
+        Args: { _staff: string; _user: string }
         Returns: boolean
       }
       is_platform_owner: { Args: { _user_id: string }; Returns: boolean }

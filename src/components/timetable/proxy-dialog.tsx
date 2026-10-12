@@ -13,17 +13,22 @@ type Plan = ReturnType<typeof planProxies>;
 const today = () => new Date().toISOString().slice(0, 10);
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 
-export function ProxyAllocator({ campusId, tenantId, canEdit }: { campusId: string; tenantId: string | null; canEdit: boolean }) {
+export function ProxyAllocator({ campusId, tenantId, canEdit, presetAbsent, presetDate, label = "Proxy" }: {
+  campusId: string; tenantId: string | null; canEdit: boolean;
+  presetAbsent?: string; presetDate?: string; label?: string;
+}) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [date, setDate] = useState(today());
+  const [date, setDate] = useState(presetDate ?? today());
   const [teachers, setTeachers] = useState<[string, string][]>([]);
-  const [absent, setAbsent] = useState("");
+  const [absent, setAbsent] = useState(presetAbsent ?? "");
   const [plan, setPlan] = useState<Plan | null>(null);
   const [picks, setPicks] = useState<Record<string, string>>({});
 
   async function openDialog() {
     setOpen(true); setPlan(null); setPicks({});
+    if (presetAbsent) setAbsent(presetAbsent);
+    if (presetDate) setDate(presetDate);
     const { data } = await supabase.from("staff").select("id, first_name, last_name").eq("campus_id", campusId).order("first_name");
     setTeachers((data ?? []).map((s) => [s.id, `${s.first_name} ${s.last_name}`]));
   }
