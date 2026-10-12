@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { GraduationCap } from "lucide-react";
 import { useTenant } from "@/lib/tenant-context";
+import { PENDING_CLAIM_KEY, runPendingClaim } from "@/components/portal/claim-student-form";
+import { Checkbox } from "@/components/ui/checkbox";
 
 function safeNext(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
@@ -28,6 +30,7 @@ function AuthPage() {
   const { tenant } = useTenant();
   const brandName = tenant?.name ?? "EduCore";
   const [loading, setLoading] = useState(false);
+  const [isStudent, setIsStudent] = useState(false);
 
   function goOn() {
     if (next) {
