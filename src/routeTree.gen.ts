@@ -47,6 +47,7 @@ import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.
 import { Route as AuthenticatedAssistantIndexRouteImport } from './routes/_authenticated/assistant.index'
 import { Route as AuthenticatedAssistantThreadIdRouteImport } from './routes/_authenticated/assistant.$threadId'
 import { Route as ApiPublicBillingRemindersRouteImport } from './routes/api/public/billing/reminders'
+import { Route as ApiPublicFeesBankWebhookRouteImport } from './routes/api/public/fees/bank-webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -244,6 +245,12 @@ const ApiPublicBillingRemindersRoute =
     path: '/api/public/billing/reminders',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicFeesBankWebhookRoute =
+  ApiPublicFeesBankWebhookRouteImport.update({
+    id: '/api/public/fees/bank-webhook',
+    path: '/api/public/fees/bank-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -283,6 +290,7 @@ export interface FileRoutesByFullPath {
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/assistant/': typeof AuthenticatedAssistantIndexRoute
   '/api/public/billing/reminders': typeof ApiPublicBillingRemindersRoute
+  '/api/public/fees/bank-webhook': typeof ApiPublicFeesBankWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -322,6 +330,7 @@ export interface FileRoutesByTo {
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/assistant': typeof AuthenticatedAssistantIndexRoute
   '/api/public/billing/reminders': typeof ApiPublicBillingRemindersRoute
+  '/api/public/fees/bank-webhook': typeof ApiPublicFeesBankWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -363,6 +372,7 @@ export interface FileRoutesById {
   '/_authenticated/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/_authenticated/assistant/': typeof AuthenticatedAssistantIndexRoute
   '/api/public/billing/reminders': typeof ApiPublicBillingRemindersRoute
+  '/api/public/fees/bank-webhook': typeof ApiPublicFeesBankWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -404,6 +414,7 @@ export interface FileRouteTypes {
     | '/assistant/$threadId'
     | '/assistant/'
     | '/api/public/billing/reminders'
+    | '/api/public/fees/bank-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -443,6 +454,7 @@ export interface FileRouteTypes {
     | '/assistant/$threadId'
     | '/assistant'
     | '/api/public/billing/reminders'
+    | '/api/public/fees/bank-webhook'
   id:
     | '__root__'
     | '/'
@@ -483,6 +495,7 @@ export interface FileRouteTypes {
     | '/_authenticated/assistant/$threadId'
     | '/_authenticated/assistant/'
     | '/api/public/billing/reminders'
+    | '/api/public/fees/bank-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -499,6 +512,7 @@ export interface RootRouteChildren {
   ApiTranscribeRoute: typeof ApiTranscribeRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   ApiPublicBillingRemindersRoute: typeof ApiPublicBillingRemindersRoute
+  ApiPublicFeesBankWebhookRoute: typeof ApiPublicFeesBankWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -769,6 +783,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBillingRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/fees/bank-webhook': {
+      id: '/api/public/fees/bank-webhook'
+      path: '/api/public/fees/bank-webhook'
+      fullPath: '/api/public/fees/bank-webhook'
+      preLoaderRoute: typeof ApiPublicFeesBankWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -846,6 +867,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTranscribeRoute: ApiTranscribeRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   ApiPublicBillingRemindersRoute: ApiPublicBillingRemindersRoute,
+  ApiPublicFeesBankWebhookRoute: ApiPublicFeesBankWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
