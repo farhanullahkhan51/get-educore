@@ -23,6 +23,7 @@ import { format, subMonths, startOfMonth } from "date-fns";
 import { useEntitlements } from "@/lib/entitlements";
 import { usePlanUsage } from "@/lib/plan-usage";
 import { NoticeFeed } from "@/components/layout/notice-feed";
+import { PnlWidget } from "@/components/dashboard/pnl-widget";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -242,6 +243,8 @@ function Dashboard() {
       <div className="mb-6">
         <NoticeFeed limit={3} />
       </div>
+
+      {user?.roles.some((r) => r === "super_admin" || r === "campus_admin" || r === "finance_officer") ? <PnlWidget campusId={scopedCampus} /> : null}
 
       {ent.planName && isSuper ? (
         <Card className="mb-6 shadow-none">

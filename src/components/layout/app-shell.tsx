@@ -128,6 +128,12 @@ const NAV: NavItem[] = [
     roles: ["super_admin", "campus_admin", "teacher"],
   },
   {
+    to: "/expenses",
+    label: "Expenses & Petty Cash",
+    icon: Receipt,
+    roles: ["super_admin", "campus_admin", "finance_officer"],
+  },
+  {
     to: "/notices",
     label: "Notice Board",
     icon: Megaphone,
