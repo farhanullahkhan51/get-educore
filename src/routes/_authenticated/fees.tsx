@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllRows } from "@/lib/fetch-all";
+import { parseStatement, statementKey } from "@/lib/bank-statement";
 import { PageHeader } from "@/components/layout/page-header";
 import { LayoutMenu } from "@/components/layout/layout-menu";
 import { useModuleLayout } from "@/lib/ui-prefs";
@@ -1285,6 +1286,22 @@ function ScholarshipsTab({ canManage, campuses }: {
 
 /* --------------------------------- BANK RECON ---------------------------------- */
 
+const RECON_LABEL: Record<string, { label: string; cls: string }> = {
+  matched: { label: "settled", cls: "bg-emerald-100 text-emerald-800" },
+  partial: { label: "partial", cls: "bg-amber-100 text-amber-800" },
+  overpaid: { label: "overpaid", cls: "bg-amber-100 text-amber-800" },
+  duplicate: { label: "already credited", cls: "bg-muted text-muted-foreground" },
+  review: { label: "needs review", cls: "bg-destructive/10 text-destructive" },
+  ambiguous: { label: "needs review", cls: "bg-destructive/10 text-destructive" },
+  unknown: { label: "unknown deposit", cls: "bg-destructive/10 text-destructive" },
+  unmatched: { label: "unmatched", cls: "" },
+};
+
+function ReconBadge({ status }: { status: string }) {
+  const s = RECON_LABEL[status] ?? RECON_LABEL.unmatched;
+  return s.cls ? <Badge className={s.cls}>{s.label}</Badge> : <Badge variant="secondary">{s.label}</Badge>;
+}
+
 function BankTab({ canManage, campuses }: {
   canManage: boolean;
   campuses: Array<{ id: string; name: string }>;
@@ -1440,7 +1457,22 @@ function BankTab({ canManage, campuses }: {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Bank Transactions</CardTitle></CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle>Bank Transactions</CardTitle>
+          {canManage && (
+            <Button size="sm" variant="outline" onClick={async () => {
+              const { data, error } = await supabase.rpc("auto_reconcile_bank_transactions" as any, { _batch: null });
+              if (error) return toast.error(error.message);
+              const r = (data ?? {}) as Record<string, number>;
+              toast.success(`${r.matched ?? 0} settled · ${r.partial ?? 0} partial · ${(r.review ?? 0) + (r.unknown ?? 0)} need review`);
+              qc.invalidateQueries({ queryKey: ["bank_transactions"] });
+              qc.invalidateQueries({ queryKey: ["fee_challans"] });
+              qc.invalidateQueries({ queryKey: ["fee-totals"] });
+            }}>
+              <CheckCircle2 className="mr-1 h-3 w-3" /> Auto-match pending
+            </Button>
+          )}
+        </CardHeader>
         <CardContent className="p-0 sm:p-6">
           {isLoading ? <p className="text-sm text-muted-foreground p-6">Loading…</p>
             : filteredTxns.length === 0 ? <p className="text-sm text-muted-foreground p-6">No transactions imported yet.</p>
@@ -1464,13 +1496,13 @@ function BankTab({ canManage, campuses }: {
                         <TableCell className="font-mono text-xs max-w-[180px] truncate whitespace-nowrap">{t.reference ?? "—"}</TableCell>
                         <TableCell className="max-w-xs truncate">{t.description ?? "—"}</TableCell>
                         <TableCell className="text-right whitespace-nowrap">{PKR.format(Number(t.amount))}</TableCell>
-                        <TableCell>
-                          {t.matched_challan_id
-                            ? <Badge className="bg-emerald-100 text-emerald-800">matched</Badge>
-                            : <Badge variant="secondary">unmatched</Badge>}
+                        <TableCell title={(t as any).match_note ?? ""}>
+                          <ReconBadge status={(t as any).match_status ?? (t.matched_challan_id ? "matched" : "unmatched")} />
+                          {(t as any).source === "webhook" && <Badge variant="outline" className="ml-1">instant</Badge>}
+                          {(t as any).match_note && <div className="text-[11px] text-muted-foreground max-w-[220px] truncate">{(t as any).match_note}</div>}
                         </TableCell>
                         <TableCell className="text-right whitespace-nowrap">
-                          {canManage && !t.matched_challan_id && (
+                          {canManage && !t.matched_challan_id && (t as any).match_status !== "duplicate" && (
                             <Button size="sm" variant="outline" onClick={() => setMatching(t)}>
                               <Link2 className="mr-1 h-3 w-3" /> Match
                             </Button>
@@ -1510,18 +1542,6 @@ function BankTab({ canManage, campuses }: {
   );
 }
 
-function parseCsv(text: string): Array<Record<string, string>> {
-  const lines = text.trim().split(/\r?\n/).filter(Boolean);
-  if (lines.length < 2) return [];
-  const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
-  return lines.slice(1).map((line) => {
-    const cells = line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
-    const row: Record<string, string> = {};
-    headers.forEach((h, i) => (row[h] = cells[i] ?? ""));
-    return row;
-  });
-}
-
 function ImportCsvDialog({
   open, onOpenChange, campuses, accounts, onDone,
 }: {
@@ -1542,23 +1562,34 @@ function ImportCsvDialog({
 
   async function submit() {
     if (!campusId) return toast.error("Pick campus");
-    const rows = parseCsv(text);
-    if (rows.length === 0) return toast.error("No rows detected. Expected columns: date, reference, description, amount");
+    const { rows, skipped } = parseStatement(text);
+    if (rows.length === 0) return toast.error("No incoming payments found. The file needs a date column and a credit/amount column.");
     setBusy(true);
     const batch = `batch-${Date.now()}`;
     const payload = rows.map((r) => ({
       campus_id: campusId,
       bank_account_id: accountId || null,
-      txn_date: r.date || new Date().toISOString().slice(0, 10),
-      reference: r.reference || r.ref || null,
-      description: r.description || r.desc || null,
-      amount: Number(r.amount || "0"),
+      ...r,
+      source: "statement",
+      external_txn_id: statementKey(r, accountId || null),
       import_batch: batch,
-    })).filter((r) => !Number.isNaN(r.amount));
-    const { error } = await supabase.from("bank_transactions").insert(payload);
+    }));
+    const { data: inserted, error } = await supabase
+      .from("bank_transactions")
+      .upsert(payload as any, { onConflict: "tenant_id,external_txn_id", ignoreDuplicates: true })
+      .select("id");
+    if (error) { setBusy(false); return toast.error(error.message); }
+    const { data: rec, error: e2 } = await supabase.rpc("auto_reconcile_bank_transactions" as any, { _batch: batch });
     setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success(`${payload.length} transaction(s) imported`);
+    if (e2) toast.error(`Imported, but auto-matching failed: ${e2.message}`);
+    const r = (rec ?? {}) as Record<string, number>;
+    const dupes = payload.length - (inserted?.length ?? 0);
+    toast.success(
+      `${inserted?.length ?? 0} imported · ${r.matched ?? 0} auto-settled · ${r.partial ?? 0} partial · ${(r.review ?? 0) + (r.unknown ?? 0)} need review` +
+      (dupes ? ` · ${dupes} already imported` : "") + ((r.duplicate ?? 0) ? ` · ${r.duplicate} already credited` : "") +
+      (skipped ? ` · ${skipped} non-credit lines skipped` : ""),
+      { duration: 10000 },
+    );
     onOpenChange(false);
     onDone();
   }
@@ -1569,7 +1600,8 @@ function ImportCsvDialog({
         <DialogHeader>
           <DialogTitle>Import Bank Statement</DialogTitle>
           <DialogDescription>
-            CSV columns: <code>date, reference, description, amount</code>. Amount in PKR.
+            Upload the CSV export from HBL, Meezan, UBL, MCB or any bank. Incoming payments whose reference or narration
+            contains a challan number are settled automatically; the rest are flagged for review. Re-uploading the same file is safe.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
@@ -1614,46 +1646,25 @@ function MatchDialog({ txn, onClose, onDone }: { txn: BankTxn; onClose: () => vo
   const { data: candidates } = useQuery({
     queryKey: ["challan-candidates", txn.campus_id],
     queryFn: async () =>
-      (await supabase.from("fee_challans")
-        .select("*")
-        .eq("campus_id", txn.campus_id)
-        .neq("status", "paid")
-        .neq("status", "waived")
-        .order("due_date", { ascending: false })
-        .limit(200)).data as Challan[] ?? [],
+      (await fetchAllRows<Challan>((from, to) =>
+        supabase.from("fee_challans")
+          .select("*")
+          .eq("campus_id", txn.campus_id)
+          .neq("status", "paid")
+          .neq("status", "waived")
+          .order("due_date", { ascending: false })
+          .range(from, to) as any,
+      )) as Challan[],
   });
 
   const q = query.toLowerCase();
   const list = (candidates ?? []).filter((c) => !q || c.challan_no.toLowerCase().includes(q));
 
   async function match(c: Challan) {
-    const net = Number(c.gross_amount) - Number(c.discount_amount) + Number(c.fine_amount);
-    const applied = Math.min(Number(txn.amount), net - Number(c.paid_amount));
-    const newPaid = Number(c.paid_amount) + applied;
-    const status: Challan["status"] = newPaid >= net ? "paid" : "partial";
-    const { error: e1 } = await supabase
-      .from("fee_challans")
-      .update({
-        paid_amount: newPaid,
-        status,
-        paid_on: status === "paid" ? new Date().toISOString().slice(0, 10) : c.paid_on,
-      })
-      .eq("id", c.id);
-    if (e1) return toast.error(e1.message);
-    const { error: e2 } = await supabase
-      .from("bank_transactions")
-      .update({ matched_challan_id: c.id, matched_at: new Date().toISOString() })
-      .eq("id", txn.id);
-    if (e2) return toast.error(e2.message);
-    await supabase.from("fee_ledger").insert({
-      campus_id: c.campus_id,
-      challan_id: c.id,
-      entry_type: "bank_match",
-      amount: applied,
-      bank_transaction_id: txn.id,
-      notes: `Matched to bank txn ${txn.reference ?? txn.id}`,
-    });
-    toast.success("Matched");
+    const { data, error } = await supabase.rpc("apply_bank_payment" as any, { _txn_id: txn.id, _challan_id: c.id });
+    if (error) return toast.error(error.message);
+    const st = (data as any)?.status;
+    toast.success(st === "partial" ? "Partial payment recorded" : st === "overpaid" ? "Matched — overpayment flagged for review" : "Matched");
     onClose();
     onDone();
   }

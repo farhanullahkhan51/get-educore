@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1791792816487,
+      "tag": "0000_bank_reconciliation_engine",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791792897799,
+      "tag": "0001_bank_txn_external_full_unique",
+      "breakpoints": true
+    }
+  ]
+}
