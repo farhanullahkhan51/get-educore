@@ -15,6 +15,7 @@
 - [ ] Decide card checkout: remove the "coming soon" line or enable real card payments.
 - [ ] Unique page titles/descriptions for every signed-in screen and the sign-in page.
 - [x] Notice Board & Circulars (announcements, audience targeting, printable letterhead).
+- [x] Staff attendance & leave (feeds proxy allocator).
 - [ ] Notification centre / SMS-WhatsApp alerts — post-launch.
 - [ ] Full launch rehearsal with a fresh institution on desktop and mobile.
 
