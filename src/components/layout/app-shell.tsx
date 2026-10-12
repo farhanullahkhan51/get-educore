@@ -23,6 +23,7 @@ import {
   CalendarDays,
   ArrowDownUp,
   Megaphone,
+  BookOpenCheck,
   CalendarCheck,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
