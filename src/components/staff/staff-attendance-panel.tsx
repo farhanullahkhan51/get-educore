@@ -27,6 +27,10 @@ import {
 type StaffLite = { id: string; first_name: string; last_name: string; staff_code: string; campus_id: string; designation: string | null; profile_id: string | null; status: string | null };
 type Leave = LeaveRow & { id: string; reason: string | null; review_note: string | null; created_at: string };
 type Att = AttRow & { id: string; check_in: string | null; check_out: string | null; note: string | null };
+// Stable empty fallbacks: a fresh `[]` each render re-triggers the draft effect forever.
+const EMPTY_STAFF: StaffLite[] = [];
+const EMPTY_LEAVES: Leave[] = [];
+const EMPTY_ATT: Att[] = [];
 
 const today = () => new Date().toISOString().slice(0, 10);
 const STATUS: { v: StaffAttStatus; label: string; cls: string }[] = [
@@ -55,7 +59,7 @@ export function StaffAttendancePanel() {
   const ownCampus = (campuses ?? []).some((c) => c.id === user?.campusId) ? user?.campusId : null;
   const activeCampus = campusId || ownCampus || campuses?.[0]?.id || "";
 
-  const { data: staff = [] } = useQuery({
+  const { data: staffData } = useQuery({
     queryKey: ["hr.staff", activeCampus],
     enabled: !!activeCampus || !isAdmin,
     queryFn: async () => {
@@ -64,11 +68,12 @@ export function StaffAttendancePanel() {
       return ((await q).data ?? []) as StaffLite[];
     },
   });
+  const staff = staffData ?? EMPTY_STAFF;
   const active = staff.filter((s) => !s.status || s.status === "active");
   const me = staff.find((s) => s.profile_id === user?.userId) ?? null;
   const nameOf = (id: string) => { const s = staff.find((x) => x.id === id); return s ? `${s.first_name} ${s.last_name}` : "—"; };
 
-  const { data: leaves = [] } = useQuery({
+  const { data: leavesData } = useQuery({
     queryKey: ["hr.leaves", activeCampus, isAdmin],
     enabled: !!user,
     queryFn: async () => (await fetchAllRows<Leave>((f, t) => {
@@ -78,15 +83,17 @@ export function StaffAttendancePanel() {
     })) as Leave[],
   });
 
-  const { data: dayAtt = [] } = useQuery({
+  const { data: dayAttData } = useQuery({
     queryKey: ["hr.att.day", activeCampus, date],
     enabled: isAdmin && !!activeCampus,
     queryFn: async () => ((await supabase.from("staff_attendance").select("id, staff_id, date, status, check_in, check_out, note").eq("campus_id", activeCampus).eq("date", date)).data ?? []) as Att[],
   });
 
+  const leaves = leavesData ?? EMPTY_LEAVES;
+  const dayAtt = dayAttData ?? EMPTY_ATT;
   const monthFrom = `${month}-01`;
   const monthTo = new Date(Date.UTC(+month.slice(0, 4), +month.slice(5, 7), 0)).toISOString().slice(0, 10);
-  const { data: monthAtt = [] } = useQuery({
+  const { data: monthAttData } = useQuery({
     queryKey: ["hr.att.month", activeCampus, month, isAdmin],
     enabled: !!user,
     queryFn: async () => (await fetchAllRows<Att>((f, t) => {
@@ -96,6 +103,7 @@ export function StaffAttendancePanel() {
     })) as Att[],
   });
 
+  const monthAtt = monthAttData ?? EMPTY_ATT;
   // Draft sheet for the selected day
   const [draft, setDraft] = useState<Record<string, { status: StaffAttStatus; check_in: string; note: string }>>({});
   useEffect(() => {

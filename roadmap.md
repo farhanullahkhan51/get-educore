@@ -27,3 +27,6 @@
 - [ ] WhatsApp/SMS gateway (needs provider credentials)
 - [ ] Remove demo data before go-live (staff codes DEMO-*, "(Demo)" circulars, demo lessons)
 - [x] Homework & Daily Diary (teacher posting, copy to sections, print, student portal feed)
+- [x] Swarm test round 1 (admin/principal agent, every screen + tab, desktop + phone; data integrity checks)
+- [ ] Swarm rounds for teacher, student and parent agents (needs one test login per role)
+- [ ] Fill guardian phones (154 of 158 students missing — parent queries/WhatsApp can't verify them)
