@@ -100,6 +100,7 @@ export const SURFACES: Record<string, Surface> = {
     { id: "/cambridge", label: "Cambridge" },
     { id: "/track-switch", label: "Track Switch" },
     { id: "/timetable", label: "Timetable" },
+    { id: "/homework", label: "Homework & Diary" },
     { id: "/notices", label: "Notice Board" },
     { id: "/fees", label: "Fees & Finance" },
     { id: "/certificates", label: "Certificates" },

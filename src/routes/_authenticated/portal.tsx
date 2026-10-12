@@ -14,6 +14,7 @@ import {
 import { CalendarCheck, Wallet, Award, FileText, CalendarClock } from "lucide-react";
 import { FeatureGate } from "@/components/layout/feature-gate";
 import { NoticeFeed } from "@/components/layout/notice-feed";
+import { DiaryFeed } from "@/components/homework/diary-feed";
 
 export const Route = createFileRoute("/_authenticated/portal")({
   head: () => ({
@@ -179,7 +180,8 @@ function StudentPortalPage() {
         <Kpi label="Certificates" value={certs?.length ?? 0} sub="Issued to you" icon={Award} />
       </div>
 
-      <div className="mb-6">
+      <div className="mb-6 space-y-4">
+        {student?.section_id && <DiaryFeed sectionId={student.section_id} />}
         <NoticeFeed limit={3} showLink={false} title="Notices from your school" />
       </div>
 
