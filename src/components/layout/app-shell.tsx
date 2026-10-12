@@ -121,6 +121,12 @@ const NAV: NavItem[] = [
     feature: "timetable",
   },
   {
+    to: "/homework",
+    label: "Homework & Diary",
+    icon: BookOpenCheck,
+    roles: ["super_admin", "campus_admin", "teacher"],
+  },
+  {
     to: "/notices",
     label: "Notice Board",
     icon: Megaphone,
