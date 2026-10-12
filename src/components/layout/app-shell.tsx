@@ -77,7 +77,7 @@ const NAV: NavItem[] = [
     icon: GraduationCap,
     roles: ["super_admin", "campus_admin", "admissions_officer", "finance_officer", "teacher"],
   },
-  { to: "/staff", label: "Staff", icon: Users, roles: ["super_admin", "campus_admin"] },
+  { to: "/staff", label: "Staff & HR", icon: Users, roles: ["super_admin", "campus_admin", "teacher"] },
   { to: "/courses", label: "Courses", icon: BookMarked, roles: ["super_admin", "campus_admin"] },
   {
     to: "/academics",
@@ -119,12 +119,6 @@ const NAV: NavItem[] = [
     icon: CalendarDays,
     roles: ["super_admin", "campus_admin", "teacher"],
     feature: "timetable",
-  },
-  {
-    to: "/staff-attendance",
-    label: "Staff Attendance",
-    icon: CalendarCheck,
-    roles: ["super_admin", "campus_admin", "teacher"],
   },
   {
     to: "/notices",

@@ -23,10 +23,49 @@ import { toast } from "sonner";
 import { Plus, Upload, FileText, Pencil, Wallet, Trash2 } from "lucide-react";
 import { useEntitlements, limitMessage } from "@/lib/entitlements";
 import { useLimitStatus, LimitNotice } from "@/lib/plan-usage";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { StaffAttendancePanel } from "@/components/staff/staff-attendance-panel";
 
 export const Route = createFileRoute("/_authenticated/staff")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    tab: s.tab === "attendance" ? ("attendance" as const) : undefined,
+  }),
+  head: () => ({
+    meta: [
+      { title: "Staff & HR" },
+      { name: "description", content: "Staff directory, documents, payroll, daily attendance and leave approvals in one place." },
+      { property: "og:title", content: "Staff & HR" },
+      { property: "og:description", content: "Staff directory, attendance and leave in one module." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: StaffPage,
 });
+
+function StaffPage() {
+  const { tab } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const { data: user } = useCurrentUser();
+  const isAdmin = !!user?.roles.some((r) => r === "super_admin" || r === "campus_admin");
+  if (user && !isAdmin) return <StaffAttendancePanel />;
+  const value = tab ?? "directory";
+  return (
+    <Tabs
+      value={value}
+      onValueChange={(v) => navigate({ search: { tab: v === "attendance" ? "attendance" : undefined }, replace: true })}
+      className="space-y-4"
+    >
+      <TabsList>
+        <TabsTrigger value="directory">Directory &amp; Payroll</TabsTrigger>
+        <TabsTrigger value="attendance">Attendance &amp; Leave</TabsTrigger>
+      </TabsList>
+      <TabsContent value="directory"><StaffDirectory /></TabsContent>
+      <TabsContent value="attendance"><StaffAttendancePanel /></TabsContent>
+    </Tabs>
+  );
+}
 
 type Staff = {
   id: string; staff_code: string; first_name: string; last_name: string;
@@ -49,7 +88,7 @@ type PayrollEntry = {
   created_at: string;
 };
 
-function StaffPage() {
+function StaffDirectory() {
   const qc = useQueryClient();
   const ent = useEntitlements();
   const [open, setOpen] = useState(false);
@@ -165,7 +204,7 @@ function StaffPage() {
     <>
       <PageHeader
         eyebrow="Personnel"
-        title="Staff"
+        title="Staff & HR"
         description="Manage teaching and administrative staff. Portal logins are granted via Users & Roles."
         actions={
           <div className="flex items-center gap-2">
