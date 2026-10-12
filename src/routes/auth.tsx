@@ -37,6 +37,20 @@ function AuthPage() {
     navigate({ to: "/dashboard" });
   }
 
+  /** If a student/parent registration is waiting, activate it and open the portal. */
+  async function finishPendingClaim(): Promise<boolean> {
+    const res = await runPendingClaim();
+    if (!res) return false;
+    if (res.ok) {
+      toast.success("Student portal activated");
+      navigate({ to: "/portal" });
+    } else {
+      toast.error(res.message);
+      navigate({ to: "/portal" });
+    }
+    return true;
+  }
+
   async function handleSignIn(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -48,24 +62,45 @@ function AuthPage() {
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Welcome back");
+    if (await finishPendingClaim()) return;
     goOn();
   }
 
   async function handleSignUp(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    const code = String(fd.get("student_code") ?? "").trim();
+    const phone = String(fd.get("guardian_phone") ?? "").trim();
+    if (isStudent) {
+      if (!code || phone.replace(/\D/g, "").length < 9) {
+        return toast.error("Enter the student code and a valid guardian phone number");
+      }
+      localStorage.setItem(PENDING_CLAIM_KEY, JSON.stringify({ code, phone }));
+    }
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: String(fd.get("email")),
       password: String(fd.get("password")),
       options: {
-        emailRedirectTo: `${window.location.origin}${next ?? "/dashboard"}`,
+        emailRedirectTo: `${window.location.origin}/auth`,
         data: { full_name: String(fd.get("full_name")) },
       },
     });
     setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Account created. Check your email if confirmation is required.");
+    if (error) {
+      localStorage.removeItem(PENDING_CLAIM_KEY);
+      return toast.error(error.message);
+    }
+    if (!data.session) {
+      toast.success(
+        isStudent
+          ? "Account created. Confirm your email, then sign in — your portal activates automatically."
+          : "Account created. Check your email if confirmation is required.",
+      );
+      return;
+    }
+    if (await finishPendingClaim()) return;
+    toast.success("Account created");
     goOn();
   }
 
