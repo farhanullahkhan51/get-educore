@@ -2052,6 +2052,27 @@ export type Database = {
         }
         Relationships: []
       }
+      portal_claim_attempts: {
+        Row: {
+          created_at: string
+          id: string
+          success: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          success?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          success?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -3518,6 +3539,10 @@ export type Database = {
       can_manage_staff_hr: {
         Args: { _campus: string; _user: string }
         Returns: boolean
+      }
+      claim_student_account: {
+        Args: { _code: string; _phone: string }
+        Returns: Json
       }
       dashboard_metrics: {
         Args: { _campus?: string; _since?: string }
