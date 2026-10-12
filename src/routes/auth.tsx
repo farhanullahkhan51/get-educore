@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { GraduationCap } from "lucide-react";
 import { useTenant } from "@/lib/tenant-context";
+import { PENDING_CLAIM_KEY, runPendingClaim } from "@/components/portal/claim-student-form";
+import { Checkbox } from "@/components/ui/checkbox";
 
 function safeNext(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
@@ -28,6 +30,7 @@ function AuthPage() {
   const { tenant } = useTenant();
   const brandName = tenant?.name ?? "EduCore";
   const [loading, setLoading] = useState(false);
+  const [isStudent, setIsStudent] = useState(false);
 
   function goOn() {
     if (next) {
@@ -35,6 +38,20 @@ function AuthPage() {
       return;
     }
     navigate({ to: "/dashboard" });
+  }
+
+  /** If a student/parent registration is waiting, activate it and open the portal. */
+  async function finishPendingClaim(): Promise<boolean> {
+    const res = await runPendingClaim();
+    if (!res) return false;
+    if (res.ok) {
+      toast.success("Student portal activated");
+      navigate({ to: "/portal" });
+    } else {
+      toast.error(res.message);
+      navigate({ to: "/portal" });
+    }
+    return true;
   }
 
   async function handleSignIn(e: React.FormEvent<HTMLFormElement>) {
@@ -48,24 +65,45 @@ function AuthPage() {
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Welcome back");
+    if (await finishPendingClaim()) return;
     goOn();
   }
 
   async function handleSignUp(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    const code = String(fd.get("student_code") ?? "").trim();
+    const phone = String(fd.get("guardian_phone") ?? "").trim();
+    if (isStudent) {
+      if (!code || phone.replace(/\D/g, "").length < 9) {
+        return toast.error("Enter the student code and a valid guardian phone number");
+      }
+      localStorage.setItem(PENDING_CLAIM_KEY, JSON.stringify({ code, phone }));
+    }
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: String(fd.get("email")),
       password: String(fd.get("password")),
       options: {
-        emailRedirectTo: `${window.location.origin}${next ?? "/dashboard"}`,
+        emailRedirectTo: `${window.location.origin}/auth`,
         data: { full_name: String(fd.get("full_name")) },
       },
     });
     setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Account created. Check your email if confirmation is required.");
+    if (error) {
+      localStorage.removeItem(PENDING_CLAIM_KEY);
+      return toast.error(error.message);
+    }
+    if (!data.session) {
+      toast.success(
+        isStudent
+          ? "Account created. Confirm your email, then sign in — your portal activates automatically."
+          : "Account created. Check your email if confirmation is required.",
+      );
+      return;
+    }
+    if (await finishPendingClaim()) return;
+    toast.success("Account created");
     goOn();
   }
 
@@ -142,12 +180,28 @@ function AuthPage() {
                     <Label htmlFor="su-pw">Password</Label>
                     <Input id="su-pw" name="password" type="password" required minLength={8} />
                   </div>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox checked={isStudent} onCheckedChange={(v) => setIsStudent(v === true)} />
+                    I am a student / parent
+                  </label>
+                  {isStudent && (
+                    <div className="space-y-4 rounded-md border border-border p-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="su-code">Student code / Roll no.</Label>
+                        <Input id="su-code" name="student_code" required maxLength={40} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="su-phone">Guardian phone registered with the school</Label>
+                        <Input id="su-phone" name="guardian_phone" required maxLength={20} inputMode="tel" />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Your portal opens automatically once these match the school's records.
+                      </p>
+                    </div>
+                  )}
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Creating…" : "Register"}
                   </Button>
-                  <p className="text-xs text-muted-foreground">
-                    The first account created becomes Super Admin automatically.
-                  </p>
                 </form>
               </TabsContent>
             </Tabs>
