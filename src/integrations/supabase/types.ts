@@ -1362,6 +1362,86 @@ export type Database = {
           },
         ]
       }
+      expenses: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          campus_id: string
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string
+          entry_type: string
+          expense_date: string
+          id: string
+          paid_at: string | null
+          payee: string
+          payment_mode: string
+          receipt_url: string | null
+          reference: string | null
+          status: string
+          tax_amount: number
+          tenant_id: string
+          updated_at: string
+          voucher_no: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          campus_id: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          entry_type?: string
+          expense_date?: string
+          id?: string
+          paid_at?: string | null
+          payee?: string
+          payment_mode?: string
+          receipt_url?: string | null
+          reference?: string | null
+          status?: string
+          tax_amount?: number
+          tenant_id: string
+          updated_at?: string
+          voucher_no?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          campus_id?: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          entry_type?: string
+          expense_date?: string
+          id?: string
+          paid_at?: string | null
+          payee?: string
+          payment_mode?: string
+          receipt_url?: string | null
+          reference?: string | null
+          status?: string
+          tax_amount?: number
+          tenant_id?: string
+          updated_at?: string
+          voucher_no?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_campus_id_fkey"
+            columns: ["campus_id"]
+            isOneToOne: false
+            referencedRelation: "campuses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fee_challans: {
         Row: {
           campus_id: string
@@ -3550,6 +3630,10 @@ export type Database = {
       }
       fee_totals: { Args: { _campus?: string }; Returns: Json }
       fee_totals_monthly: {
+        Args: { _campus?: string; _months?: number }
+        Returns: Json
+      }
+      finance_pnl_monthly: {
         Args: { _campus?: string; _months?: number }
         Returns: Json
       }

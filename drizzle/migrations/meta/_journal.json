@@ -36,6 +36,13 @@
       "when": 1791797220276,
       "tag": "0004_student_self_claim",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791804524506,
+      "tag": "0005_expenses_petty_cash",
+      "breakpoints": true
     }
   ]
 }
