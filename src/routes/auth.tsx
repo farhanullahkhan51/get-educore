@@ -180,12 +180,28 @@ function AuthPage() {
                     <Label htmlFor="su-pw">Password</Label>
                     <Input id="su-pw" name="password" type="password" required minLength={8} />
                   </div>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox checked={isStudent} onCheckedChange={(v) => setIsStudent(v === true)} />
+                    I am a student / parent
+                  </label>
+                  {isStudent && (
+                    <div className="space-y-4 rounded-md border border-border p-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="su-code">Student code / Roll no.</Label>
+                        <Input id="su-code" name="student_code" required maxLength={40} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="su-phone">Guardian phone registered with the school</Label>
+                        <Input id="su-phone" name="guardian_phone" required maxLength={20} inputMode="tel" />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Your portal opens automatically once these match the school's records.
+                      </p>
+                    </div>
+                  )}
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Creating…" : "Register"}
                   </Button>
-                  <p className="text-xs text-muted-foreground">
-                    The first account created becomes Super Admin automatically.
-                  </p>
                 </form>
               </TabsContent>
             </Tabs>
