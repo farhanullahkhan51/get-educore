@@ -15,6 +15,13 @@
       "when": 1791792897799,
       "tag": "0001_bank_txn_external_full_unique",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791793679364,
+      "tag": "0002_staff_attendance_and_leaves",
+      "breakpoints": true
     }
   ]
 }
