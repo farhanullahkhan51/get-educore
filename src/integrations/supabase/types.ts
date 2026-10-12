@@ -1669,6 +1669,75 @@ export type Database = {
           },
         ]
       }
+      homework_entries: {
+        Row: {
+          assigned_on: string
+          attachment_url: string | null
+          campus_id: string | null
+          course_id: string | null
+          created_at: string
+          created_by: string | null
+          details: string
+          due_on: string | null
+          id: string
+          kind: string
+          section_id: string
+          subject: string
+          tenant_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_on?: string
+          attachment_url?: string | null
+          campus_id?: string | null
+          course_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          details?: string
+          due_on?: string | null
+          id?: string
+          kind?: string
+          section_id: string
+          subject?: string
+          tenant_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_on?: string
+          attachment_url?: string | null
+          campus_id?: string | null
+          course_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          details?: string
+          due_on?: string | null
+          id?: string
+          kind?: string
+          section_id?: string
+          subject?: string
+          tenant_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homework_entries_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "homework_entries_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inquiries: {
         Row: {
           academic_system: Database["public"]["Enums"]["academic_system"] | null
@@ -3440,6 +3509,10 @@ export type Database = {
       campus_of_uid_text: { Args: { _uid_text: string }; Returns: string }
       can_manage_fees: {
         Args: { _campus_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_manage_homework: {
+        Args: { _section: string; _user: string }
         Returns: boolean
       }
       can_manage_staff_hr: {
