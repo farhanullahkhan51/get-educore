@@ -15,6 +15,7 @@ import { CalendarCheck, Wallet, Award, FileText, CalendarClock } from "lucide-re
 import { FeatureGate } from "@/components/layout/feature-gate";
 import { NoticeFeed } from "@/components/layout/notice-feed";
 import { DiaryFeed } from "@/components/homework/diary-feed";
+import { ClaimStudentForm } from "@/components/portal/claim-student-form";
 
 export const Route = createFileRoute("/_authenticated/portal")({
   head: () => ({
@@ -152,13 +153,15 @@ function StudentPortalPage() {
       <>
         <PageHeader
           eyebrow="Student Portal"
-          title="Portal not linked yet"
-          description="Your account isn't linked to a student profile."
+          title="Activate your portal"
+          description="Enter the student code and the guardian phone number registered with the school."
         />
-        <Card className="shadow-none">
-          <CardContent className="p-6 text-sm text-muted-foreground">
-            Please ask your campus administrator to link your login to your student record so you can view attendance,
-            fees, results and certificates here.
+        <Card className="max-w-md shadow-none">
+          <CardContent className="p-6">
+            <ClaimStudentForm />
+            <p className="mt-4 text-xs text-muted-foreground">
+              Don't know the student code? It's printed on the fee challan and ID card, or ask the school office.
+            </p>
           </CardContent>
         </Card>
       </>
