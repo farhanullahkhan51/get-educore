@@ -192,7 +192,8 @@ function UsersPage() {
                       <div className="flex flex-wrap gap-1">
                         {userRoles.length === 0 && <span className="text-xs text-muted-foreground">No roles</span>}
                         {userRoles.map((r) => (
-                          <Badge key={r.id} variant="secondary" className="gap-1">
+                          <Badge key={r.id} variant="outline" className={`gap-1.5 ${roleTone(r.role).badge}`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${roleTone(r.role).dot}`} />
                             {roleLabel(r.role as AppRole)}
                             {r.campus_id && <span className="opacity-60">· {campusMap.get(r.campus_id)}</span>}
                             <button onClick={() => requestRevoke(r, p.full_name ?? p.email ?? "this user")} className="ml-1 hover:text-destructive">
@@ -313,7 +314,7 @@ function RoleAssigner({ onAssign }: { onAssign: (role: AppRole) => void }) {
       <Select onValueChange={(v) => onAssign(v as AppRole)}>
         <SelectTrigger className="w-44"><SelectValue placeholder="+ grant role" /></SelectTrigger>
         <SelectContent>
-          {ROLES.map((r) => <SelectItem key={r} value={r}>{roleLabel(r)}</SelectItem>)}
+          {ROLES.map((r) => <SelectItem key={r} value={r}><span className="flex items-center gap-2"><span className={`h-2 w-2 rounded-full ${roleTone(r).dot}`} />{roleLabel(r)}</span></SelectItem>)}
         </SelectContent>
       </Select>
     </div>
@@ -322,3 +323,15 @@ function RoleAssigner({ onAssign }: { onAssign: (role: AppRole) => void }) {
 
 // Suppress unused
 const _ = Button;
+
+const ROLE_TONES: Record<string, { badge: string; dot: string }> = {
+  super_admin: { badge: "border-primary/40 bg-primary/10 text-primary", dot: "bg-primary" },
+  campus_admin: { badge: "border-oxford/40 bg-oxford/10 text-oxford dark:text-foreground", dot: "bg-oxford" },
+  finance_officer: { badge: "border-success/40 bg-success/10 text-success", dot: "bg-success" },
+  admissions_officer: { badge: "border-warning/50 bg-warning/15 text-foreground", dot: "bg-warning" },
+  teacher: { badge: "border-gold/50 bg-gold/15 text-foreground", dot: "bg-gold" },
+  student: { badge: "border-border bg-muted text-muted-foreground", dot: "bg-muted-foreground" },
+};
+function roleTone(role: string) {
+  return ROLE_TONES[role] ?? ROLE_TONES.student;
+}
