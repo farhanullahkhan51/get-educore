@@ -24,6 +24,7 @@ import { TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { EditableTabs } from "@/components/layout/editable";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import QRCode from "qrcode";
 import { Plus, Pencil, Trash2, Wallet, AlertTriangle, CheckCircle2, Upload, Link2, Eye, Printer } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { FeatureGate } from "@/components/layout/feature-gate";
@@ -726,11 +727,15 @@ function ChallansTab({
   );
 }
 
-function printChallan(
+async function printChallan(
   c: Challan,
   student: { code: string; name: string } | undefined,
   campus: { name: string; code: string } | undefined,
 ) {
+  const w = window.open("", "_blank", "width=800,height=1000");
+  if (!w) return;
+  const verifyUrl = `${window.location.origin}/verify/challan/${c.id}`;
+  const qr = await QRCode.toDataURL(verifyUrl, { margin: 1, width: 180, errorCorrectionLevel: "M" });
   const net = Number(c.gross_amount) - Number(c.discount_amount) + Number(c.fine_amount);
   const balance = net - Number(c.paid_amount);
   const fmt = (n: number) => new Intl.NumberFormat("en-PK", { style: "currency", currency: "PKR", maximumFractionDigits: 0 }).format(n);
@@ -742,7 +747,7 @@ function printChallan(
           <div class="school">${campus?.name ?? getActiveTenantName()}</div>
           <div class="sub">${campus?.code ?? ""} · Fee Challan</div>
         </div>
-        <div class="copytag">${title}</div>
+        <div class="right"><div class="copytag">${title}</div><img class="qr" src="${qr}" alt="Scan to verify"/><div class="qrcap">Scan to verify</div></div>
       </header>
       <div class="meta">
         <div><span>Challan #</span><strong>${c.challan_no}</strong></div>
@@ -776,6 +781,7 @@ function printChallan(
       .school{font-size:18px;font-weight:700;font-family:Georgia,serif}
       .sub{font-size:11px;color:#475569;letter-spacing:.08em;text-transform:uppercase}
       .copytag{font-size:11px;border:1px solid #0f172a;padding:2px 8px;text-transform:uppercase;letter-spacing:.1em}
+      .right{text-align:center}.qr{width:84px;height:84px;display:block;margin:6px auto 0}.qrcap{font-size:9px;color:#475569}
       .meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:12px;margin-bottom:10px}
       .meta span{color:#64748b;display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em}
       table{width:100%;border-collapse:collapse;font-size:12px}
@@ -790,8 +796,6 @@ function printChallan(
     ${copies.map(copy).join("")}
     <script>window.onload=()=>{window.print()}</script>
     </body></html>`;
-  const w = window.open("", "_blank", "width=800,height=1000");
-  if (!w) return;
   w.document.write(html);
   w.document.close();
 }

@@ -49,6 +49,7 @@ import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AuthenticatedAssistantIndexRouteImport } from './routes/_authenticated/assistant.index'
 import { Route as AuthenticatedAssistantThreadIdRouteImport } from './routes/_authenticated/assistant.$threadId'
+import { Route as VerifyChallanIdRouteImport } from './routes/verify.challan.$id'
 import { Route as ApiPublicBillingRemindersRouteImport } from './routes/api/public/billing/reminders'
 import { Route as ApiPublicFeesBankWebhookRouteImport } from './routes/api/public/fees/bank-webhook'
 
@@ -258,6 +259,11 @@ const AuthenticatedAssistantThreadIdRoute =
     path: '/assistant/$threadId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const VerifyChallanIdRoute = VerifyChallanIdRouteImport.update({
+  id: '/verify/challan/$id',
+  path: '/verify/challan/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicBillingRemindersRoute =
   ApiPublicBillingRemindersRouteImport.update({
     id: '/api/public/billing/reminders',
@@ -310,6 +316,7 @@ export interface FileRoutesByFullPath {
   '/api/transcribe': typeof ApiTranscribeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
+  '/verify/challan/$id': typeof VerifyChallanIdRoute
   '/assistant/': typeof AuthenticatedAssistantIndexRoute
   '/api/public/billing/reminders': typeof ApiPublicBillingRemindersRoute
   '/api/public/fees/bank-webhook': typeof ApiPublicFeesBankWebhookRoute
@@ -353,6 +360,7 @@ export interface FileRoutesByTo {
   '/api/transcribe': typeof ApiTranscribeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
+  '/verify/challan/$id': typeof VerifyChallanIdRoute
   '/assistant': typeof AuthenticatedAssistantIndexRoute
   '/api/public/billing/reminders': typeof ApiPublicBillingRemindersRoute
   '/api/public/fees/bank-webhook': typeof ApiPublicFeesBankWebhookRoute
@@ -398,6 +406,7 @@ export interface FileRoutesById {
   '/api/transcribe': typeof ApiTranscribeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/_authenticated/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
+  '/verify/challan/$id': typeof VerifyChallanIdRoute
   '/_authenticated/assistant/': typeof AuthenticatedAssistantIndexRoute
   '/api/public/billing/reminders': typeof ApiPublicBillingRemindersRoute
   '/api/public/fees/bank-webhook': typeof ApiPublicFeesBankWebhookRoute
@@ -443,6 +452,7 @@ export interface FileRouteTypes {
     | '/api/transcribe'
     | '/.lovable/oauth/consent'
     | '/assistant/$threadId'
+    | '/verify/challan/$id'
     | '/assistant/'
     | '/api/public/billing/reminders'
     | '/api/public/fees/bank-webhook'
@@ -486,6 +496,7 @@ export interface FileRouteTypes {
     | '/api/transcribe'
     | '/.lovable/oauth/consent'
     | '/assistant/$threadId'
+    | '/verify/challan/$id'
     | '/assistant'
     | '/api/public/billing/reminders'
     | '/api/public/fees/bank-webhook'
@@ -530,6 +541,7 @@ export interface FileRouteTypes {
     | '/api/transcribe'
     | '/.lovable/oauth/consent'
     | '/_authenticated/assistant/$threadId'
+    | '/verify/challan/$id'
     | '/_authenticated/assistant/'
     | '/api/public/billing/reminders'
     | '/api/public/fees/bank-webhook'
@@ -548,6 +560,7 @@ export interface RootRouteChildren {
   ApiChatRoute: typeof ApiChatRoute
   ApiTranscribeRoute: typeof ApiTranscribeRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
+  VerifyChallanIdRoute: typeof VerifyChallanIdRoute
   ApiPublicBillingRemindersRoute: typeof ApiPublicBillingRemindersRoute
   ApiPublicFeesBankWebhookRoute: typeof ApiPublicFeesBankWebhookRoute
 }
@@ -834,6 +847,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAssistantThreadIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/verify/challan/$id': {
+      id: '/verify/challan/$id'
+      path: '/verify/challan/$id'
+      fullPath: '/verify/challan/$id'
+      preLoaderRoute: typeof VerifyChallanIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/billing/reminders': {
       id: '/api/public/billing/reminders'
       path: '/api/public/billing/reminders'
@@ -930,6 +950,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiChatRoute: ApiChatRoute,
   ApiTranscribeRoute: ApiTranscribeRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
+  VerifyChallanIdRoute: VerifyChallanIdRoute,
   ApiPublicBillingRemindersRoute: ApiPublicBillingRemindersRoute,
   ApiPublicFeesBankWebhookRoute: ApiPublicFeesBankWebhookRoute,
 }
