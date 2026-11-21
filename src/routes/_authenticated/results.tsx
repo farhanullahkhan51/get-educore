@@ -1,3 +1,4 @@
+import { gradeForTrack, trackOf } from "@/lib/grading";
 import { createFileRoute } from "@tanstack/react-router";
 import { escapeDeep, escapeHtml } from "@/lib/html-escape";
 import { useState } from "react";
@@ -55,7 +56,7 @@ function ResultsPage() {
     queryKey: ["students-in-section", sectionId],
     enabled: !!sectionId,
     queryFn: async () => (await supabase.from("students")
-      .select("id, first_name, last_name, student_code, section_id")
+      .select("id, first_name, last_name, student_code, section_id, academic_system")
       .eq("section_id", sectionId).order("first_name")).data ?? [],
   });
 
@@ -104,7 +105,7 @@ function ResultsPage() {
             code: info?.code ?? "",
             title: info?.title ?? "",
             percent: Number(percent.toFixed(2)),
-            grade: letterFor(percent),
+            grade: gradeForTrack(percent, trackOf(st.academic_system)) ?? letterFor(percent),
             gpa: gpaFor(percent),
             marks_obtained: Number(c.obtained.toFixed(2)),
             marks_total: Number(c.total.toFixed(2)),

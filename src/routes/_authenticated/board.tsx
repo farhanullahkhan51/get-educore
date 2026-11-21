@@ -1,3 +1,4 @@
+import { gradeForTrack } from "@/lib/grading";
 import { createFileRoute } from "@tanstack/react-router";
 import { escapeDeep, escapeHtml } from "@/lib/html-escape";
 import { getActiveTenantName } from "@/lib/tenant-context";
@@ -661,14 +662,7 @@ function ResultsTab() {
 
 function gradeFor(total: number | null, max: number): string | null {
   if (total == null || !max) return null;
-  const p = (total / max) * 100;
-  if (p >= 80) return "A+";
-  if (p >= 70) return "A";
-  if (p >= 60) return "B";
-  if (p >= 50) return "C";
-  if (p >= 40) return "D";
-  if (p >= 33) return "E";
-  return "F";
+  return gradeForTrack((total / max) * 100, "board");
 }
 
 function GatedBoardPage() {

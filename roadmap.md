@@ -32,4 +32,4 @@
 - [ ] Swarm rounds for teacher, student and parent agents (needs one test login per role)
 - [ ] Fill guardian phones (154 of 158 students missing — parent queries/WhatsApp can't verify them)
 - [x] Fees: one-click late fines (batch challan generation already existed)
-- [ ] Cambridge vs Board grading rules
+- [x] Cambridge vs Board grading rules
