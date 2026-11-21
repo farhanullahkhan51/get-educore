@@ -4,7 +4,7 @@ export function CampusPills({ value, onChange, campuses }: {
 }) {
   const opts = [{ id: "all", name: "All campuses" }, ...campuses];
   return (
-    <div role="radiogroup" aria-label="Campus" className="glass-panel sticky top-2 z-10 mb-6 inline-flex max-w-full gap-1 overflow-x-auto rounded-full p-1">
+    <div role="radiogroup" aria-label="Campus" className="glass-panel inline-flex max-w-full gap-1 overflow-x-auto rounded-full p-1">
       {opts.map((c) => {
         const on = value === c.id;
         return (

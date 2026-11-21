@@ -62,12 +62,12 @@ function Kpi({
     >
       <CardContent className="p-5">
         <div className="flex items-center justify-between">
-          <div className="text-xs uppercase tracking-widest text-muted-foreground">{label}</div>
+          <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
           <Icon className="h-4 w-4 text-muted-foreground" />
         </div>
         <div
           className={
-            "mt-3 font-serif text-3xl font-semibold " +
+            "mt-3 font-serif text-4xl font-semibold tabular-nums tracking-tight " +
             (tone === "warn" ? "text-destructive" : "")
           }
         >
@@ -115,6 +115,7 @@ function Dashboard() {
   const { data: user } = useCurrentUser();
   const isSuper = user?.roles.includes("super_admin") ?? false;
   const [campus, setCampus] = useState<string>("all");
+  const [months, setMonths] = useState<3 | 6 | 12>(6);
   const ent = useEntitlements();
   const { data: planUsage } = usePlanUsage();
 
@@ -130,7 +131,7 @@ function Dashboard() {
 
   const scopedCampus = isSuper ? (campus === "all" ? null : campus) : user?.campusId ?? null;
 
-  const since = useMemo(() => startOfMonth(subMonths(new Date(), 5)), []);
+  const since = useMemo(() => startOfMonth(subMonths(new Date(), months - 1)), [months]);
 
   const { data: agg, isLoading } = useQuery({
     queryKey: ["dashboard-metrics", scopedCampus, format(since, "yyyy-MM-dd")],
@@ -222,7 +223,7 @@ function Dashboard() {
       <PageHeader
         eyebrow={`Signed in as ${roleLabel(user?.primaryRole ?? null)}`}
         title={user?.fullName || user?.email ? `Welcome, ${user?.fullName ?? user?.email}` : "Welcome"}
-        description="Institution-wide totals, with attendance and admissions trends covering the last six months."
+        description={`Institution-wide totals, with attendance and admissions trends covering the last ${months} months.`}
       />
 
       {ent.planName && isSuper ? (
@@ -255,9 +256,19 @@ function Dashboard() {
         </div>
       ) : null}
       {isSuper ? <SetupMilestones /> : null}
-      {isSuper && (campuses?.length ?? 0) > 1 ? (
-        <CampusPills value={campus} onChange={setCampus} campuses={campuses ?? []} />
-      ) : null}
+      <div className="sticky top-14 z-10 mb-6 flex flex-wrap items-center gap-3">
+        {isSuper && (campuses?.length ?? 0) > 1 ? (
+          <CampusPills value={campus} onChange={setCampus} campuses={campuses ?? []} />
+        ) : null}
+        <div role="radiogroup" aria-label="Trend period" className="glass-panel inline-flex gap-1 rounded-full p-1">
+          {([3, 6, 12] as const).map((m) => (
+            <button key={m} type="button" role="radio" aria-checked={months === m} onClick={() => setMonths(m)}
+              className={"press rounded-full px-4 py-1.5 text-sm transition-colors duration-300 " + (months === m ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent hover:text-foreground")}>
+              {m === 12 ? "12 months" : `${m} months`}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="mb-6">
         <NoticeFeed limit={3} />
@@ -361,7 +372,7 @@ function Dashboard() {
                 <Card className="h-full shadow-none">
                   <CardHeader>
                     <CardTitle className="font-serif text-lg">{block.label}</CardTitle>
-                    <CardDescription>Last six months, by challan issue month</CardDescription>
+                    <CardDescription>Last {months} months, by challan issue month</CardDescription>
                   </CardHeader>
                   <CardContent className={chartH}>
                     <ResponsiveContainer width="100%" height="100%">
@@ -403,7 +414,7 @@ function Dashboard() {
                 <Card className="h-full shadow-none">
                   <CardHeader>
                     <CardTitle className="font-serif text-lg">{block.label}</CardTitle>
-                    <CardDescription>Inquiries received in the last six months</CardDescription>
+                    <CardDescription>Inquiries received in the last {months} months</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {metrics.funnel.map((f) => {

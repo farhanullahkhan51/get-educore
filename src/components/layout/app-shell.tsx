@@ -1,4 +1,5 @@
 import { DocumentScanButton } from "@/components/scan/document-scanner";
+import { CommandPalette } from "@/components/layout/command-palette";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useCurrentUser, roleLabel, type AppRole } from "@/hooks/use-current-user";
 import { useTenant } from "@/lib/tenant-context";
@@ -205,6 +206,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 
   const navByPath = new Map(NAV.map((item) => [item.to, item]));
+  const paletteItems = NAV.filter(
+    (item) => (user?.roles.some((r) => item.roles.includes(r)) ?? false) && (!item.feature || ent.can(item.feature)),
+  ).map((item) => ({ to: item.to, label: item.label, icon: item.icon }));
 
   const navList = (onNavigate?: () => void) => (
     <EditableList
@@ -222,10 +226,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             to={item.to}
             onClick={onNavigate}
             className={cn(
-              "flex items-center gap-3 rounded-sm px-3 py-2 text-sm transition-colors",
+              "press flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors duration-300",
               active
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                ? "glass-nav-active text-sidebar-accent-foreground"
+                : "text-sidebar-foreground/80 hover:bg-sidebar-accent/40 hover:text-sidebar-accent-foreground",
             )}
           >
             <Icon className="h-4 w-4" />
@@ -259,7 +263,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="shell-aura relative isolate flex min-h-screen bg-background">
       <RouteProgress />
       <a
         href="#main-content"
@@ -283,7 +287,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       )}
       <aside
-        className={`hidden w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground md:flex ${preview ? "pt-7" : ""}`}
+        className={`glass-sidebar sticky top-0 hidden h-screen w-64 shrink-0 flex-col text-sidebar-foreground md:flex ${preview ? "pt-7" : ""}`}
       >
         {brandBlock}
         {navList()}
@@ -317,7 +321,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </SheetTrigger>
               <SheetContent
                 side="left"
-                className="w-72 bg-sidebar text-sidebar-foreground p-0 flex flex-col"
+                className="glass-sidebar w-72 text-sidebar-foreground p-0 flex flex-col"
               >
                 <SheetTitle className="sr-only">Navigation</SheetTitle>
                 {brandBlock}
@@ -329,9 +333,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
 
         {/* Desktop top bar */}
-        <div className="sticky top-0 z-30 hidden items-center justify-end border-b bg-background px-6 py-2 md:flex">
+        <div className="sticky top-0 z-30 hidden items-center justify-end border-b bg-background/70 backdrop-blur-xl px-6 py-2 md:flex">
           <div className="flex items-center gap-2">
             {ent.can("edit_mode") && <EditModeButton />}
+            <CommandPalette items={paletteItems} />
             <DocumentScanButton />
             {ent.can("ai_assistant") && <AssistantMenu />}
           </div>
