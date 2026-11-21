@@ -1,3 +1,4 @@
+import { DocumentScanButton } from "@/components/scan/document-scanner";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useCurrentUser, roleLabel, type AppRole } from "@/hooks/use-current-user";
 import { useTenant } from "@/lib/tenant-context";
@@ -306,6 +307,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
           <div className="flex items-center gap-1">
             {ent.can("edit_mode") && <EditModeButton />}
+            <DocumentScanButton />
             {ent.can("ai_assistant") && <AssistantMenu />}
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
@@ -330,6 +332,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="sticky top-0 z-30 hidden items-center justify-end border-b bg-background px-6 py-2 md:flex">
           <div className="flex items-center gap-2">
             {ent.can("edit_mode") && <EditModeButton />}
+            <DocumentScanButton />
             {ent.can("ai_assistant") && <AssistantMenu />}
           </div>
         </div>

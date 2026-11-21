@@ -45,6 +45,7 @@ import { Route as AuthenticatedTimetableRouteImport } from './routes/_authentica
 import { Route as AuthenticatedTrackSwitchRouteImport } from './routes/_authenticated/track-switch'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiScanDocumentRouteImport } from './routes/api/scan-document'
 import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AuthenticatedAssistantIndexRouteImport } from './routes/_authenticated/assistant.index'
@@ -237,6 +238,11 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiScanDocumentRoute = ApiScanDocumentRouteImport.update({
+  id: '/api/scan-document',
+  path: '/api/scan-document',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTranscribeRoute = ApiTranscribeRouteImport.update({
   id: '/api/transcribe',
   path: '/api/transcribe',
@@ -313,6 +319,7 @@ export interface FileRoutesByFullPath {
   '/track-switch': typeof AuthenticatedTrackSwitchRoute
   '/users': typeof AuthenticatedUsersRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/scan-document': typeof ApiScanDocumentRoute
   '/api/transcribe': typeof ApiTranscribeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
@@ -357,6 +364,7 @@ export interface FileRoutesByTo {
   '/track-switch': typeof AuthenticatedTrackSwitchRoute
   '/users': typeof AuthenticatedUsersRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/scan-document': typeof ApiScanDocumentRoute
   '/api/transcribe': typeof ApiTranscribeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
@@ -403,6 +411,7 @@ export interface FileRoutesById {
   '/_authenticated/track-switch': typeof AuthenticatedTrackSwitchRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/scan-document': typeof ApiScanDocumentRoute
   '/api/transcribe': typeof ApiTranscribeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/_authenticated/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
@@ -449,6 +458,7 @@ export interface FileRouteTypes {
     | '/track-switch'
     | '/users'
     | '/api/chat'
+    | '/api/scan-document'
     | '/api/transcribe'
     | '/.lovable/oauth/consent'
     | '/assistant/$threadId'
@@ -493,6 +503,7 @@ export interface FileRouteTypes {
     | '/track-switch'
     | '/users'
     | '/api/chat'
+    | '/api/scan-document'
     | '/api/transcribe'
     | '/.lovable/oauth/consent'
     | '/assistant/$threadId'
@@ -538,6 +549,7 @@ export interface FileRouteTypes {
     | '/_authenticated/track-switch'
     | '/_authenticated/users'
     | '/api/chat'
+    | '/api/scan-document'
     | '/api/transcribe'
     | '/.lovable/oauth/consent'
     | '/_authenticated/assistant/$threadId'
@@ -558,6 +570,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiScanDocumentRoute: typeof ApiScanDocumentRoute
   ApiTranscribeRoute: typeof ApiTranscribeRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   VerifyChallanIdRoute: typeof VerifyChallanIdRoute
@@ -819,6 +832,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/scan-document': {
+      id: '/api/scan-document'
+      path: '/api/scan-document'
+      fullPath: '/api/scan-document'
+      preLoaderRoute: typeof ApiScanDocumentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/transcribe': {
       id: '/api/transcribe'
       path: '/api/transcribe'
@@ -948,6 +968,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiScanDocumentRoute: ApiScanDocumentRoute,
   ApiTranscribeRoute: ApiTranscribeRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   VerifyChallanIdRoute: VerifyChallanIdRoute,
