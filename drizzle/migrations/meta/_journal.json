@@ -43,6 +43,13 @@
       "when": 1791804524506,
       "tag": "0005_expenses_petty_cash",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795237945536,
+      "tag": "0006_harden_scope_helpers_and_board_writes",
+      "breakpoints": true
     }
   ]
 }

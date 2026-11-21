@@ -17,6 +17,19 @@ export const deleteAppUser = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    // Tenant boundary: an institution admin may only delete users of their own institution.
+    // Platform owners may manage any institution.
+    const { data: isOwner } = await supabase.rpc("is_platform_owner", { _user_id: userId });
+    if (!isOwner) {
+      const [{ data: me }, { data: target }] = await Promise.all([
+        supabaseAdmin.from("profiles").select("tenant_id").eq("id", userId).maybeSingle(),
+        supabaseAdmin.from("profiles").select("tenant_id").eq("id", data.userId).maybeSingle(),
+      ]);
+      if (!me?.tenant_id || !target || target.tenant_id !== me.tenant_id) {
+        throw new Error("Forbidden: this user does not belong to your institution");
+      }
+    }
+
     // Prevent removing the last remaining Super Admin
     const { data: targetRoles } = await supabaseAdmin
       .from("user_roles")

@@ -5,9 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, ShieldAlert } from "lucide-react";
 
 export const Route = createFileRoute("/verify/challan/$id")({
-  loader: async ({ params }) => {
+  validateSearch: (s: Record<string, unknown>) => ({ t: typeof s["t"] === "string" ? (s["t"] as string) : "" }),
+  loaderDeps: ({ search }) => ({ t: search.t }),
+  loader: async ({ params, deps }) => {
     try {
-      return { challan: await verifyChallan({ data: { id: params.id } }) };
+      return { challan: await verifyChallan({ data: { id: params.id, t: deps.t } }) };
     } catch {
       return { challan: null };
     }

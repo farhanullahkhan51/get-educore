@@ -61,6 +61,20 @@ export const Route = createFileRoute("/api/chat")({
           if (!thread) return new Response("Thread not found", { status: 404 });
         }
 
+        // Only user/assistant turns may come from the client; the system prompt is server-owned.
+        if (
+          messages.length > 200 ||
+          !messages.every(
+            (m) =>
+              m &&
+              typeof m === "object" &&
+              ((m as { role?: unknown }).role === "user" || (m as { role?: unknown }).role === "assistant") &&
+              typeof (m as { id?: unknown }).id === "string" &&
+              Array.isArray((m as { parts?: unknown }).parts),
+          )
+        ) {
+          return new Response("Invalid messages", { status: 400 });
+        }
         const uiMessages = messages as UIMessage[];
         const lastUser = [...uiMessages].reverse().find((m) => m.role === "user");
 

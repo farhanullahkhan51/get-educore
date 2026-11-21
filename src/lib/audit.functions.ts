@@ -22,14 +22,26 @@ export const insertAuditLog = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => insertAuditLogSchema.parse(input))
   .handler(async ({ data, context }) => {
+    // Never trust caller-supplied scope: derive the tenant from the caller's own profile
+    // and only keep a campus the caller can actually access.
+    const { data: tenantId } = await context.supabase.rpc("get_user_tenant", { _user_id: context.userId });
+    if (!tenantId) throw new Error("No institution is linked to your account.");
+    let campusId: string | null = null;
+    if (data.campus_id) {
+      const { data: ok } = await context.supabase.rpc("has_campus_access", {
+        _user_id: context.userId,
+        _campus_id: data.campus_id,
+      });
+      campusId = ok ? data.campus_id : null;
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("audit_logs").insert({
-      tenant_id: data.tenant_id,
+      tenant_id: tenantId as string,
       actor_id: context.userId,
       action: data.action,
       entity_type: data.entity_type,
       entity_id: data.entity_id,
-      campus_id: data.campus_id,
+      campus_id: campusId,
       details: (data.details ?? null) as Json | null,
     });
     if (error) throw error;

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { escapeDeep, escapeHtml } from "@/lib/html-escape";
 import { getActiveTenantName } from "@/lib/tenant-context";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -379,7 +380,7 @@ function RollSlipTab() {
 
   async function printSlip(kind: "roll_slip" | "admit_card") {
     if (!regId) return toast.error("Select a registration");
-    const r: any = regs?.find((x: any) => x.id === regId);
+    const r: any = escapeDeep(regs?.find((x: any) => x.id === regId));
     if (!r) return;
     setBusy(true);
     try {
@@ -391,14 +392,14 @@ function RollSlipTab() {
       }
       const { data: entries } = await supabase.from("board_exam_entries")
         .select("*").eq("registration_id", r.id).order("display_order");
-      const subjRows = (entries ?? []).map((e: any, i: number) => `
+      const subjRows = escapeDeep(entries ?? []).map((e: any, i: number) => `
         <tr>
           <td style="text-align:center">${i + 1}</td>
           <td>${e.subject_code}</td>
           <td>${e.subject_name}${e.paper ? ` (${e.paper})` : ""}</td>
           <td style="text-align:center">${Number(e.theory_max)} + ${Number(e.practical_max)}</td>
         </tr>`).join("");
-      const st = studentOf(r.student_id); const c = campusOf(r.campus_id);
+      const st = escapeDeep(studentOf(r.student_id)); const c = escapeDeep(campusOf(r.campus_id));
       const title = kind === "roll_slip" ? "ROLL NUMBER SLIP" : "ADMIT CARD";
       const w = window.open("", "_blank", "width=900,height=1100");
       if (!w) { setBusy(false); return; }
@@ -441,7 +442,7 @@ function RollSlipTab() {
           <tbody>${subjRows || '<tr><td colspan="4" style="text-align:center">No subjects registered</td></tr>'}</tbody>
         </table>
         <div class="sig"><div>Candidate Signature</div><div>Controller of Examinations</div><div>Principal</div></div>
-        <div class="stamp">Issued ${new Date().toLocaleDateString()} · ${getActiveTenantName()}</div>
+        <div class="stamp">Issued ${new Date().toLocaleDateString()} · ${escapeHtml(getActiveTenantName())}</div>
         </body></html>`);
       w.document.close();
       setTimeout(() => w.print(), 400);
@@ -530,8 +531,8 @@ function ResultsTab() {
 
   function printGazette() {
     if (!regId) return;
-    const r: any = regs?.find((x: any) => x.id === regId);
-    const rows = (entries ?? []).map((e: any) => {
+    const r: any = escapeDeep(regs?.find((x: any) => x.id === regId));
+    const rows = escapeDeep(entries ?? []).map((e: any) => {
       const res = e.board_results?.[0];
       return `<tr>
         <td>${e.subject_code}</td>

@@ -55,7 +55,9 @@ export function parseCsvObjects(text: string): Record<string, string>[] {
 }
 
 function esc(v: unknown): string {
-  const s = v === null || v === undefined ? "" : String(v);
+  let s = v === null || v === undefined ? "" : String(v);
+  // Neutralise spreadsheet formula triggers in text cells (CSV injection).
+  if (typeof v === "string" && /^[=+\-@\t\r]/.test(s) && !/^-?\d+(\.\d+)?$/.test(s)) s = `'${s}`;
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { escapeDeep, escapeHtml } from "@/lib/html-escape";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -157,9 +158,10 @@ function ResultsPage() {
     qc.invalidateQueries({ queryKey: ["report_cards"] });
   }
 
-  function printCard(card: ReportCard) {
-    const st = students?.find((s) => s.id === card.student_id);
-    const section: any = sections?.find((s: any) => s.id === sectionId);
+  function printCard(rawCard: ReportCard) {
+    const card = escapeDeep(rawCard);
+    const st = escapeDeep(students?.find((s) => s.id === card.student_id));
+    const section: any = escapeDeep(sections?.find((s: any) => s.id === sectionId));
     const subs = card.subjects as any[];
     const rows = subs.map((s) => `
       <tr>
@@ -198,7 +200,7 @@ function ResultsPage() {
         }
       </style></head><body>
       <div class="h">
-        <div class="sub">${getActiveTenantName()} Academic Report</div>
+        <div class="sub">${escapeHtml(getActiveTenantName())} Academic Report</div>
         <h1>REPORT CARD</h1>
         <div class="sub">${card.term} · ${card.academic_year}</div>
       </div>

@@ -164,7 +164,7 @@ export const markInvoicePaid = createServerFn({ method: "POST" })
         .select("primary_color, email_sender_name")
         .eq("tenant_id", invoice.tenant_id)
         .maybeSingle();
-      const { sendEmail, brandedHtml } = await import("@/lib/email.server");
+      const { sendEmail, brandedHtml, escapeEmailText } = await import("@/lib/email.server");
       const institution = tenant?.name ?? "Your institution";
       await sendEmail({
         to: sub.billing_email,
@@ -174,8 +174,8 @@ export const markInvoicePaid = createServerFn({ method: "POST" })
           institution,
           color: settings?.primary_color,
           heading: "Payment received — your plan is active",
-          body: `<p>We have confirmed your bank transfer for invoice <strong>${invoice.invoice_no}</strong>.</p>
-                 <p>Your workspace is fully active${invoice.period_end ? ` until ${invoice.period_end}` : ""}. Thank you.</p>`,
+          body: `<p>We have confirmed your bank transfer for invoice <strong>${escapeEmailText(invoice.invoice_no)}</strong>.</p>
+                 <p>Your workspace is fully active${invoice.period_end ? ` until ${escapeEmailText(invoice.period_end)}` : ""}. Thank you.</p>`,
         }),
       });
       await supabaseAdmin

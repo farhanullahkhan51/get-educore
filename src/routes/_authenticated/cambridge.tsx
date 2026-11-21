@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { escapeDeep, escapeHtml } from "@/lib/html-escape";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -377,7 +378,7 @@ function StatementTab() {
 
   async function printStatement() {
     if (!regId) return toast.error("Select a registration");
-    const r: any = regs?.find((x: any) => x.id === regId);
+    const r: any = escapeDeep(regs?.find((x: any) => x.id === regId));
     if (!r) return;
     setBusy(true);
     try {
@@ -385,9 +386,9 @@ function StatementTab() {
       if (outstanding) { setBusy(false); return toast.error("Student has outstanding fees — clear dues first."); }
       const { data: entries } = await supabase.from("cambridge_subject_entries")
         .select("*").eq("registration_id", r.id).order("display_order");
-      const s = students?.find((x) => x.id === r.student_id);
-      const c = campuses?.find((x) => x.id === r.campus_id);
-      const rows = (entries ?? []).map((e: any, i: number) => `
+      const s = escapeDeep(students?.find((x) => x.id === r.student_id));
+      const c = escapeDeep(campuses?.find((x) => x.id === r.campus_id));
+      const rows = escapeDeep(entries ?? []).map((e: any, i: number) => `
         <tr>
           <td style="text-align:center">${i + 1}</td>
           <td>${e.syllabus_code}</td>
@@ -420,7 +421,7 @@ function StatementTab() {
           @media print{*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;}}
         </style></head><body>
         <div class="h">
-          <div class="sub">${getActiveTenantName()} · ${c?.name ?? ""}</div>
+          <div class="sub">${escapeHtml(getActiveTenantName())} · ${c?.name ?? ""}</div>
           <h1>STATEMENT OF ENTRY</h1>
           <div class="sub">Cambridge Assessment International Education</div>
         </div>

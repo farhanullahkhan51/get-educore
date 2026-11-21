@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
+
   MODULE_LAYOUTS,
   MODULE_KEYS,
   defaultsFor,
@@ -16,6 +17,12 @@ const MODULE_ENUM = MODULE_KEYS as [string, ...string[]];
 
 
 type Db = SupabaseClient<Database>;
+
+
+/** Strip characters that carry meaning in PostgREST filter expressions or LIKE patterns. */
+function safeTerm(v: string): string {
+  return v.replace(/[^\p{L}\p{N}\s\-']/gu, " ").replace(/\s+/g, " ").trim().slice(0, 80);
+}
 
 export type AssistantContext = {
   supabase: Db;
@@ -176,7 +183,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
       if (!ctx.campusId) return { error: "No campus is available for your account." };
       return { id: ctx.campusId };
     }
-    const like = `%${name.trim()}%`;
+    const like = `%${safeTerm(name)}%`;
     const { data } = await supabase
       .from("campuses")
       .select("id, name")
@@ -200,7 +207,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
   }
 
   async function findStudent(term: string) {
-    const like = `%${term.trim()}%`;
+    const like = `%${safeTerm(term)}%`;
     const { data } = await supabase
       .from("students")
       .select("id, student_code, first_name, last_name, campus_id, class_id, section_id, academic_system")
@@ -210,7 +217,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
   }
 
   async function findStaff(term: string) {
-    const like = `%${term.trim()}%`;
+    const like = `%${safeTerm(term)}%`;
     const { data } = await supabase
       .from("staff")
       .select("id, staff_code, first_name, last_name, campus_id, academic_system")
@@ -220,7 +227,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
   }
 
   async function findClass(term: string) {
-    const like = `%${term.trim()}%`;
+    const like = `%${safeTerm(term)}%`;
     const { data } = await supabase
       .from("classes")
       .select("id, name, grade_level, campus_id, program_id, academic_system")
@@ -238,7 +245,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
   }
 
   async function findCourse(term: string) {
-    const like = `%${term.trim()}%`;
+    const like = `%${safeTerm(term)}%`;
     const { data } = await supabase
       .from("courses")
       .select("id, code, title, campus_id, class_id, academic_system")
@@ -412,7 +419,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
         filter: z.string().describe("Optional free-text filter on names/codes. Empty string lists everything."),
       }),
       execute: async ({ filter }) => {
-        const like = `%${filter.trim()}%`;
+        const like = `%${safeTerm(filter)}%`;
         const [programs, classes, sections, courses] = await Promise.all([
           supabase.from("programs").select("id, name, code, academic_system, campus_id").limit(100),
           supabase.from("classes").select("id, name, grade_level, academic_system, campus_id, program_id").limit(200),
@@ -450,7 +457,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
           .limit(25);
         const term = query.trim();
         if (term) {
-          const like = `%${term}%`;
+          const like = `%${safeTerm(term)}%`;
           q = q.or(
             `first_name.ilike.${like},last_name.ilike.${like},student_code.ilike.${like},guardian_name.ilike.${like},guardian_occupation.ilike.${like}`,
           );
@@ -476,7 +483,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
           .limit(25);
         const term = query.trim();
         if (term) {
-          const like = `%${term}%`;
+          const like = `%${safeTerm(term)}%`;
           q = q.or(
             `first_name.ilike.${like},last_name.ilike.${like},staff_code.ilike.${like},designation.ilike.${like},department.ilike.${like}`,
           );
@@ -583,7 +590,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
       execute: async ({ class_name, section_name }) => {
         const term = class_name.trim();
         let cq = supabase.from("classes").select("id, name, grade_level, academic_year, campus_id, academic_system");
-        if (term) cq = cq.or(`name.ilike.%${term}%,grade_level.ilike.%${term}%`);
+        if (term) cq = cq.or(`name.ilike.%${safeTerm(term)}%,grade_level.ilike.%${safeTerm(term)}%`);
         const { data: classes, error: cErr } = await cq.limit(10);
         if (cErr) return { error: cErr.message };
         if (!classes?.length) return { error: `No class matching "${term}" was found.` };

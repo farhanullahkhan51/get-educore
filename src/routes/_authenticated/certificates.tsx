@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { escapeDeep, escapeHtml } from "@/lib/html-escape";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -290,8 +291,9 @@ function CertificatesPage() {
     refetch();
   }
 
-  function printCert(c: Certificate) {
-    const campus = campuses?.find((x) => x.id === c.campus_id);
+  function printCert(rawCert: Certificate) {
+    const c = escapeDeep(rawCert);
+    const campus = escapeDeep(campuses?.find((x) => x.id === c.campus_id));
     const w = window.open("", "_blank", "width=900,height=1100");
     if (!w) return;
     const bodyHtml = c.body.split(/\n{2,}/).map((p) => `<p>${p.replace(/\n/g, "<br/>")}</p>`).join("");
@@ -323,7 +325,7 @@ function CertificatesPage() {
       <div class="frame">
         ${watermark}
         <div class="head">
-          <div class="brand">${getActiveTenantName()}</div>
+          <div class="brand">${escapeHtml(getActiveTenantName())}</div>
           <h1>${campus?.name ?? ""}</h1>
           <div class="campus">Office of the Principal</div>
         </div>
@@ -339,7 +341,7 @@ function CertificatesPage() {
           <div>Head of Institution</div>
           <div>Official Seal</div>
         </div>
-        <div class="foot">This is a computer-generated certificate. Verify with serial no. ${c.serial_no} · ${getActiveTenantName()}</div>
+        <div class="foot">This is a computer-generated certificate. Verify with serial no. ${c.serial_no} · ${escapeHtml(getActiveTenantName())}</div>
       </div>
       </body></html>`);
     w.document.close();

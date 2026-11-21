@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getChallanVerifyToken } from "@/lib/challan-verify.functions";
+import { escapeDeep, escapeHtml } from "@/lib/html-escape";
 import { getActiveTenantName } from "@/lib/tenant-context";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -734,7 +736,11 @@ async function printChallan(
 ) {
   const w = window.open("", "_blank", "width=800,height=1000");
   if (!w) return;
-  const verifyUrl = `${window.location.origin}/verify/challan/${c.id}`;
+  const { t } = await getChallanVerifyToken({ data: { id: c.id } });
+  c = escapeDeep(c);
+  student = escapeDeep(student);
+  campus = escapeDeep(campus);
+  const verifyUrl = `${window.location.origin}/verify/challan/${c.id}?t=${t}`;
   const qr = await QRCode.toDataURL(verifyUrl, { margin: 1, width: 180, errorCorrectionLevel: "M" });
   const net = Number(c.gross_amount) - Number(c.discount_amount) + Number(c.fine_amount);
   const balance = net - Number(c.paid_amount);
@@ -744,7 +750,7 @@ async function printChallan(
     <section class="copy">
       <header>
         <div class="brand">
-          <div class="school">${campus?.name ?? getActiveTenantName()}</div>
+          <div class="school">${campus?.name ?? escapeHtml(getActiveTenantName())}</div>
           <div class="sub">${campus?.code ?? ""} · Fee Challan</div>
         </div>
         <div class="right"><div class="copytag">${title}</div><img class="qr" src="${qr}" alt="Scan to verify"/><div class="qrcap">Scan to verify</div></div>

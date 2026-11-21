@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { escapeDeep, escapeHtml } from "@/lib/html-escape";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -211,8 +212,9 @@ function NoticesPage() {
     qc.invalidateQueries({ queryKey: ["notices"] });
   }
 
-  function printNotice(n: Notice) {
-    const campusName = campuses?.find((c) => c.id === n.campus_id)?.name ?? "All campuses";
+  function printNotice(raw: Notice) {
+    const n = escapeDeep(raw);
+    const campusName = escapeHtml(campuses?.find((c) => c.id === raw.campus_id)?.name ?? "All campuses");
     const w = window.open("", "_blank", "width=900,height=1100");
     if (!w) return;
     const body = n.content
@@ -240,18 +242,18 @@ function NoticesPage() {
         @media print{*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;}}
       </style></head><body>
       <div class="h">
-        <h1>${getActiveTenantName()}</h1>
+        <h1>${escapeHtml(getActiveTenantName())}</h1>
         <div class="sub">${campusName}</div>
       </div>
       <div class="meta">
         <div>Ref. No: <strong>${n.reference_no}</strong></div>
-        <div>Date: <strong>${new Date(n.published_at).toLocaleDateString()}</strong></div>
+        <div>Date: <strong>${new Date(raw.published_at).toLocaleDateString()}</strong></div>
       </div>
       <h2>${n.title}</h2>
       <div class="to">To: ${label(AUDIENCES, n.audience)} &nbsp;·&nbsp; Category: ${label(CATEGORIES, n.category)}${n.priority !== "normal" ? ` &nbsp;·&nbsp; ${label(PRIORITIES, n.priority).toUpperCase()}` : ""}</div>
       ${body}
       <div class="sig"><div>${n.issued_by}</div></div>
-      <div class="foot">This is an officially issued circular of ${getActiveTenantName()} · ${n.reference_no}</div>
+      <div class="foot">This is an officially issued circular of ${escapeHtml(getActiveTenantName())} · ${n.reference_no}</div>
       <script>window.onload=()=>window.print()</script>
       </body></html>`);
     w.document.close();
