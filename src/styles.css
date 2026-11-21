@@ -308,3 +308,19 @@
   .dash-glass .rounded-xl.border.bg-card { transition: none; }
   .dash-glass .rounded-xl.border.bg-card:hover { transform: none; }
 }
+
+/* Apple-style entrance + Framer-style press */
+@keyframes dash-rise { from { opacity: 0; transform: translateY(10px) scale(0.99); } to { opacity: 1; transform: none; } }
+.dash-rise { animation: dash-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.dash-glass .rounded-xl.border.bg-card { animation: dash-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.dash-glass [data-block-id]:nth-child(2) .rounded-xl { animation-delay: 40ms; }
+.dash-glass [data-block-id]:nth-child(3) .rounded-xl { animation-delay: 80ms; }
+.dash-glass [data-block-id]:nth-child(4) .rounded-xl { animation-delay: 120ms; }
+.dash-glass [data-block-id]:nth-child(n+5) .rounded-xl { animation-delay: 160ms; }
+.press { transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+.press:active, .dash-glass a:active > .rounded-xl { transform: scale(0.98); }
+.dash-glass .recharts-tooltip-wrapper > div { background: var(--glass-bg) !important; backdrop-filter: blur(16px); border-radius: 0.75rem !important; border-color: var(--border) !important; }
+@media (prefers-reduced-motion: reduce) {
+  .dash-rise, .dash-glass .rounded-xl.border.bg-card { animation: none; }
+  .press:active, .dash-glass a:active > .rounded-xl { transform: none; }
+}

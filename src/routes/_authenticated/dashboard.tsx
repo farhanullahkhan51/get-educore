@@ -7,7 +7,6 @@ import { useCurrentUser, roleLabel } from "@/hooks/use-current-user";
 import { PageHeader } from "@/components/layout/page-header";
 import { EditableGrid } from "@/components/layout/editable";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -24,6 +23,8 @@ import { useEntitlements } from "@/lib/entitlements";
 import { usePlanUsage } from "@/lib/plan-usage";
 import { NoticeFeed } from "@/components/layout/notice-feed";
 import { PnlWidget } from "@/components/dashboard/pnl-widget";
+import { SetupMilestones } from "@/components/dashboard/setup-milestones";
+import { CampusPills } from "@/components/dashboard/campus-pills";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -225,7 +226,7 @@ function Dashboard() {
       />
 
       {ent.planName && isSuper ? (
-        <div className="glass-panel mb-6 flex flex-wrap items-stretch divide-x divide-border/60 rounded-2xl px-2 py-3 [&>*]:px-5">
+        <div className="glass-panel dash-rise mb-6 flex flex-wrap items-stretch divide-x divide-border/60 rounded-2xl px-2 py-3 [&>*]:px-5">
             <div>
               <div className="text-xs uppercase tracking-wide text-muted-foreground">Plan</div>
               <div className="font-serif text-base">{ent.planName}</div>
@@ -253,22 +254,10 @@ function Dashboard() {
             />
         </div>
       ) : null}
-      {isSuper ? (
-        <div className="mb-6 flex items-center gap-3">
-          <Building2 className="h-4 w-4 text-muted-foreground" />
-          <Select value={campus} onValueChange={setCampus}>
-            <SelectTrigger className="w-64">
-              <SelectValue placeholder="All campuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All campuses</SelectItem>
-              {(campuses ?? []).map((c) => (
-                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-       ) : null}
+      {isSuper ? <SetupMilestones /> : null}
+      {isSuper && (campuses?.length ?? 0) > 1 ? (
+        <CampusPills value={campus} onChange={setCampus} campuses={campuses ?? []} />
+      ) : null}
 
       <div className="mb-6">
         <NoticeFeed limit={3} />
