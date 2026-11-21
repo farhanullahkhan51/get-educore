@@ -57,6 +57,13 @@
       "when": 1795238095415,
       "tag": "0007_revoke_anon_on_signed_in_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795241386582,
+      "tag": "0008_performance_indexes",
+      "breakpoints": true
     }
   ]
 }
