@@ -1,0 +1,10 @@
+REVOKE EXECUTE ON FUNCTION public.apply_bank_payment(uuid, uuid, text) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.auto_reconcile_bank_transactions(text) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.claim_student_account(text, text) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.my_billing_state() FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.my_plan_usage() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.apply_bank_payment(uuid, uuid, text) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.auto_reconcile_bank_transactions(text) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.claim_student_account(text, text) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.my_billing_state() TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.my_plan_usage() TO authenticated, service_role;

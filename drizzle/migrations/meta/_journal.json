@@ -50,6 +50,13 @@
       "when": 1795237945536,
       "tag": "0006_harden_scope_helpers_and_board_writes",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795238095415,
+      "tag": "0007_revoke_anon_on_signed_in_functions",
+      "breakpoints": true
     }
   ]
 }
