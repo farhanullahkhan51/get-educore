@@ -1,6 +1,7 @@
 # EduCore roadmap
 
 ## In progress
+- [x] Fix `/` search toggle and search accessible system records, with desktop/mobile verification.
 - [ ] Agent integrations (MCP): expose EduCore tools to AI assistants, secured with sign-in.
 - [x] Timetable Optimisation tool (clash check, auto-fill, free periods).
 - [x] Proxy Teacher Allocator (cover for absent teachers, printable slip).

@@ -209,6 +209,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const paletteItems = NAV.filter(
     (item) => (user?.roles.some((r) => item.roles.includes(r)) ?? false) && (!item.feature || ent.can(item.feature)),
   ).map((item) => ({ to: item.to, label: item.label, icon: item.icon }));
+  if (ent.can("ai_assistant")) paletteItems.push({ to: "/assistant", label: "AI Assistant", icon: BookOpen });
 
   const navList = (onNavigate?: () => void) => (
     <EditableList
@@ -295,9 +296,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <main className={`flex-1 overflow-x-hidden ${preview ? "pt-7" : ""}`}>
-        {/* Mobile top bar */}
-        <div className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b bg-background px-4 py-3 md:hidden">
-          <div className="flex items-center gap-2 min-w-0">
+        {/* One shared top bar keeps the search shortcut listener unique. */}
+        <div className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b bg-background px-4 py-3 md:justify-end md:px-6 md:py-2">
+          <div className="flex items-center gap-2 min-w-0 md:hidden">
             {tenant?.logo_url ? (
               <img src={tenant.logo_url} alt="" className="h-7 w-7 rounded-sm object-contain" />
             ) : (
@@ -310,12 +311,13 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <CommandPalette items={paletteItems} />
             {ent.can("edit_mode") && <EditModeButton />}
             <DocumentScanButton />
             {ent.can("ai_assistant") && <AssistantMenu />}
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Open navigation">
+                <Button variant="ghost" size="icon" aria-label="Open navigation" className="md:hidden">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
@@ -329,16 +331,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {userBlock}
               </SheetContent>
             </Sheet>
-          </div>
-        </div>
-
-        {/* Desktop top bar */}
-        <div className="sticky top-0 z-30 hidden items-center justify-end border-b bg-background px-6 py-2 md:flex">
-          <div className="flex items-center gap-2">
-            {ent.can("edit_mode") && <EditModeButton />}
-            <CommandPalette items={paletteItems} />
-            <DocumentScanButton />
-            {ent.can("ai_assistant") && <AssistantMenu />}
           </div>
         </div>
 
