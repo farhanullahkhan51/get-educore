@@ -264,3 +264,47 @@
     animation: none !important;
   }
 }
+
+/* Dashboard glassmorphism */
+:root {
+  --glass-bg: color-mix(in oklab, var(--card) 62%, transparent);
+  --glass-rim: color-mix(in oklab, white 55%, transparent);
+  --glass-shadow: 0 1px 0 0 var(--glass-rim) inset, 0 12px 32px -16px color-mix(in oklab, var(--primary) 28%, transparent);
+  --aura-board: oklch(0.55 0.14 255 / 0.18);
+  --aura-cambridge: oklch(0.75 0.15 70 / 0.14);
+  --aura-finance: oklch(0.65 0.13 160 / 0.12);
+}
+.dark {
+  --glass-bg: color-mix(in oklab, var(--card) 55%, transparent);
+  --glass-rim: color-mix(in oklab, white 12%, transparent);
+}
+@utility glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+  box-shadow: var(--glass-shadow);
+}
+.dash-aura {
+  position: absolute; inset: -4rem -2rem auto -2rem; height: 36rem; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(40% 50% at 15% 20%, var(--aura-board), transparent 70%),
+    radial-gradient(35% 45% at 85% 10%, var(--aura-cambridge), transparent 70%),
+    radial-gradient(40% 50% at 60% 70%, var(--aura-finance), transparent 70%);
+  filter: blur(20px);
+}
+.dash-glass { isolation: isolate; }
+.dash-glass .rounded-xl.border.bg-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(160%);
+  box-shadow: var(--glass-shadow);
+  border-radius: 1rem;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.dash-glass .rounded-xl.border.bg-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--glass-shadow), 0 20px 40px -20px color-mix(in oklab, var(--primary) 35%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-glass .rounded-xl.border.bg-card { transition: none; }
+  .dash-glass .rounded-xl.border.bg-card:hover { transform: none; }
+}

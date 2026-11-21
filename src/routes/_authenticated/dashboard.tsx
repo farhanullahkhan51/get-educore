@@ -216,39 +216,16 @@ function Dashboard() {
   }
 
   return (
-    <>
+    <div className="dash-glass relative">
+      <div aria-hidden className="dash-aura" />
       <PageHeader
         eyebrow={`Signed in as ${roleLabel(user?.primaryRole ?? null)}`}
         title={user?.fullName || user?.email ? `Welcome, ${user?.fullName ?? user?.email}` : "Welcome"}
         description="Institution-wide totals, with attendance and admissions trends covering the last six months."
       />
 
-      {isSuper ? (
-        <div className="mb-6 flex items-center gap-3">
-          <Building2 className="h-4 w-4 text-muted-foreground" />
-          <Select value={campus} onValueChange={setCampus}>
-            <SelectTrigger className="w-64">
-              <SelectValue placeholder="All campuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All campuses</SelectItem>
-              {(campuses ?? []).map((c) => (
-                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-       ) : null}
-
-      <div className="mb-6">
-        <NoticeFeed limit={3} />
-      </div>
-
-      {user?.roles.some((r) => r === "super_admin" || r === "campus_admin" || r === "finance_officer") ? <PnlWidget campusId={scopedCampus} /> : null}
-
       {ent.planName && isSuper ? (
-        <Card className="mb-6 shadow-none">
-          <CardContent className="flex flex-wrap items-center gap-x-8 gap-y-3 py-4">
+        <div className="glass-panel mb-6 flex flex-wrap items-stretch divide-x divide-border/60 rounded-2xl px-2 py-3 [&>*]:px-5">
             <div>
               <div className="text-xs uppercase tracking-wide text-muted-foreground">Plan</div>
               <div className="font-serif text-base">{ent.planName}</div>
@@ -274,9 +251,31 @@ function Dashboard() {
               used={planUsage?.campuses_used ?? campuses?.length ?? 0}
               cap={planUsage?.campuses_cap ?? ent.limit("campus_limit")}
             />
-          </CardContent>
-        </Card>
+        </div>
       ) : null}
+      {isSuper ? (
+        <div className="mb-6 flex items-center gap-3">
+          <Building2 className="h-4 w-4 text-muted-foreground" />
+          <Select value={campus} onValueChange={setCampus}>
+            <SelectTrigger className="w-64">
+              <SelectValue placeholder="All campuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All campuses</SelectItem>
+              {(campuses ?? []).map((c) => (
+                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+       ) : null}
+
+      <div className="mb-6">
+        <NoticeFeed limit={3} />
+      </div>
+
+      {user?.roles.some((r) => r === "super_admin" || r === "campus_admin" || r === "finance_officer") ? <PnlWidget campusId={scopedCampus} /> : null}
+
 
       <EditableGrid
         scope="dashboard"
@@ -519,7 +518,7 @@ function Dashboard() {
           }
         }}
       />
-    </>
+    </div>
   );
 }
 
