@@ -558,6 +558,7 @@ function ChallansTab({
             </Select>
             <ActiveFilterChip module="fees" />
             <LayoutMenu module="fees" />
+            {canManage && <LateFineButton campuses={campuses} onDone={() => qc.invalidateQueries()} />}
             {canManage && (
               <Button onClick={() => setGeneratorOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" /> Generate Challans
@@ -1717,5 +1718,67 @@ function GatedFeesPage() {
     <FeatureGate feature="fees" title="Fees & Finance">
       <FeesPage />
     </FeatureGate>
+  );
+}
+
+function LateFineButton({ campuses, onDone }: { campuses: { id: string; name: string }[]; onDone: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [campusId, setCampusId] = useState("");
+  const [mode, setMode] = useState<"flat" | "percent">("flat");
+  const [value, setValue] = useState("500");
+  const [busy, setBusy] = useState(false);
+  async function run() {
+    const v = Number(value);
+    if (!campusId) return toast.error("Pick a campus");
+    if (!(v > 0) || (mode === "percent" && v > 100)) return toast.error("Enter a valid fine");
+    setBusy(true);
+    const { data, error } = await supabase.rpc("apply_late_fines", { _campus: campusId, _mode: mode, _value: v });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    const n = (data as { updated?: number } | null)?.updated ?? 0;
+    toast.success(n ? `Late fine added to ${n} overdue challan(s)` : "No overdue challans without a fine");
+    setOpen(false);
+    onDone();
+  }
+  return (
+    <>
+      <Button variant="outline" onClick={() => setOpen(true)}>Apply late fines</Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Apply late fines</DialogTitle>
+            <DialogDescription>Adds a one-time fine to unpaid or partly paid challans past their due date that don't have a fine yet.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Campus</Label>
+              <Select value={campusId} onValueChange={setCampusId}>
+                <SelectTrigger><SelectValue placeholder="Select campus" /></SelectTrigger>
+                <SelectContent>{campuses.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Fine type</Label>
+                <Select value={mode} onValueChange={(v) => setMode(v as "flat" | "percent")}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="flat">Fixed amount (PKR)</SelectItem>
+                    <SelectItem value="percent">% of net fee</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>{mode === "flat" ? "Amount (PKR)" : "Percent"}</Label>
+                <Input type="number" min="1" max={mode === "percent" ? 100 : undefined} value={value} onChange={(e) => setValue(e.target.value)} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={run} disabled={busy}>{busy ? "Applying…" : "Apply fines"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

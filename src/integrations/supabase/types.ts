@@ -3603,6 +3603,10 @@ export type Database = {
         Args: { _challan_id: string; _note?: string; _txn_id: string }
         Returns: Json
       }
+      apply_late_fines: {
+        Args: { _campus: string; _mode: string; _value: number }
+        Returns: Json
+      }
       auto_reconcile_bank_transactions: {
         Args: { _batch?: string }
         Returns: Json

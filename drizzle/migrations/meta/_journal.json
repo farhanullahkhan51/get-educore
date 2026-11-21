@@ -64,6 +64,13 @@
       "when": 1795241386582,
       "tag": "0008_performance_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1795241423013,
+      "tag": "0009_apply_late_fines",
+      "breakpoints": true
     }
   ]
 }
