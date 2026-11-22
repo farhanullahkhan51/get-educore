@@ -1456,6 +1456,8 @@ export type Database = {
           gross_amount: number
           id: string
           issue_date: string
+          line_items: Json
+          merged_into: string | null
           notes: string | null
           paid_amount: number
           paid_on: string | null
@@ -1479,6 +1481,8 @@ export type Database = {
           gross_amount: number
           id?: string
           issue_date?: string
+          line_items?: Json
+          merged_into?: string | null
           notes?: string | null
           paid_amount?: number
           paid_on?: string | null
@@ -1502,6 +1506,8 @@ export type Database = {
           gross_amount?: number
           id?: string
           issue_date?: string
+          line_items?: Json
+          merged_into?: string | null
           notes?: string | null
           paid_amount?: number
           paid_on?: string | null
@@ -1525,6 +1531,13 @@ export type Database = {
             columns: ["fee_structure_id"]
             isOneToOne: false
             referencedRelation: "fee_structures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_challans_merged_into_fkey"
+            columns: ["merged_into"]
+            isOneToOne: false
+            referencedRelation: "fee_challans"
             referencedColumns: ["id"]
           },
           {
@@ -1827,6 +1840,7 @@ export type Database = {
           converted_at: string | null
           converted_student_id: string | null
           created_at: string
+          fee_plan: Json | null
           grade_applying_for: string | null
           guardian_email: string | null
           guardian_name: string
@@ -1843,6 +1857,7 @@ export type Database = {
           student_name: string
           tenant_id: string
           updated_at: string
+          whatsapp_number: string | null
         }
         Insert: {
           academic_system?:
@@ -1854,6 +1869,7 @@ export type Database = {
           converted_at?: string | null
           converted_student_id?: string | null
           created_at?: string
+          fee_plan?: Json | null
           grade_applying_for?: string | null
           guardian_email?: string | null
           guardian_name: string
@@ -1870,6 +1886,7 @@ export type Database = {
           student_name: string
           tenant_id?: string
           updated_at?: string
+          whatsapp_number?: string | null
         }
         Update: {
           academic_system?:
@@ -1881,6 +1898,7 @@ export type Database = {
           converted_at?: string | null
           converted_student_id?: string | null
           created_at?: string
+          fee_plan?: Json | null
           grade_applying_for?: string | null
           guardian_email?: string | null
           guardian_name?: string
@@ -1897,6 +1915,7 @@ export type Database = {
           student_name?: string
           tenant_id?: string
           updated_at?: string
+          whatsapp_number?: string | null
         }
         Relationships: [
           {
@@ -2893,6 +2912,7 @@ export type Database = {
           created_at: string
           date_of_birth: string | null
           documents: Json | null
+          father_cnic: string | null
           first_name: string
           gender: string | null
           grade: string | null
@@ -2901,6 +2921,8 @@ export type Database = {
           guardian_phone: string | null
           id: string
           last_name: string
+          monthly_fee: number | null
+          phone_home: string | null
           profile_id: string | null
           program_id: string | null
           section_id: string | null
@@ -2918,6 +2940,7 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           documents?: Json | null
+          father_cnic?: string | null
           first_name: string
           gender?: string | null
           grade?: string | null
@@ -2926,6 +2949,8 @@ export type Database = {
           guardian_phone?: string | null
           id?: string
           last_name: string
+          monthly_fee?: number | null
+          phone_home?: string | null
           profile_id?: string | null
           program_id?: string | null
           section_id?: string | null
@@ -2943,6 +2968,7 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           documents?: Json | null
+          father_cnic?: string | null
           first_name?: string
           gender?: string | null
           grade?: string | null
@@ -2951,6 +2977,8 @@ export type Database = {
           guardian_phone?: string | null
           id?: string
           last_name?: string
+          monthly_fee?: number | null
+          phone_home?: string | null
           profile_id?: string | null
           program_id?: string | null
           section_id?: string | null
@@ -3624,6 +3652,7 @@ export type Database = {
         Args: { _campus: string; _user: string }
         Returns: boolean
       }
+      carry_forward_balances: { Args: { _targets: string[] }; Returns: number }
       claim_student_account: {
         Args: { _code: string; _phone: string }
         Returns: Json
@@ -3681,6 +3710,10 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      merge_challans: {
+        Args: { _due: string; _ids: string[] }
+        Returns: string
+      }
       my_billing_state: {
         Args: never
         Returns: {
@@ -3733,6 +3766,10 @@ export type Database = {
           status: Database["public"]["Enums"]["tenant_status"]
           student_limit: number
         }[]
+      }
+      roll_challans_into: {
+        Args: { _ids: string[]; _target: string }
+        Returns: number
       }
       set_section_seat: {
         Args: { _seat_index: number; _section_id: string; _student_id: string }

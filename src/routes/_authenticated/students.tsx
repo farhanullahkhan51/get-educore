@@ -21,7 +21,8 @@ import { useTrackLayout } from "@/lib/track-layout";
 import { useArranged, byText, densityCell } from "@/lib/ui-arrange";
 import { useEntitlements, limitMessage } from "@/lib/entitlements";
 import { useLimitStatus, LimitNotice } from "@/lib/plan-usage";
-import { useSectionCapacity, SECTION_FULL_HINT } from "@/lib/section-capacity";
+import { useSectionCapacity } from "@/lib/section-capacity";
+import { ClassSectionFields } from "@/components/students/class-section-fields";
 import { ActiveFilterChip, FilteredEmptyState } from "@/components/layout/filter-chip";
 import { useModuleState } from "@/lib/module-state";
 import { TableSkeletonRows } from "@/components/layout/skeletons";
@@ -74,7 +75,7 @@ function StudentsPage() {
   });
   const { data: classes } = useQuery({
     queryKey: ["classes"],
-    queryFn: async () => (await supabase.from("classes").select("id, name, campus_id")).data ?? [],
+    queryFn: async () => (await supabase.from("classes").select("id, name, campus_id, academic_system")).data ?? [],
   });
   const { data: sections } = useQuery({
     queryKey: ["sections"],
@@ -143,9 +144,8 @@ function StudentsPage() {
       return toast.error(limitMessage("students", studentLimit.cap, ent.planName));
     }
     const fd = new FormData(e.currentTarget);
-    const code = "STU-" + Date.now().toString(36).toUpperCase();
-    const { error } = await supabase.from("students").insert({
-      student_code: code,
+    const { data: created, error } = await supabase.from("students").insert({
+      student_code: "",
       first_name: String(fd.get("first_name")),
       last_name: String(fd.get("last_name")),
       campus_id: String(fd.get("campus_id")),
@@ -159,10 +159,13 @@ function StudentsPage() {
       gender: (fd.get("gender") as string) || null,
       address: String(fd.get("address") || "") || null,
       grade: String(fd.get("grade") || "") || null,
+      father_cnic: String(fd.get("father_cnic") || "").trim() || null,
+      phone_home: String(fd.get("phone_home") || "").trim() || null,
+      monthly_fee: fd.get("monthly_fee") ? Number(fd.get("monthly_fee")) : null,
       academic_system: String(fd.get("academic_system")) as Student["academic_system"],
-    });
+    }).select("student_code").single();
     if (error) return toast.error(error.message);
-    toast.success(`Student ${code} registered`);
+    toast.success(`Student ${created?.student_code ?? ""} registered`);
     setDirty(false);
     setOpen(false);
     qc.invalidateQueries({ queryKey: ["students"] });
@@ -187,6 +190,9 @@ function StudentsPage() {
       gender: (fd.get("gender") as string) || null,
       address: String(fd.get("address") || "") || null,
       grade: String(fd.get("grade") || "") || null,
+      father_cnic: String(fd.get("father_cnic") || "").trim() || null,
+      phone_home: String(fd.get("phone_home") || "").trim() || null,
+      monthly_fee: fd.get("monthly_fee") ? Number(fd.get("monthly_fee")) : null,
       academic_system: String(fd.get("academic_system")) as Student["academic_system"],
     }).eq("id", editing.id);
     if (error) return toast.error(error.message);
@@ -234,7 +240,7 @@ function StudentsPage() {
                   <div className="space-y-2"><Label>First name</Label><Input name="first_name" required /></div>
                   <div className="space-y-2"><Label>Last name</Label><Input name="last_name" required /></div>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2"><Label>Date of birth</Label><Input name="date_of_birth" type="date" /></div>
                   <div className="space-y-2">
                     <Label>Gender</Label>
@@ -244,16 +250,6 @@ function StudentsPage() {
                         <SelectItem value="male">Male</SelectItem>
                         <SelectItem value="female">Female</SelectItem>
                         <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Academic system</Label>
-                    <Select name="academic_system" defaultValue="board">
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="board">Board</SelectItem>
-                        <SelectItem value="cambridge">Cambridge</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -269,13 +265,6 @@ function StudentsPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <Label>Campus</Label>
-                    <Select name="campus_id" required>
-                      <SelectTrigger><SelectValue placeholder="Campus" /></SelectTrigger>
-                      <SelectContent>{campuses?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
                     <Label>Program</Label>
                     <Select name="program_id">
                       <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
@@ -283,31 +272,11 @@ function StudentsPage() {
                     </Select>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label>Class</Label>
-                    <Select name="class_id">
-                      <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                      <SelectContent>{classes?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Section</Label>
-                    <Select name="section_id">
-                      <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                      <SelectContent>
-                        {sections?.map((s) => {
-                          const cap = sectionCapacity.get(s.id);
-                          return (
-                            <SelectItem key={s.id} value={s.id} disabled={!!cap?.full}>
-                              {s.name}{cap ? ` — ${sectionCapacity.label(s.id)}` : ""}
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-[11px] text-muted-foreground">{SECTION_FULL_HINT}</p>
-                  </div>
+                <ClassSectionFields campuses={campuses ?? []} classes={(classes ?? []) as any} sections={sections ?? []} capacity={sectionCapacity} onChange={() => setDirty(true)} />
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-2"><Label>Father's CNIC</Label><Input name="father_cnic" placeholder="12345-1234567-1" pattern="\d{5}-?\d{7}-?\d" /></div>
+                  <div className="space-y-2"><Label>Phone (home)</Label><Input name="phone_home" /></div>
+                  <div className="space-y-2"><Label>Monthly fee (PKR)</Label><Input name="monthly_fee" type="number" min="0" step="1" /></div>
                 </div>
                 <DialogFooter><Button type="submit">Register student</Button></DialogFooter>
               </form>
@@ -452,7 +421,7 @@ function StudentsPage() {
                 <div className="space-y-2"><Label>First name</Label><Input name="first_name" defaultValue={editing.first_name} required /></div>
                 <div className="space-y-2"><Label>Last name</Label><Input name="last_name" defaultValue={editing.last_name} required /></div>
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2"><Label>Date of birth</Label><Input name="date_of_birth" type="date" defaultValue={editing.date_of_birth ?? ""} /></div>
                 <div className="space-y-2">
                   <Label>Gender</Label>
@@ -462,16 +431,6 @@ function StudentsPage() {
                       <SelectItem value="male">Male</SelectItem>
                       <SelectItem value="female">Female</SelectItem>
                       <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Academic system</Label>
-                  <Select name="academic_system" defaultValue={editing.academic_system}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="board">Board</SelectItem>
-                      <SelectItem value="cambridge">Cambridge</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -487,13 +446,6 @@ function StudentsPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label>Campus</Label>
-                  <Select name="campus_id" defaultValue={editing.campus_id} required>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{campuses?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
                   <Label>Program</Label>
                   <Select name="program_id" defaultValue={editing.program_id ?? undefined}>
                     <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
@@ -501,32 +453,12 @@ function StudentsPage() {
                   </Select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Class</Label>
-                  <Select name="class_id" defaultValue={editing.class_id ?? undefined}>
-                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                    <SelectContent>{classes?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Section</Label>
-                  <Select name="section_id" defaultValue={editing.section_id ?? undefined}>
-                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                    <SelectContent>
-                      {sections?.map((s) => {
-                        const cap = sectionCapacity.get(s.id);
-                        const blocked = !!cap?.full && s.id !== editing.section_id;
-                        return (
-                          <SelectItem key={s.id} value={s.id} disabled={blocked}>
-                            {s.name}{cap ? ` — ${sectionCapacity.label(s.id)}` : ""}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-[11px] text-muted-foreground">{SECTION_FULL_HINT}</p>
-                </div>
+              <ClassSectionFields campuses={campuses ?? []} classes={(classes ?? []) as any} sections={sections ?? []} capacity={sectionCapacity} onChange={() => setDirty(true)}
+                initial={{ campus_id: editing.campus_id, academic_system: editing.academic_system as any, class_id: editing.class_id, section_id: editing.section_id }} />
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-2"><Label>Father's CNIC</Label><Input name="father_cnic" defaultValue={(editing as any).father_cnic ?? ""} placeholder="12345-1234567-1" pattern="\d{5}-?\d{7}-?\d" /></div>
+                <div className="space-y-2"><Label>Phone (home)</Label><Input name="phone_home" defaultValue={(editing as any).phone_home ?? ""} /></div>
+                <div className="space-y-2"><Label>Monthly fee (PKR)</Label><Input name="monthly_fee" type="number" min="0" step="1" defaultValue={(editing as any).monthly_fee ?? ""} /></div>
               </div>
               <DialogFooter><Button type="submit">Save changes</Button></DialogFooter>
             </form>

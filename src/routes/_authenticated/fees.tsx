@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getChallanVerifyToken } from "@/lib/challan-verify.functions";
 import { escapeDeep, escapeHtml } from "@/lib/html-escape";
-import { getActiveTenantName } from "@/lib/tenant-context";
+import { getActiveTenant, getActiveTenantName } from "@/lib/tenant-context";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -559,6 +559,7 @@ function ChallansTab({
             <ActiveFilterChip module="fees" />
             <LayoutMenu module="fees" />
             {canManage && <LateFineButton campuses={campuses} onDone={() => qc.invalidateQueries()} />}
+            {canManage && <CombineVouchersButton challans={challans ?? []} studentMap={studentMap} onDone={(c) => { qc.invalidateQueries({ queryKey: ["fee_challans"] }); const cp = campuses.find((x) => x.id === c.campus_id); void printChallan(c, studentMap.get(c.student_id), cp); }} />}
             {canManage && (
               <Button onClick={() => setGeneratorOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" /> Generate Challans
@@ -620,7 +621,7 @@ function ChallansTab({
                       </TableCell>
                       <TableCell className={`text-right ${cellCls}`}>{PKR.format(net)}</TableCell>
                       <TableCell className={`text-right ${cellCls}`}>{PKR.format(Number(c.paid_amount))}</TableCell>
-                      <TableCell className={cellCls}>{statusBadge(isOverdue ? "overdue" : c.status)}</TableCell>
+                      <TableCell className={cellCls}>{(c as any).merged_into ? <Badge variant="outline">merged</Badge> : statusBadge(isOverdue ? "overdue" : c.status)}</TableCell>
                       <TableCell className={`text-right ${cellCls}`}>
                         <div className="flex justify-end gap-1">
                           <Button size="icon" variant="ghost" title="View" onClick={() => setViewing(c)}>
@@ -735,77 +736,116 @@ async function printChallan(
   student: { code: string; name: string } | undefined,
   campus: { name: string; code: string } | undefined,
 ) {
-  const w = window.open("", "_blank", "width=800,height=1000");
+  const w = window.open("", "_blank", "width=1100,height=800");
   if (!w) return;
-  const { t } = await getChallanVerifyToken({ data: { id: c.id } });
+  const [{ t }, stRes, cpRes, bankRes, fsRes] = await Promise.all([
+    getChallanVerifyToken({ data: { id: c.id } }),
+    supabase.from("students").select("classes(name), sections(name)").eq("id", c.student_id).maybeSingle(),
+    supabase.from("campuses").select("address, phone, email").eq("id", c.campus_id).maybeSingle(),
+    supabase.from("bank_accounts").select("bank_name, account_title, account_number, iban, branch").eq("campus_id", c.campus_id).eq("active", true).limit(1),
+    c.fee_structure_id ? supabase.from("fee_structures").select("name").eq("id", c.fee_structure_id).maybeSingle() : Promise.resolve({ data: null }),
+  ]);
+  const tenant = getActiveTenant();
+  const st = stRes.data as { classes?: { name?: string } | null; sections?: { name?: string } | null } | null;
+  const info = escapeDeep({
+    school: getActiveTenantName(),
+    campus: campus?.name ?? "",
+    address: cpRes.data?.address ?? "",
+    phone: cpRes.data?.phone ?? "",
+    email: cpRes.data?.email ?? "",
+    cls: st?.classes?.name ?? "—",
+    sec: st?.sections?.name ?? "—",
+    bank: bankRes.data?.[0] ?? null,
+    feeName: (fsRes.data as { name?: string } | null)?.name ?? "",
+  });
+  const logo = tenant?.logo_url && /^(https?:|data:image\/)/.test(tenant.logo_url) ? escapeHtml(tenant.logo_url) : "";
   c = escapeDeep(c);
   student = escapeDeep(student);
-  campus = escapeDeep(campus);
   const verifyUrl = `${window.location.origin}/verify/challan/${c.id}?t=${t}`;
-  const qr = await QRCode.toDataURL(verifyUrl, { margin: 1, width: 180, errorCorrectionLevel: "M" });
+  const qr = await QRCode.toDataURL(verifyUrl, { margin: 0, width: 140, errorCorrectionLevel: "M" });
   const net = Number(c.gross_amount) - Number(c.discount_amount) + Number(c.fine_amount);
   const balance = net - Number(c.paid_amount);
-  const fmt = (n: number) => new Intl.NumberFormat("en-PK", { style: "currency", currency: "PKR", maximumFractionDigits: 0 }).format(n);
+  const fmt = (n: number) => new Intl.NumberFormat("en-PK", { maximumFractionDigits: 0 }).format(n);
+  const monthYear = c.period_label || new Date(c.due_date + "T00:00:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+  const lines = (Array.isArray((c as any).line_items) ? (c as any).line_items : []) as { label: string; amount: number }[];
+  const extra = lines.reduce((t, l) => t + Number(l.amount || 0), 0);
+  const base = Number(c.gross_amount) - extra;
+  const headName = info.feeName || CATEGORY_LABEL[c.category] || `${c.category} fee`;
+  const rows = [
+    ...(base > 0 || lines.length === 0 ? [[`${headName} — ${monthYear}`, base]] : []),
+    ...lines.map((l) => [escapeHtml(String(l.label)), Number(l.amount)]),
+  ] as [string, number][];
   const copies = ["Bank Copy", "School Copy", "Student Copy"];
+  const bank = info.bank as { bank_name: string; account_title: string; account_number: string; iban?: string | null; branch?: string | null } | null;
   const copy = (title: string) => `
     <section class="copy">
+      <div class="copytag">${title}</div>
       <header>
+        ${logo ? `<img class="logo" src="${logo}" alt=""/>` : ""}
         <div class="brand">
-          <div class="school">${campus?.name ?? escapeHtml(getActiveTenantName())}</div>
-          <div class="sub">${campus?.code ?? ""} · Fee Challan</div>
+          <div class="school">${info.school}</div>
+          <div class="sub">${info.campus}</div>
+          ${info.address ? `<div class="sub">${info.address}</div>` : ""}
+          <div class="sub">${[info.phone, info.email].filter(Boolean).join(" · ")}</div>
         </div>
-        <div class="right"><div class="copytag">${title}</div><img class="qr" src="${qr}" alt="Scan to verify"/><div class="qrcap">Scan to verify</div></div>
       </header>
+      <div class="bank">${bank
+        ? `<b>${bank.bank_name}</b>${bank.branch ? ` · ${bank.branch}` : ""}<br/>A/C Title: ${bank.account_title}<br/>A/C No: <b>${bank.account_number}</b>${bank.iban ? `<br/>IBAN: ${bank.iban}` : ""}`
+        : "Bank account not set — add it under Fees → Bank"}</div>
       <div class="meta">
-        <div><span>Challan #</span><strong>${c.challan_no}</strong></div>
-        <div><span>Issue Date</span><strong>${c.issue_date}</strong></div>
-        <div><span>Due Date</span><strong>${c.due_date}</strong></div>
-        <div><span>Period</span><strong>${c.period_label ?? "—"}</strong></div>
-        <div><span>Student</span><strong>${student?.name ?? "—"}</strong></div>
-        <div><span>Student ID</span><strong>${student?.code ?? "—"}</strong></div>
+        <div><span>Voucher #</span>${c.challan_no}</div>
+        <div><span>Student ID</span>${student?.code ?? "—"}</div>
+        <div class="w"><span>Student</span>${student?.name ?? "—"}</div>
+        <div><span>Class</span>${info.cls}</div>
+        <div><span>Section</span>${info.sec}</div>
+        <div><span>Issue date</span>${c.issue_date}</div>
+        <div><span>Due date</span>${c.due_date}</div>
       </div>
       <table>
-        <thead><tr><th>Description</th><th class="r">Amount</th></tr></thead>
         <tbody>
-          <tr><td>${c.category} fee</td><td class="r">${fmt(Number(c.gross_amount))}</td></tr>
-          <tr><td>Discount / Scholarship</td><td class="r">− ${fmt(Number(c.discount_amount))}</td></tr>
-          <tr><td>Fine / Late Fee</td><td class="r">${fmt(Number(c.fine_amount))}</td></tr>
-          <tr class="tot"><td>Net Payable</td><td class="r">${fmt(net)}</td></tr>
-          <tr><td>Paid</td><td class="r">${fmt(Number(c.paid_amount))}</td></tr>
-          <tr class="tot"><td>Balance Due</td><td class="r">${fmt(balance)}</td></tr>
+          ${rows.map(([l, a]) => `<tr><td>${l}</td><td class="r">${fmt(a)}</td></tr>`).join("")}
+          ${Number(c.discount_amount) > 0 ? `<tr><td>Scholarship</td><td class="r">− ${fmt(Number(c.discount_amount))}</td></tr>` : ""}
+          ${Number(c.fine_amount) > 0 ? `<tr><td>Late fee</td><td class="r">${fmt(Number(c.fine_amount))}</td></tr>` : ""}
+          <tr class="tot"><td>Total payable (PKR)</td><td class="r">${fmt(net)}</td></tr>
+          ${Number(c.paid_amount) > 0 ? `<tr><td>Paid</td><td class="r">${fmt(Number(c.paid_amount))}</td></tr><tr class="tot"><td>Balance</td><td class="r">${fmt(balance)}</td></tr>` : ""}
         </tbody>
       </table>
-      <div class="status">Status: <strong>${c.status.toUpperCase()}</strong></div>
-      <footer>Payable at any designated bank on or before due date. Late payments incur fines.</footer>
-    </section>
-  `;
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Challan ${c.challan_no}</title>
+      <div class="foot"><img class="qr" src="${qr}" alt="Scan to verify"/><div>Scan to check this voucher.<br/>Pay on or before the due date; late payment carries a fine.<br/><br/>Bank stamp & signature</div></div>
+    </section>`;
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Voucher ${c.challan_no}</title>
     <style>
+      @page{size:A4 landscape;margin:6mm}
       *{box-sizing:border-box}
-      body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#0f172a;margin:0;padding:16px;background:#fff}
-      .copy{border:1px solid #0f172a;padding:16px;margin-bottom:12px;page-break-inside:avoid}
-      header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #0f172a;padding-bottom:8px;margin-bottom:10px}
-      .school{font-size:18px;font-weight:700;font-family:Georgia,serif}
-      .sub{font-size:11px;color:#475569;letter-spacing:.08em;text-transform:uppercase}
-      .copytag{font-size:11px;border:1px solid #0f172a;padding:2px 8px;text-transform:uppercase;letter-spacing:.1em}
-      .right{text-align:center}.qr{width:84px;height:84px;display:block;margin:6px auto 0}.qrcap{font-size:9px;color:#475569}
-      .meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:12px;margin-bottom:10px}
-      .meta span{color:#64748b;display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em}
-      table{width:100%;border-collapse:collapse;font-size:12px}
-      th,td{border-bottom:1px solid #e2e8f0;padding:6px 4px;text-align:left}
-      th{background:#f1f5f9}
-      .r{text-align:right}
+      body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#0f172a;margin:0;background:#fff}
+      .page{display:grid;grid-template-columns:repeat(3,1fr);gap:0;height:calc(210mm - 12mm)}
+      .copy{border-right:1px dashed #64748b;padding:4mm;font-size:9.5px;overflow:hidden;page-break-inside:avoid;break-inside:avoid}
+      .copy:last-child{border-right:0}
+      .copytag{text-align:center;font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;border:1px solid #0f172a;padding:1px;margin-bottom:4px}
+      header{display:flex;gap:6px;align-items:center;border-bottom:1.5px solid #0f172a;padding-bottom:4px;margin-bottom:4px}
+      .logo{width:34px;height:34px;object-fit:contain}
+      .school{font-size:12px;font-weight:700;font-family:Georgia,serif;line-height:1.1}
+      .sub{font-size:8px;color:#475569;line-height:1.25}
+      .bank{font-size:8.5px;background:#f1f5f9;padding:3px 5px;margin-bottom:4px;line-height:1.35}
+      .meta{display:grid;grid-template-columns:1fr 1fr;gap:2px 6px;margin-bottom:4px}
+      .meta .w{grid-column:span 2}
+      .meta span{color:#64748b;display:block;font-size:7px;text-transform:uppercase;letter-spacing:.05em}
+      table{width:100%;border-collapse:collapse}
+      td{border-bottom:1px solid #e2e8f0;padding:2px 2px}
+      .r{text-align:right;white-space:nowrap}
       .tot{font-weight:700;background:#f8fafc}
-      .status{margin-top:8px;font-size:12px}
-      footer{margin-top:8px;font-size:10px;color:#64748b;border-top:1px dashed #cbd5e1;padding-top:6px}
-      @media print{body{padding:0}.copy{border-color:#000}}
+      .foot{display:flex;gap:6px;align-items:center;margin-top:5px;font-size:7.5px;color:#475569}
+      .qr{width:52px;height:52px}
     </style></head><body>
-    ${copies.map(copy).join("")}
+    <div class="page">${copies.map(copy).join("")}</div>
     <script>window.onload=()=>{window.print()}</script>
     </body></html>`;
   w.document.write(html);
   w.document.close();
 }
+
+const CATEGORY_LABEL: Record<string, string> = {
+  tuition: "Tuition fee", admission: "Admission fee", exam: "Exam fee", transport: "Transport fee", hostel: "Hostel fee", other: "Fee",
+};
 
 function ViewChallanDialog({
   challan, student, campus, onClose, onPrint,
@@ -836,7 +876,7 @@ function ViewChallanDialog({
           {row("Issue Date", challan.issue_date)}
           {row("Due Date", challan.due_date)}
           {row("Gross", PKR.format(Number(challan.gross_amount)))}
-          {row("Discount", PKR.format(Number(challan.discount_amount)))}
+          {row("Scholarship", PKR.format(Number(challan.discount_amount)))}
           {row("Fine", PKR.format(Number(challan.fine_amount)))}
           {row("Net", <strong>{PKR.format(net)}</strong>)}
           {row("Paid", PKR.format(Number(challan.paid_amount)))}
@@ -910,7 +950,7 @@ function EditChallanDialog({ challan, onClose, onDone }: { challan: Challan; onC
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Gross (PKR)</Label><Input name="gross_amount" type="number" min="0" step="1" defaultValue={Number(challan.gross_amount)} required /></div>
-            <div><Label>Discount (PKR)</Label><Input name="discount_amount" type="number" min="0" step="1" defaultValue={Number(challan.discount_amount)} required /></div>
+            <div><Label>Scholarship (PKR)</Label><Input name="discount_amount" type="number" min="0" step="1" defaultValue={Number(challan.discount_amount)} required /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Fine (PKR)</Label><Input name="fine_amount" type="number" min="0" step="1" defaultValue={Number(challan.fine_amount)} required /></div>
@@ -959,6 +999,7 @@ function GeneratorDialog({
   const [structureId, setStructureId] = useState<string>("");
   const [classId, setClassId] = useState<string>("all");
   const [period, setPeriod] = useState<string>(() => new Date().toISOString().slice(0, 7));
+  const [carryForward, setCarryForward] = useState(true);
   const [dueDate, setDueDate] = useState<string>(() => {
     const d = new Date(); d.setDate(10); d.setMonth(d.getMonth() + 1);
     return d.toISOString().slice(0, 10);
@@ -1029,10 +1070,16 @@ function GeneratorDialog({
       return toast.info("All eligible students already have challans for this period.");
     }
 
-    const { error } = await supabase.from("fee_challans").insert(rows);
+    const { data: inserted, error } = await supabase.from("fee_challans").insert(rows).select("id");
+    if (error) { setBusy(false); return toast.error(error.message); }
+    let carried = 0;
+    if (carryForward && inserted?.length) {
+      const { data: n, error: cfErr } = await supabase.rpc("carry_forward_balances" as any, { _targets: inserted.map((r) => r.id) });
+      if (cfErr) toast.error(`Vouchers made, but unpaid balances were not added: ${cfErr.message}`);
+      else carried = Number(n ?? 0);
+    }
     setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success(`${rows.length} challan(s) generated`);
+    toast.success(`${rows.length} challan(s) generated${carried ? ` · ${carried} include unpaid balance from earlier months` : ""}`);
     onOpenChange(false);
     onDone();
   }
@@ -1088,6 +1135,10 @@ function GeneratorDialog({
             <Label>Due Date</Label>
             <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
           </div>
+          <label className="flex items-start gap-2 text-sm">
+            <input type="checkbox" className="mt-1" checked={carryForward} onChange={(e) => setCarryForward(e.target.checked)} />
+            <span>Add any unpaid amount from earlier vouchers to this month's voucher</span>
+          </label>
           <div className="rounded-md border p-3 text-sm">
             <div className="flex justify-between"><span>Eligible students</span><strong>{eligible.length}</strong></div>
             {structure && (
@@ -1780,5 +1831,90 @@ function LateFineButton({ campuses, onDone }: { campuses: { id: string; name: st
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+/* ------------------------------ COMBINE VOUCHERS ------------------------------- */
+function CombineVouchersButton({ challans, studentMap, onDone }: {
+  challans: Challan[];
+  studentMap: Map<string, { code: string; name: string }>;
+  onDone: (c: Challan) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const [studentId, setStudentId] = useState("");
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [due, setDue] = useState(() => new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10));
+  const [busy, setBusy] = useState(false);
+  const open_ = (c: Challan) => !(c as any).merged_into && ["unpaid", "partial", "overdue"].includes(c.status);
+  const bal = (c: Challan) => Number(c.gross_amount) - Number(c.discount_amount) + Number(c.fine_amount) - Number(c.paid_amount);
+  const owing = useMemo(() => {
+    const ids = new Set(challans.filter(open_).map((c) => c.student_id));
+    const term = q.trim().toLowerCase();
+    return [...ids].map((id) => ({ id, ...(studentMap.get(id) ?? { code: "", name: "Unknown" }) }))
+      .filter((s) => !term || s.name.toLowerCase().includes(term) || s.code.includes(term)).slice(0, 30);
+  }, [challans, studentMap, q]);
+  const list = challans.filter((c) => c.student_id === studentId && open_(c)).sort((a, b) => a.due_date.localeCompare(b.due_date));
+  const total = list.filter((c) => picked.has(c.id)).reduce((t, c) => t + bal(c), 0);
+
+  async function combine() {
+    setBusy(true);
+    const { data: id, error } = await supabase.rpc("merge_challans" as any, { _ids: [...picked], _due: due });
+    if (error) { setBusy(false); return toast.error(error.message); }
+    const { data: c } = await supabase.from("fee_challans").select("*").eq("id", id as unknown as string).single();
+    setBusy(false);
+    toast.success(`Combined voucher ${c?.challan_no ?? ""} created`);
+    setOpen(false); setPicked(new Set()); setStudentId("");
+    if (c) onDone(c as unknown as Challan);
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild><Button variant="outline"><Link2 className="mr-2 h-4 w-4" />Combine vouchers</Button></DialogTrigger>
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Combine unpaid vouchers</DialogTitle>
+          <DialogDescription>Pick a student, tick the months to pay together, and print one voucher for all of them.</DialogDescription>
+        </DialogHeader>
+        {!studentId ? (
+          <div className="space-y-2">
+            <Input placeholder="Search student name or ID" value={q} onChange={(e) => setQ(e.target.value)} />
+            <div className="max-h-72 divide-y overflow-y-auto rounded-md border">
+              {owing.length === 0 && <p className="p-3 text-sm text-muted-foreground">No students with unpaid vouchers.</p>}
+              {owing.map((s) => (
+                <button key={s.id} type="button" className="flex w-full justify-between px-3 py-2 text-left text-sm hover:bg-muted"
+                  onClick={() => { setStudentId(s.id); setPicked(new Set(challans.filter((c) => c.student_id === s.id && open_(c)).map((c) => c.id))); }}>
+                  <span>{s.name}</span><span className="font-mono text-xs text-muted-foreground">{s.code}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between text-sm">
+              <strong>{studentMap.get(studentId)?.name}</strong>
+              <Button variant="ghost" size="sm" onClick={() => setStudentId("")}>Change student</Button>
+            </div>
+            <div className="divide-y rounded-md border">
+              {list.map((c) => (
+                <label key={c.id} className="flex items-center gap-3 px-3 py-2 text-sm">
+                  <input type="checkbox" checked={picked.has(c.id)} onChange={(e) => {
+                    const n = new Set(picked); if (e.target.checked) n.add(c.id); else n.delete(c.id); setPicked(n);
+                  }} />
+                  <span className="font-mono text-xs">{c.challan_no}</span>
+                  <span className="flex-1 text-muted-foreground">{c.period_label ?? c.due_date}</span>
+                  <span className="tabular-nums">{PKR.format(bal(c))}</span>
+                </label>
+              ))}
+            </div>
+            <div><Label>Due date</Label><Input type="date" value={due} onChange={(e) => setDue(e.target.value)} /></div>
+            <div className="flex justify-between rounded-md bg-muted p-3 text-sm"><span>Total on combined voucher</span><strong>{PKR.format(total)}</strong></div>
+          </div>
+        )}
+        <DialogFooter>
+          <Button onClick={combine} disabled={busy || picked.size < 2 || !studentId}>{busy ? "Combining…" : `Combine ${picked.size} vouchers & print`}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllRows } from "@/lib/fetch-all";
+import { FEE_HEADS, defaultFeePlan, planTotal, type FeeHead, type FeePlan } from "@/lib/fee-plan";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +18,6 @@ import { EditableTabs } from "@/components/layout/editable";
 import { toast } from "sonner";
 import { Phone, Mail, MapPin, Clock, ArrowRight, UserPlus, Search, ExternalLink } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { generateCode } from "@/lib/generate-code";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { FeatureGate } from "@/components/layout/feature-gate";
 import { LayoutMenu } from "@/components/layout/layout-menu";
@@ -449,6 +449,8 @@ function InquiryDetailDialog({
           <DetailBlock title="Guardian">
             <Row k="Name">{inquiry.guardian_name}{inquiry.guardian_relation ? ` (${inquiry.guardian_relation})` : ""}</Row>
             <Row k="Phone"><a className="hover:underline" href={`tel:${inquiry.guardian_phone}`}><Phone className="mr-1 inline h-3 w-3" />{inquiry.guardian_phone}</a></Row>
+            {(inquiry as any).whatsapp_number && <Row k="WhatsApp"><a className="hover:underline" href={`https://wa.me/${String((inquiry as any).whatsapp_number).replace(/\D/g, "").replace(/^0/, "92")}`} target="_blank" rel="noreferrer">{(inquiry as any).whatsapp_number}</a></Row>}
+            {(inquiry as any).fee_plan && FEE_HEADS.map((h) => <Row key={h.key} k={h.label}>PKR {Number((inquiry as any).fee_plan[h.key] ?? 0).toLocaleString()}</Row>)}
             {inquiry.guardian_email && <Row k="Email"><a className="hover:underline" href={`mailto:${inquiry.guardian_email}`}><Mail className="mr-1 inline h-3 w-3" />{inquiry.guardian_email}</a></Row>}
             {inquiry.address && <Row k="Address"><MapPin className="mr-1 inline h-3 w-3" />{inquiry.address}</Row>}
           </DetailBlock>
@@ -514,6 +516,14 @@ function NewInquiryDialog({
   const [saving, setSaving] = useState(false);
   const [campusId, setCampusId] = useState<string>(defaultCampusId ?? "");
   const selectedCampus = campuses.find((c) => c.id === campusId);
+  const { data: structures } = useQuery({
+    queryKey: ["fee_structures", "inquiry", campusId],
+    enabled: !!campusId,
+    queryFn: async () => (await supabase.from("fee_structures").select("name, category, amount, class_id, active").eq("campus_id", campusId).eq("active", true)).data ?? [],
+  });
+  const defaults = defaultFeePlan((structures ?? []) as any);
+  const [plan, setPlan] = useState<Partial<FeePlan>>({});
+  const feeOf = (k: FeeHead) => plan[k] ?? defaults[k];
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -535,6 +545,8 @@ function NewInquiryDialog({
       campus_id: campusId || null,
       academic_system: (fd.get("academic_system") as AcademicSystem) || (selectedCampus?.academic_system === "both" ? null : selectedCampus?.academic_system ?? null),
       notes: (fd.get("notes") as string) || null,
+      whatsapp_number: String(fd.get("whatsapp_number") ?? "").trim() || null,
+      fee_plan: Object.fromEntries(FEE_HEADS.map((h) => [h.key, Number(feeOf(h.key)) || 0])) as any,
       source: "walk-in",
       status: "new",
     });
@@ -546,7 +558,7 @@ function NewInquiryDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle className="font-serif">Log a walk-in inquiry</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
@@ -590,6 +602,29 @@ function NewInquiryDialog({
             <div className="space-y-2">
               <Label>Email</Label>
               <Input name="guardian_email" type="email" />
+            </div>
+            <div className="space-y-2 col-span-2">
+              <Label>WhatsApp number</Label>
+              <Input name="whatsapp_number" type="tel" placeholder="03XX-XXXXXXX" />
+            </div>
+            <div className="col-span-2 space-y-2 rounded-md border p-3">
+              <div className="flex items-baseline justify-between">
+                <Label>Fee structure</Label>
+                <span className="text-xs text-muted-foreground">{campusId ? "School's standard fees — change any amount to give a discount" : "Choose a campus to load the school's fees"}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {FEE_HEADS.map((h) => (
+                  <div key={h.key} className="space-y-1">
+                    <span className="text-xs text-muted-foreground">{h.label}</span>
+                    <Input type="number" min="0" step="1" value={feeOf(h.key)}
+                      onChange={(e) => setPlan((p) => ({ ...p, [h.key]: e.target.value === "" ? 0 : Number(e.target.value) }))} />
+                  </div>
+                ))}
+                <div className="space-y-1">
+                  <span className="text-xs text-muted-foreground">Total</span>
+                  <div className="flex h-9 items-center font-medium tabular-nums">PKR {planTotal(Object.fromEntries(FEE_HEADS.map((h) => [h.key, feeOf(h.key)]))).toLocaleString()}</div>
+                </div>
+              </div>
             </div>
             <div className="space-y-2 col-span-2">
               <Label>Notes</Label>
@@ -641,19 +676,6 @@ function ConvertDialog({
     enabled: !!classId,
     queryFn: async () => (await supabase.from("sections").select("id, name").eq("class_id", classId).order("name")).data ?? [],
   });
-  const { data: existingCodes } = useQuery({
-    queryKey: ["student-codes", effectiveCampusId],
-    enabled: !!effectiveCampusId,
-    queryFn: async () =>
-      await fetchAllRows<{ student_code: string }>((from, to) =>
-        supabase
-          .from("students")
-          .select("student_code")
-          .eq("campus_id", effectiveCampusId)
-          .order("student_code")
-          .range(from, to) as any,
-      ),
-  });
 
   if (!inquiry) return null;
 
@@ -667,18 +689,8 @@ function ConvertDialog({
     const [firstName, ...rest] = inquiry.student_name.trim().split(/\s+/);
     const lastName = rest.join(" ") || firstName;
 
-    let studentCode = String(fd.get("student_code") ?? "").trim().toUpperCase();
-    if (!studentCode) {
-      const campusCode = campuses?.find((c) => c.id === finalCampusId)?.name ?? "STU";
-      const existing = (existingCodes ?? []).map((r) => r.student_code as string);
-      const year = new Date().getFullYear().toString().slice(-2);
-      const base = generateCode(campusCode, []).replace(/\d+$/, "") + year;
-      // find next number for this base
-      let n = 1;
-      const taken = new Set(existing.map((s) => s.toUpperCase()));
-      while (taken.has(`${base}-${String(n).padStart(4, "0")}`)) n++;
-      studentCode = `${base}-${String(n).padStart(4, "0")}`;
-    }
+    const studentCode = String(fd.get("student_code") ?? "").trim();
+    if (studentCode && !/^\d{5}$/.test(studentCode)) { toast.error("Student ID must be exactly 5 digits"); return; }
 
     const acadSystem = (fd.get("academic_system") as AcademicSystem) || inquiry.academic_system || "board";
     const grade = String(fd.get("grade") ?? "").trim() || inquiry.grade_applying_for || null;
@@ -699,11 +711,12 @@ function ConvertDialog({
         program_id: effectiveProgramId || null,
         class_id: classId || null,
         section_id: sectionId || null,
+        monthly_fee: (inquiry as any).fee_plan?.tuition ?? null,
         grade,
         academic_system: acadSystem === "both" ? "board" : acadSystem,
         status: "active",
       })
-      .select("id")
+      .select("id, student_code")
       .single();
 
     if (studentErr || !student) {
@@ -722,7 +735,7 @@ function ConvertDialog({
     setSaving(false);
 
     if (updateErr) return toast.error(updateErr.message);
-    toast.success(`${inquiry.student_name} enrolled as ${studentCode}`);
+    toast.success(`${inquiry.student_name} enrolled as ${student.student_code}`);
     onDone();
   }
 
@@ -741,7 +754,7 @@ function ConvertDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Student ID</Label>
-              <Input name="student_code" placeholder="Auto-generated" />
+              <Input name="student_code" placeholder="Auto (5 digits)" inputMode="numeric" pattern="\d{5}" maxLength={5} />
             </div>
             <div className="space-y-2">
               <Label>Grade</Label>

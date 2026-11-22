@@ -167,7 +167,10 @@ export function DocumentScanButton() {
         if (!campusId) throw new Error("No campus available for this record.");
         const table = kind === "student" ? "students" : "staff";
         const codeKey = kind === "student" ? "student_code" : "staff_code";
-        const code = clean[codeKey] ?? `${kind === "student" ? "STU" : "STF"}-${Date.now().toString(36).toUpperCase()}`;
+        const scanned = clean[codeKey];
+        const code = kind === "student"
+          ? (scanned && /^\d{5}$/.test(String(scanned)) ? scanned : "")
+          : scanned ?? `STF-${Date.now().toString(36).toUpperCase()}`;
         const payload = { ...clean, [codeKey]: code, campus_id: campusId, first_name: clean["first_name"], last_name: clean["last_name"] };
         const { error } = await (supabase.from(table) as unknown as { insert: (p: object) => Promise<{ error: Error | null }> }).insert(payload);
         if (error) throw error;

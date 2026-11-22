@@ -1,35 +1,8 @@
-# EduCore roadmap
-
-## In progress
-- [x] Fix `/` search toggle and search accessible system records, with desktop/mobile verification.
-- [ ] Agent integrations (MCP): expose EduCore tools to AI assistants, secured with sign-in.
-- [x] Timetable Optimisation tool (clash check, auto-fill, free periods).
-- [x] Proxy Teacher Allocator (cover for absent teachers, printable slip).
-- [ ] Bilingual Circular generator.
-- [x] Parent Query handler.
-- [ ] WhatsApp/SMS gateway (needs provider account).
-- [x] Keep Classes & Sections permanently separated into Board and Cambridge groups.
-
-## Outstanding (from gap audit)
-- [x] Lock Timetable by plan at the page itself (URL no longer bypasses the menu restriction).
-- [ ] Lock Insights by plan at the page itself.
-- [ ] Decide card checkout: remove the "coming soon" line or enable real card payments.
-- [ ] Unique page titles/descriptions for every signed-in screen and the sign-in page.
-- [x] Notice Board & Circulars (announcements, audience targeting, printable letterhead).
-- [x] Staff attendance & leave (feeds proxy allocator).
-- [ ] Notification centre / SMS-WhatsApp alerts — post-launch.
-- [ ] Full launch rehearsal with a fresh institution on desktop and mobile.
-
-## MCP rollout
-- [x] Timetable optimisation MCP (tested on demo timetable)
-- [x] Proxy teacher allocator MCP (hard-case tested)
-- [x] Bilingual circular MCP (English + Urdu)
-- [ ] Parent query handler MCP
-- [ ] WhatsApp/SMS gateway (needs provider credentials)
-- [ ] Remove demo data before go-live (staff codes DEMO-*, "(Demo)" circulars, demo lessons)
-- [x] Homework & Daily Diary (teacher posting, copy to sections, print, student portal feed)
-- [x] Swarm test round 1 (admin/principal agent, every screen + tab, desktop + phone; data integrity checks)
-- [ ] Swarm rounds for teacher, student and parent agents (needs one test login per role)
-- [ ] Fill guardian phones (154 of 158 students missing — parent queries/WhatsApp can't verify them)
-- [x] Fees: one-click late fines (batch challan generation already existed)
-- [x] Cambridge vs Board grading rules
+# Roadmap
+- [x] 5-digit numeric student IDs
+- [x] Section picker shows only selected grade's sections (by track)
+- [x] Single-campus roles see only their campus
+- [x] Bulk import/export with 15 school columns
+- [x] Fee voucher: 3 copies on 1 page, "Scholarship" label, logo/address/phone/email/bank/class/section/fee lines
+- [x] Inquiry: WhatsApp number + editable fee structure (5 heads)
+- [x] Combine selected unpaid vouchers into one; short payments roll to next month

@@ -29,6 +29,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { useTenant } from "@/lib/tenant-context";
 import { parseCsvObjects, toCsv, downloadCsv } from "@/lib/csv";
 import { generateCode } from "@/lib/generate-code";
+import { parseStudentRow, SCHOOL_STUDENT_HEADERS } from "@/lib/student-import";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/import-export")({
@@ -45,10 +46,6 @@ export const Route = createFileRoute("/_authenticated/import-export")({
 
 type RowResult = { row: number; label: string; ok: boolean; message: string };
 
-const STUDENT_HEADERS = [
-  "first_name", "last_name", "gender", "date_of_birth", "guardian_name",
-  "guardian_phone", "guardian_occupation", "address", "class", "section", "admission_date",
-];
 const STAFF_HEADERS = [
   "first_name", "last_name", "designation", "department", "email",
   "phone", "qualification", "date_of_joining", "address",
@@ -303,7 +300,7 @@ function StudentImport({
     const out: RowResult[] = [];
     try {
       const existing = await fetchAllRows<{ student_code: string }>((from, to) =>
-        supabase.from("students").select("student_code").eq("campus_id", campusId).order("student_code").range(from, to) as any,
+        supabase.from("students").select("student_code").order("student_code").range(from, to) as any,
       );
       const taken = existing.map((s) => s.student_code);
 
@@ -325,55 +322,64 @@ function StudentImport({
         freeBySection.set(s.id, Math.max(0, cap - (used.get(s.id) ?? 0)));
       }
 
-      const classByName = new Map(classes.map((c) => [c.name.trim().toLowerCase(), c.id]));
-      const secByKey = new Map(sections.map((s) => [`${s.class_id}:${s.name.trim().toLowerCase()}`, s.id]));
+      const { data: allCampuses } = await supabase.from("campuses").select("id, name");
+      const campusByName = new Map((allCampuses ?? []).map((c) => [c.name.trim().toLowerCase(), c.id]));
+      const { data: allClasses } = await supabase.from("classes").select("id, name, campus_id");
+      const { data: allSections } = await supabase.from("sections").select("id, name, class_id");
+      const classKey = new Map((allClasses ?? []).map((c) => [`${c.campus_id}:${c.name.trim().toLowerCase()}`, c.id]));
+      const secByKey = new Map((allSections ?? []).map((s) => [`${s.class_id}:${s.name.trim().toLowerCase()}`, s.id]));
+      const takenIds = new Set(taken);
+      void classes; void sections;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const inserts: any[] = [];
       const rowMeta: { row: number; label: string }[] = [];
 
-      rows.forEach((r, i) => {
+      rows.forEach((raw, i) => {
         const rowNum = i + 2; // header is row 1
-        const label = `${r.first_name ?? ""} ${r.last_name ?? ""}`.trim() || `Row ${rowNum}`;
+        const parsed = parseStudentRow(raw);
+        const label = parsed.ok ? `${parsed.value.first_name} ${parsed.value.last_name}`.trim() : (Object.values(raw)[0] || `Row ${rowNum}`);
         const fail = (message: string) => out.push({ row: rowNum, label, ok: false, message });
+        if (!parsed.ok) return fail(parsed.error);
+        const r = parsed.value;
 
-        if (!r.first_name) return fail("first_name is required");
-        if (r.date_of_birth && !DATE_RE.test(r.date_of_birth)) return fail("date_of_birth must be YYYY-MM-DD");
-        if (r.admission_date && !DATE_RE.test(r.admission_date)) return fail("admission_date must be YYYY-MM-DD");
-
-        const classId = r.class ? classByName.get(r.class.toLowerCase()) : undefined;
-        if (r.class && !classId) return fail(`Class "${r.class}" not found on this campus`);
-        const sectionId = r.section && classId ? secByKey.get(`${classId}:${r.section.toLowerCase()}`) : undefined;
-        if (r.section && !sectionId) return fail(`Section "${r.section}" not found in class "${r.class}"`);
+        const rowCampus = r.campus ? campusByName.get(r.campus.toLowerCase()) : campusId;
+        if (!rowCampus) return fail(`Campus "${r.campus}" not found, or you don't have access to it`);
+        if (r.student_code) {
+          if (takenIds.has(r.student_code)) return fail(`Adm. ID ${r.student_code} is already used`);
+          takenIds.add(r.student_code);
+        }
+        const classId = r.class_name ? classKey.get(`${rowCampus}:${r.class_name.toLowerCase()}`) : undefined;
+        if (r.class_name && !classId) return fail(`Class "${r.class_name}" not found on that campus`);
+        const sectionId = r.section_name && classId ? secByKey.get(`${classId}:${r.section_name.toLowerCase()}`) : undefined;
+        if (r.section_name && !sectionId) return fail(`Section "${r.section_name}" not found in class "${r.class_name}"`);
         if (sectionId) {
           const free = freeBySection.get(sectionId) ?? 0;
           if (free <= 0) {
             return fail(
-              `Section "${r.section}" is full (${capBySection.get(sectionId) ?? 0} places). Create another section for this class, or add more chairs to it.`,
+              `Section "${r.section_name}" is full (${capBySection.get(sectionId) ?? 0} places). Create another section for this class, or add more chairs to it.`,
             );
           }
           freeBySection.set(sectionId, free - 1);
         }
 
-
-
-        const code = generateCode(`${r.first_name} ${r.last_name ?? ""}`, taken);
-        taken.push(code);
         inserts.push({
           tenant_id: tenantId,
-          campus_id: campusId,
-          student_code: code,
+          campus_id: rowCampus,
+          student_code: r.student_code ?? "",
           first_name: r.first_name,
-          last_name: r.last_name || "",
-          gender: r.gender || null,
-          date_of_birth: r.date_of_birth || null,
-          guardian_name: r.guardian_name || null,
-          guardian_phone: r.guardian_phone || null,
-          guardian_occupation: r.guardian_occupation || null,
-          address: r.address || null,
+          last_name: r.last_name,
+          gender: r.gender,
+          date_of_birth: r.date_of_birth,
+          guardian_name: r.guardian_name,
+          guardian_phone: r.guardian_phone,
+          phone_home: r.phone_home,
+          father_cnic: r.father_cnic,
+          monthly_fee: r.monthly_fee,
+          address: r.address,
           class_id: classId ?? null,
           section_id: sectionId ?? null,
-          admission_date: r.admission_date || null,
+          admission_date: r.admission_date,
           academic_system: academicSystem,
           status: "active",
         });
@@ -411,7 +417,7 @@ function StudentImport({
   return (
     <ImportCard
       title="Import students"
-      headers={STUDENT_HEADERS}
+      headers={[...SCHOOL_STUDENT_HEADERS]}
       templateName="students-template.csv"
       onFile={run}
       busy={busy}
@@ -694,23 +700,24 @@ const EXPORTS: ExportDef[] = [
   {
     key: "students",
     label: "Students",
-    description: "All students with class, section and guardian details.",
+    description: "All students in the school's admission-register format (same columns as the import).",
     run: async (campusId) => {
       const rows = (await fetchAllRows<Record<string, unknown>>((from, to) =>
         supabase
           .from("students")
-          .select("student_code, first_name, last_name, gender, date_of_birth, guardian_name, guardian_phone, guardian_occupation, address, admission_date, status, classes(name), sections(name)")
+          .select("student_code, first_name, last_name, gender, date_of_birth, guardian_name, guardian_phone, phone_home, father_cnic, monthly_fee, address, admission_date, campuses(name), classes(name), sections(name)")
           .eq("campus_id", campusId)
-          .order("first_name")
+          .order("student_code")
           .range(from, to) as any,
       )) as Record<string, unknown>[];
+      const dmy = (d: unknown) => (typeof d === "string" && d ? d.split("-").reverse().join("/") : "");
+      const nm = (o: unknown) => (o as { name: string } | null)?.name ?? "";
       return {
-        headers: ["student_code", "first_name", "last_name", "gender", "date_of_birth", "guardian_name", "guardian_phone", "guardian_occupation", "class", "section", "admission_date", "status"],
+        headers: [...SCHOOL_STUDENT_HEADERS],
         rows: rows.map((s) => [
-          s.student_code, s.first_name, s.last_name, s.gender, s.date_of_birth,
-          s.guardian_name, s.guardian_phone, s.guardian_occupation,
-          (s.classes as { name: string } | null)?.name, (s.sections as { name: string } | null)?.name,
-          s.admission_date, s.status,
+          s.student_code, dmy(s.admission_date), `${s.first_name ?? ""} ${s.last_name ?? ""}`.trim(), s.guardian_name, s.father_cnic,
+          s.gender, dmy(s.date_of_birth), s.guardian_phone, s.phone_home, s.address,
+          nm(s.campuses), nm(s.classes), nm(s.sections), s.monthly_fee,
         ]),
       };
     },

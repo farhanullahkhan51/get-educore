@@ -753,7 +753,7 @@ export function buildAssistantTools(ctx: AssistantContext) {
         const payload = {
           tenant_id: ctx.tenantId,
           campus_id: campus.id,
-          student_code: code("STU"),
+          student_code: "",
           first_name: i.first_name.trim(),
           last_name: i.last_name.trim(),
           academic_system: i.academic_system,
