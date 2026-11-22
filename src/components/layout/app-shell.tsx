@@ -26,7 +26,7 @@ import {
   ArrowDownUp,
   Megaphone,
   BookOpenCheck, Receipt,
-  CalendarCheck,
+  CalendarCheck, Palette,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -164,6 +164,7 @@ const NAV: NavItem[] = [
   },
   { to: "/billing", label: "Billing & Plan", icon: Wallet, roles: ["super_admin"] },
   { to: "/users", label: "Users & Roles", icon: UserCog, roles: ["super_admin"] },
+  { to: "/branding", label: "Branding & Web Address", icon: Palette, roles: ["super_admin"] },
   { to: "/platform", label: "Platform Admin", icon: ShieldCheck, roles: ["super_admin"] },
 ];
 

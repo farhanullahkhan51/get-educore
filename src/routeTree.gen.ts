@@ -22,6 +22,7 @@ import { Route as AuthenticatedAcademicsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAdmissionsRouteImport } from './routes/_authenticated/admissions'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as AuthenticatedBoardRouteImport } from './routes/_authenticated/board'
+import { Route as AuthenticatedBrandingRouteImport } from './routes/_authenticated/branding'
 import { Route as AuthenticatedCambridgeRouteImport } from './routes/_authenticated/cambridge'
 import { Route as AuthenticatedCampusesRouteImport } from './routes/_authenticated/campuses'
 import { Route as AuthenticatedCertificatesRouteImport } from './routes/_authenticated/certificates'
@@ -117,6 +118,11 @@ const AuthenticatedBillingRoute = AuthenticatedBillingRouteImport.update({
 const AuthenticatedBoardRoute = AuthenticatedBoardRouteImport.update({
   id: '/board',
   path: '/board',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBrandingRoute = AuthenticatedBrandingRouteImport.update({
+  id: '/branding',
+  path: '/branding',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCambridgeRoute = AuthenticatedCambridgeRouteImport.update({
@@ -296,6 +302,7 @@ export interface FileRoutesByFullPath {
   '/admissions': typeof AuthenticatedAdmissionsRoute
   '/billing': typeof AuthenticatedBillingRoute
   '/board': typeof AuthenticatedBoardRoute
+  '/branding': typeof AuthenticatedBrandingRoute
   '/cambridge': typeof AuthenticatedCambridgeRoute
   '/campuses': typeof AuthenticatedCampusesRoute
   '/certificates': typeof AuthenticatedCertificatesRoute
@@ -341,6 +348,7 @@ export interface FileRoutesByTo {
   '/admissions': typeof AuthenticatedAdmissionsRoute
   '/billing': typeof AuthenticatedBillingRoute
   '/board': typeof AuthenticatedBoardRoute
+  '/branding': typeof AuthenticatedBrandingRoute
   '/cambridge': typeof AuthenticatedCambridgeRoute
   '/campuses': typeof AuthenticatedCampusesRoute
   '/certificates': typeof AuthenticatedCertificatesRoute
@@ -388,6 +396,7 @@ export interface FileRoutesById {
   '/_authenticated/admissions': typeof AuthenticatedAdmissionsRoute
   '/_authenticated/billing': typeof AuthenticatedBillingRoute
   '/_authenticated/board': typeof AuthenticatedBoardRoute
+  '/_authenticated/branding': typeof AuthenticatedBrandingRoute
   '/_authenticated/cambridge': typeof AuthenticatedCambridgeRoute
   '/_authenticated/campuses': typeof AuthenticatedCampusesRoute
   '/_authenticated/certificates': typeof AuthenticatedCertificatesRoute
@@ -435,6 +444,7 @@ export interface FileRouteTypes {
     | '/admissions'
     | '/billing'
     | '/board'
+    | '/branding'
     | '/cambridge'
     | '/campuses'
     | '/certificates'
@@ -480,6 +490,7 @@ export interface FileRouteTypes {
     | '/admissions'
     | '/billing'
     | '/board'
+    | '/branding'
     | '/cambridge'
     | '/campuses'
     | '/certificates'
@@ -526,6 +537,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admissions'
     | '/_authenticated/billing'
     | '/_authenticated/board'
+    | '/_authenticated/branding'
     | '/_authenticated/cambridge'
     | '/_authenticated/campuses'
     | '/_authenticated/certificates'
@@ -669,6 +681,13 @@ declare module '@tanstack/react-router' {
       path: '/board'
       fullPath: '/board'
       preLoaderRoute: typeof AuthenticatedBoardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/branding': {
+      id: '/_authenticated/branding'
+      path: '/branding'
+      fullPath: '/branding'
+      preLoaderRoute: typeof AuthenticatedBrandingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/cambridge': {
@@ -896,6 +915,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdmissionsRoute: typeof AuthenticatedAdmissionsRoute
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRoute
   AuthenticatedBoardRoute: typeof AuthenticatedBoardRoute
+  AuthenticatedBrandingRoute: typeof AuthenticatedBrandingRoute
   AuthenticatedCambridgeRoute: typeof AuthenticatedCambridgeRoute
   AuthenticatedCampusesRoute: typeof AuthenticatedCampusesRoute
   AuthenticatedCertificatesRoute: typeof AuthenticatedCertificatesRoute
@@ -927,6 +947,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdmissionsRoute: AuthenticatedAdmissionsRoute,
   AuthenticatedBillingRoute: AuthenticatedBillingRoute,
   AuthenticatedBoardRoute: AuthenticatedBoardRoute,
+  AuthenticatedBrandingRoute: AuthenticatedBrandingRoute,
   AuthenticatedCambridgeRoute: AuthenticatedCambridgeRoute,
   AuthenticatedCampusesRoute: AuthenticatedCampusesRoute,
   AuthenticatedCertificatesRoute: AuthenticatedCertificatesRoute,

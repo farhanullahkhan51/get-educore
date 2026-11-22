@@ -9,6 +9,10 @@ export type PublicSite = {
   origin: string;
   /** True when this is the platform's own address, not an institution's. */
   isPlatform: boolean;
+  /** Set only on an institution's own address. */
+  tenantId: string | null;
+  primaryColor: string | null;
+  academicSystem: string | null;
 };
 
 const FALLBACK: PublicSite = {
@@ -16,6 +20,9 @@ const FALLBACK: PublicSite = {
   logoUrl: null,
   origin: "https://get-educore.lovable.app",
   isPlatform: true,
+  tenantId: null,
+  primaryColor: null,
+  academicSystem: null,
 };
 
 /**
@@ -57,7 +64,7 @@ export const getPublicSite = createServerFn({ method: "GET" }).handler(async ():
     const { data, error } = await supabase.rpc("resolve_tenant_by_host", { _host: host });
     if (error) return { ...FALLBACK, origin };
     const row = (Array.isArray(data) ? data[0] : data) as
-      | { name?: string | null; slug?: string | null; logo_url?: string | null }
+      | { id?: string; name?: string | null; slug?: string | null; logo_url?: string | null; primary_color?: string | null; academic_system?: string | null }
       | undefined;
     if (!row?.name) return { ...FALLBACK, origin };
     return {
@@ -65,6 +72,9 @@ export const getPublicSite = createServerFn({ method: "GET" }).handler(async ():
       logoUrl: row.logo_url ?? null,
       origin,
       isPlatform: row.slug === "educore",
+      tenantId: row.slug === "educore" ? null : (row.id ?? null),
+      primaryColor: row.primary_color ?? null,
+      academicSystem: row.academic_system ?? null,
     };
   } catch {
     return { ...FALLBACK, origin };

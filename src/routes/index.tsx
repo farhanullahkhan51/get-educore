@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { GraduationCap, Armchair, CalendarClock, Landmark, Languages, Check, ArrowRight, Globe } from "lucide-react";
 import { useTenant } from "@/lib/tenant-context";
 import { getPublicSite } from "@/lib/public-site.functions";
+import { SchoolHome } from "@/components/public/school-home";
 
 export const Route = createFileRoute("/")({
   beforeLoad: async () => {
@@ -15,8 +16,11 @@ export const Route = createFileRoute("/")({
   loader: () => getPublicSite(),
   head: ({ loaderData }) => {
     const site = loaderData ?? { name: "EduCore", origin: "https://get-educore.lovable.app" };
-    const title = `${site.name} — Academic ERP for admissions, fees and results`;
-    const description = `${site.name} unifies admissions, fees, attendance, results and certificates across every campus, with Board (BISE) and Cambridge support.`;
+    const school = loaderData && !loaderData.isPlatform && loaderData.tenantId;
+    const title = school ? `${site.name} — Admissions, parent & student portal` : `${site.name} — Academic ERP for admissions, fees and results`;
+    const description = school
+      ? `Apply for admission, sign in to the parent and student portal, and verify fee vouchers at ${site.name}.`
+      : `${site.name} unifies admissions, fees, attendance, results and certificates across every campus, with Board (BISE) and Cambridge support.`;
     return {
       meta: [
         { title },
@@ -205,6 +209,12 @@ const TIERS = [
 ];
 
 function Landing() {
+  const site = Route.useLoaderData();
+  if (site && !site.isPlatform && site.tenantId) return <SchoolHome site={site} />;
+  return <PlatformLanding />;
+}
+
+function PlatformLanding() {
   const { tenant } = useTenant();
   const brandName = tenant?.name ?? "EduCore";
   return (
