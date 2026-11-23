@@ -1619,7 +1619,10 @@ function ImportCsvDialog({
   const [busy, setBusy] = useState(false);
 
   async function onFile(f: File) {
-    setText(await f.text());
+    if (!/\.csv$/i.test(f.name)) return void toast.error("Only CSV bank statements can be uploaded.");
+    const t = await f.text();
+    if (/\uFFFD|[\x00-\x08\x0E-\x1F]/.test(t.slice(0, 4000))) return void toast.error("That file isn't a readable CSV. Export the statement as CSV and try again.");
+    setText(t);
   }
 
   async function submit() {

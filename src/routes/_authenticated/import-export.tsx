@@ -170,7 +170,9 @@ function FilePicker({ onParsed, disabled }: { onParsed: (rows: Record<string, st
           const file = e.target.files?.[0];
           e.target.value = "";
           if (!file) return;
+          if (!/\.csv$/i.test(file.name)) { toast.error("Only CSV files can be uploaded here."); return; }
           const text = await file.text();
+          if (/\uFFFD|[\x00-\x08\x0E-\x1F]/.test(text.slice(0, 4000))) { toast.error("That file isn't a readable CSV. Save it from Excel as CSV and try again."); return; }
           const rows = parseCsvObjects(text);
           if (rows.length === 0) {
             toast.error("No data rows found in that file.");
