@@ -128,3 +128,59 @@ export function parseStudentRow(raw: Record<string, string>): { ok: true; value:
     },
   };
 }
+
+/** Our fields in the same order as SCHOOL_STUDENT_HEADERS, for the column-matching wizard. */
+export const IMPORT_FIELD_KEYS = [
+  "adm_id", "adm_date", "student_name", "father_name", "father_cnic",
+  "gender", "dob", "mobile", "phone_home", "address",
+  "campus", "class_name", "section_name", "fee",
+] as const;
+export type ImportFieldKey = (typeof IMPORT_FIELD_KEYS)[number];
+
+const EXTRA_GUESSES: [RegExp, ImportFieldKey][] = [
+  [/father|guardian|parent.*name/, "father_name"],
+  [/cnic/, "father_cnic"],
+  [/birth|dob/, "dob"],
+  [/adm.*date|joining|enrol.*date/, "adm_date"],
+  [/adm|roll|regno|registration|grno/, "adm_id"],
+  [/mobile|cell|contact|whatsapp|phone/, "mobile"],
+  [/address/, "address"],
+  [/section|sec$/, "section_name"],
+  [/class|grade|standard/, "class_name"],
+  [/campus|branch/, "campus"],
+  [/fee/, "fee"],
+  [/gender|sex/, "gender"],
+  [/name/, "student_name"],
+];
+
+/** Best guess for which field a file's column holds; null means skip. */
+export function guessField(header: string): ImportFieldKey | null {
+  const n = norm(header);
+  const exact = LOOKUP.get(n);
+  if (exact) return exact as ImportFieldKey;
+  for (const [re, key] of EXTRA_GUESSES) if (re.test(n)) return key;
+  return null;
+}
+
+/** Guess every column, letting each field be claimed by the first column only. */
+export function guessMapping(headers: string[]): (ImportFieldKey | null)[] {
+  const used = new Set<ImportFieldKey>();
+  return headers.map((h) => {
+    const g = guessField(h);
+    if (!g || used.has(g)) return null;
+    used.add(g);
+    return g;
+  });
+}
+
+/** Turn a raw file row into a school-format row using the chosen column mapping. */
+export function remapRow(cells: string[], mapping: (ImportFieldKey | null)[]): Record<string, string> {
+  const out: Record<string, string> = {};
+  mapping.forEach((key, i) => {
+    if (!key) return;
+    const header = SCHOOL_STUDENT_HEADERS[IMPORT_FIELD_KEYS.indexOf(key)]!;
+    const v = (cells[i] ?? "").trim();
+    if (v && !out[header]) out[header] = v;
+  });
+  return out;
+}

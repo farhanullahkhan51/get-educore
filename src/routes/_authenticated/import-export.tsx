@@ -31,6 +31,7 @@ import { parseCsvObjects, toCsv, downloadCsv } from "@/lib/csv";
 import { generateCode } from "@/lib/generate-code";
 import { parseStudentRow, SCHOOL_STUDENT_HEADERS } from "@/lib/student-import";
 import { cn } from "@/lib/utils";
+import { StudentImportWizard } from "@/components/import/student-import-wizard";
 
 export const Route = createFileRoute("/_authenticated/import-export")({
   head: () => ({
@@ -379,7 +380,7 @@ function StudentImport({
           address: r.address,
           class_id: classId ?? null,
           section_id: sectionId ?? null,
-          admission_date: r.admission_date,
+          admission_date: r.admission_date ?? new Date().toISOString().slice(0, 10),
           academic_system: academicSystem,
           status: "active",
         });
@@ -422,7 +423,9 @@ function StudentImport({
       onFile={run}
       busy={busy}
       results={results}
-    />
+    >
+      <StudentImportWizard busy={busy} onImport={run} />
+    </ImportCard>
   );
 }
 
