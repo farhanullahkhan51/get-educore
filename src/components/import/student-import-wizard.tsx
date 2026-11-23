@@ -28,8 +28,14 @@ async function readFile(file: File): Promise<string[][]> {
     return data.map((r) => r.map(cellText));
   }
   if (/\.xls$/i.test(file.name)) throw new Error("Old .xls files aren't supported — in Excel use Save As → Excel Workbook (.xlsx).");
-  return parseCsv(await file.text());
+  if (!/\.csv$/i.test(file.name)) throw new Error("Only Excel (.xlsx) or CSV files can be imported. PDFs and Word files can't be read here.");
+  const text = await file.text();
+  if (/\uFFFD|[\x00-\x08\x0E-\x1F]/.test(text.slice(0, 4000))) throw new Error("That file isn't a readable CSV. Save it from Excel as .xlsx or CSV and try again.");
+  return parseCsv(text);
 }
+
+/** A real student name: has letters and no binary/garbage characters. */
+export const looksLikeName = (v: string) => /\p{L}{2,}/u.test(v) && !/[\uFFFD\x00-\x1F]/.test(v);
 
 /** Upload an Excel/CSV file as-is, match its columns to EduCore fields, then import. */
 export function StudentImportWizard({ busy, onImport }: { busy: boolean; onImport: (rows: Record<string, string>[]) => void }) {
@@ -50,6 +56,9 @@ export function StudentImportWizard({ busy, onImport }: { busy: boolean; onImpor
       if (hi < 0) hi = 0;
       const head = (all[hi] ?? []).map((h, i) => h || `Column ${i + 1}`);
       const body = all.slice(hi + 1);
+      if (guessMapping(head).filter(Boolean).length < 2 && !/\.xlsx$/i.test(file.name)) {
+        toast.message("We couldn't recognise the column headings — please match them below.");
+      }
       if (body.length === 0) { toast.error("No student rows found in that file."); return; }
       setFileName(file.name); setHeaders(head); setRows(body); setMapping(guessMapping(head));
     } catch (e) {
@@ -120,7 +129,14 @@ export function StudentImportWizard({ busy, onImport }: { busy: boolean; onImpor
       <p className="text-xs text-muted-foreground">
         Missing Adm. IDs are numbered automatically. Missing Adm. Dates use today. Classes and sections must already exist with the same names.
       </p>
-      <Button disabled={busy || !hasName} onClick={() => onImport(rows.map((r) => remapRow(r, mapping)))}>
+      <Button disabled={busy || !hasName} onClick={() => {
+        const ni = mapping.indexOf("student_name");
+        const good = rows.filter((r) => looksLikeName(r[ni] ?? ""));
+        const bad = rows.length - good.length;
+        if (good.length === 0) { toast.error("None of the rows have a readable student name."); return; }
+        if (bad > 0) toast.message(`${bad} rows skipped — no readable student name.`);
+        onImport(good.map((r) => remapRow(r, mapping)));
+      }}>
         {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         {hasName ? `Import ${rows.length} students` : "Pick which column is Student Name"}
       </Button>
